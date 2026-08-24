@@ -302,7 +302,19 @@ EOF
   assert_contains "$report" "(silent - no problems found)" \
     "a successful result was not durably readable through report: $report"
 
-  pass "fm-startup-network: a clean successful result never queues a main-blocking wake"
+  # Bootstrap itself explicitly types completed benign work as BOOTSTRAP_INFO.
+  # That producer-owned no-action record is durable but must remain just as
+  # quiet as a fully silent success.
+  FM_FAKE_BOOTSTRAP_LOG="$log" \
+    FM_FAKE_BOOTSTRAP_OUT='BOOTSTRAP_INFO: fixture completed benign work' \
+    run_stage "$home" "$root" run --locked 0
+  [ ! -s "$home/state/.wake-queue" ] \
+    || fail "a BOOTSTRAP_INFO-only success queued a main-blocking wake: $(cat "$home/state/.wake-queue")"
+  report=$(run_stage "$home" "$root" report)
+  assert_contains "$report" "BOOTSTRAP_INFO: fixture completed benign work" \
+    "the completed no-action fact was not retained in the durable report"
+
+  pass "fm-startup-network: silent and explicitly informational successes never queue a main-blocking wake"
 }
 
 # The FAILED/actionable half of the same contract, paired with the success

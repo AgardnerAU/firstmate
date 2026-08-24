@@ -26,9 +26,9 @@
 #     state/.startup-network.report and reaches the agent either inline in the
 #     digest or, when it finishes too late for the digest to inline it, as a
 #     `check: startup-network` wake - but only when the late result is itself
-#     actionable (state is not "done", or the report carries one of
-#     bootstrap-diagnostics' actionable prefixes; report_is_actionable owns
-#     that test). A late-finishing clean run is not captain-facing progress
+#     actionable (state is not "done", or bootstrap emitted something other
+#     than its explicit BOOTSTRAP_INFO no-action record; report_requires_wake
+#     owns that transport test). A late-finishing clean run is not captain-facing progress
 #     (AGENTS.md section 8) and never becomes a wake row; it is still durable
 #     in the report file for `... report` to read on demand. Only a durable
 #     acknowledgement written after harvest prints the finished result
@@ -301,18 +301,16 @@ lock_unchanged() {  # <expected-pid>
   [ "$current" = "$expected" ]
 }
 
-# A successful ("done") run with a silent or BOOTSTRAP_INFO-only report is not
-# captain-facing progress (AGENTS.md section 8): it must never become a
-# main-blocking wake row. Only a run whose state is not "done", or whose
-# report carries one of bootstrap-diagnostics' actionable prefixes, is
-# actionable. This is the single owner of that "actionable network-checks
-# report" test; bootstrap-diagnostics (AGENTS.md section 13) owns the prefix
-# list itself.
-report_is_actionable() {  # <state>
+# Bootstrap owns the meaning of its output protocol: silence is success,
+# BOOTSTRAP_INFO is an explicit completed no-action fact, and every other line
+# is a diagnostic. This delivery layer does not maintain a second semantic
+# prefix list or decide what a diagnostic means; it only applies that producer-
+# supplied transport type. Unknown non-empty output fails safe by waking.
+report_requires_wake() {  # <state>
   local state=$1
   [ "$state" = "done" ] || return 0
   [ -s "$REPORT_FILE" ] || return 1
-  grep -Eq '^(MISSING:|MISSING_MANUAL:|NEEDS_GH_AUTH$|BACKEND_INVALID:|STARTUP_MEMORY_BUDGET:|CREW_DISPATCH: invalid|FLEET_SYNC:|PR_CHECK_MIGRATION:|TANGLE:|SECONDMATE_SYNC:|NUDGE_SECONDMATES:|SECONDMATE_LIVENESS:|SECONDMATE_HANDOFF:|FMX:|NETWORK_CHECKS:)' \
+  awk 'NF && $0 !~ /^BOOTSTRAP_INFO:/ { found=1; exit } END { exit !found }' \
     "$REPORT_FILE" 2>/dev/null
 }
 
@@ -344,7 +342,7 @@ EOF
       [ "$claim_live" -eq 1 ] || rm -f "$CLAIM_FILE" 2>/dev/null || true
     fi
     if [ "$claim_live" -eq 0 ]; then
-      if report_is_actionable "$state"; then
+      if report_requires_wake "$state"; then
         fm_wake_append check startup-network \
           "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
           || true
@@ -361,7 +359,7 @@ EOF
     fm_lock_release "$PUBLISH_LOCK"
     return 0
   fi
-  if report_is_actionable "$state"; then
+  if report_requires_wake "$state"; then
     fm_wake_append check startup-network \
       "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
       || true

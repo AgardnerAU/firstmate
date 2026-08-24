@@ -397,6 +397,15 @@ reclaim_stale_branch_grant_locked || exit 1
 [ "$ACTOR" != branch ] || require_branch_eligible_rows || exit 1
 
 if [ -n "$ACK_THROUGH" ]; then
+  if [ "$ACTOR" = main ]; then
+    # Preserve main's original whole-cutoff acknowledgement contract: rows may
+    # arrive after presentation but before the printed ack runs, and a direct
+    # or replayed main ack still owns every unreserved row through its cutoff.
+    # Claim again under the queue lock so those rows cannot be stranded merely
+    # because they were not present during the earlier drain. A live branch
+    # grant remains excluded by claim_main_rows_locked.
+    claim_main_rows_locked || exit 1
+  fi
   if [ "$ACTOR" = branch ]; then
     # check-kind rows (inactive-outcome receipts, secondmate stall markers)
     # are never in a branch's eligible snapshot - they are main-only by
