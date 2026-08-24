@@ -367,9 +367,45 @@ fm_lock_remove_stray_owner_link() {
   fi
 }
 
+# Depth bound for the reclaim-mutex chain below. Healthy operation reaches
+# depth 1: a second level exists only while a crashed reclaimer's own mutex is
+# being reclaimed, so the spare levels are pure crash headroom and the marker
+# path can never grow by more than this many suffixes.
+FM_LOCK_STEAL_MAX_DEPTH=4
+
+# fm_lock_steal_path <lockdir>: single owner of a lock's reclaim-mutex path,
+# published in FM_LOCK_STEAL_PATH (a global rather than stdout because every
+# caller sits in a lock critical section that must not fork). Non-zero means no
+# marker may exist at that depth, so callers must report a definite outcome
+# instead of nesting further.
+#
+# The bound is the fix for a silent 26-minute supervision outage on 2026-08-24:
+# the marker was a plain "$lockdir.steal" suffix, fm_lock_try_acquire acquired it
+# by calling itself, and any failure to CREATE a lock (rather than to find it
+# free) drove that call one suffix deeper per level with nothing to stop it. The
+# watcher armed, then died inside the loop once the path passed the filesystem's
+# limit, leaving the fleet unsupervised with every record looking normal.
+FM_LOCK_STEAL_PATH=
+fm_lock_steal_path() {  # <lockdir>
+  local lockdir=$1 rest=$1 depth=0
+  FM_LOCK_STEAL_PATH=
+  while :; do
+    case "$rest" in
+      *.steal) rest=${rest%.steal} ;;
+      *) break ;;
+    esac
+    depth=$((depth + 1))
+    [ "$depth" -lt "$FM_LOCK_STEAL_MAX_DEPTH" ] || return 1
+  done
+  FM_LOCK_STEAL_PATH="$lockdir.steal"
+}
+
 fm_lock_claim_blocked_by_steal() {
   local lockdir=$1 allowed_steal_owner=${2:-} steal
-  steal="$lockdir.steal"
+  # No derivable marker means no process can ever publish one at this depth, so
+  # nothing can be holding a reclaim against this claim.
+  fm_lock_steal_path "$lockdir" || return 1
+  steal=$FM_LOCK_STEAL_PATH
   [ -e "$steal" ] || [ -L "$steal" ] || return 1
   if [ -n "$allowed_steal_owner" ] && fm_lock_points_to_owner "$steal" "$allowed_steal_owner"; then
     return 1
@@ -443,12 +479,21 @@ fm_lock_remove_path() {
 }
 
 fm_lock_mid_acquire_is_fresh() {
-  local lockdir=$1 pid=$2 mid_acquire_stale
+  local lockdir=$1 pid=$2 mid_acquire_stale age
   case "$pid" in
     ''|*[!0-9]*)
       mid_acquire_stale=$FM_LOCK_STALE_AFTER
       [ "$mid_acquire_stale" -lt 2 ] && mid_acquire_stale=2
-      [ "$(fm_path_age "$lockdir")" -lt "$mid_acquire_stale" ]
+      age=$(fm_path_age "$lockdir")
+      # A non-numeric age means the path could not be read at all - the same
+      # unreadable over-long path the 2026-08-24 marker runaway produced, which
+      # turned this comparison into a bare "[: : integer expected". Answer
+      # "still fresh" so an unreadable lock is declined rather than reclaimed:
+      # a shell error is not a licence to steal.
+      case "$age" in
+        ''|*[!0-9]*) return 0 ;;
+      esac
+      [ "$age" -lt "$mid_acquire_stale" ]
       return
       ;;
   esac
@@ -820,7 +865,20 @@ fm_lock_try_acquire() {
     return 1
   fi
 
-  steal="$lockdir.steal"
+  if ! fm_lock_steal_path "$lockdir"; then
+    FM_LOCK_HELD_PID=$(cat "$lockdir/pid" 2>/dev/null || true)
+    return 1
+  fi
+  steal=$FM_LOCK_STEAL_PATH
+  # fm_lock_try_create can fail with nothing on disk to reclaim: the environment
+  # refused the creation (no space, no permission, no fork), not another holder.
+  # Reclaiming needs something to reclaim FROM, so report "not acquired" rather
+  # than publishing a reclaim mutex for a lock that does not exist. This is where
+  # the 2026-08-24 runaway entered the marker chain.
+  if [ ! -e "$lockdir" ] && [ ! -L "$lockdir" ] \
+    && [ ! -e "$steal" ] && [ ! -L "$steal" ]; then
+    return 1
+  fi
   if ! fm_lock_try_acquire "$steal"; then
     FM_LOCK_HELD_PID=$(cat "$lockdir/pid" 2>/dev/null || true)
     FM_LOCK_OWNER_DIR=
@@ -1104,7 +1162,8 @@ fm_autoarm_claim_abandoned() {  # <state-dir>
 fm_autoarm_release_abandoned() {  # <state-dir>
   local state=$1 lock steal
   lock="$state/.claude-autoarm.lock"
-  steal="$lock.steal"
+  fm_lock_steal_path "$lock" || return 1
+  steal=$FM_LOCK_STEAL_PATH
   fm_autoarm_claim_abandoned "$state" || return 1
   fm_lock_try_acquire "$steal" || return 1
   if ! fm_autoarm_claim_abandoned "$state"; then

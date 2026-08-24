@@ -427,6 +427,187 @@ test_lock_paused_mid_acquire_claim_fails_during_steal() {
   pass "paused mid-acquire claimant backs off to active stealer"
 }
 
+# The 2026-08-24 supervision outage: fm_lock_try_acquire published its reclaim
+# mutex as a plain "$lockdir.steal" suffix and acquired it by calling itself, so
+# any failure to CREATE a lock - as opposed to finding it already held - drove
+# that call one suffix deeper per level. The watcher armed, then died inside the
+# loop once the path passed the filesystem's limit, and the fleet ran
+# unsupervised for 26 minutes with every durable record looking normal.
+#
+# Both cases below drive the real lock functions and measure the paths the
+# algorithm actually asks the filesystem for, through an on-PATH mktemp that
+# records the reclaim depth of every creation attempt and refuses it.
+steal_depth_probe() {  # <dir> -> echoes a bin dir whose mktemp records+refuses
+  local dir=$1 shim
+  shim="$dir/probe-bin"
+  mkdir -p "$shim"
+  cat > "$shim/mktemp" <<'SH'
+#!/usr/bin/env bash
+# Record how deep into the reclaim-marker chain this creation sits, then refuse
+# it. Only the depth is logged: the runaway this guards against grows the path
+# itself, so logging paths would grow the log just as fast.
+rest=$*
+depth=0
+while [ "${rest#*.steal}" != "$rest" ]; do
+  rest=${rest#*.steal}
+  depth=$((depth + 1))
+done
+printf '%s\n' "$depth" >> "$FM_TEST_STEAL_DEPTH_LOG"
+exit 1
+SH
+  chmod +x "$shim/mktemp"
+  printf '%s\n' "$shim"
+}
+
+deepest_steal_depth() {  # <log>
+  awk 'NF { if ($1 + 0 > d) d = $1 + 0 } END { print d + 0 }' "$1"
+}
+
+steal_depth_bound() {  # <state>
+  FM_STATE_OVERRIDE="$1" bash -c '. "$1"; printf "%s\n" "${FM_LOCK_STEAL_MAX_DEPTH:-}"' _ "$LIB"
+}
+
+test_lock_creation_failure_does_not_nest_reclaim_markers() {
+  local dir state lockdir shim log runner rc i deepest
+  dir=$(make_case lock-create-failure)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  log="$dir/steal-depths"
+  : > "$log"
+  shim=$(steal_depth_probe "$dir")
+  # Nothing exists at $lockdir: every creation is refused by the environment,
+  # not by another holder, so there is no owner anywhere to reclaim.
+  FM_TEST_STEAL_DEPTH_LOG="$log" FM_STATE_OVERRIDE="$state" PATH="$shim:$PATH" \
+    bash -c '. "$1"; fm_lock_try_acquire "$2"' _ "$LIB" "$lockdir" \
+    >/dev/null 2>"$dir/acquire.err" &
+  runner=$!
+  i=0
+  while [ "$i" -lt 100 ] && is_live_non_zombie "$runner"; do
+    sleep 0.1
+    i=$((i + 1))
+  done
+  if is_live_non_zombie "$runner"; then
+    deepest=$(deepest_steal_depth "$log")
+    kill -9 "$runner" 2>/dev/null || true
+    wait "$runner" 2>/dev/null || true
+    fail "refused lock creation never terminated; reclaim markers reached depth $deepest and were still growing"
+  fi
+  rc=0
+  wait "$runner" || rc=$?
+  [ "$rc" -ne 0 ] || fail "acquirer claimed a lock it was never able to create"
+  deepest=$(deepest_steal_depth "$log")
+  [ "$deepest" -eq 0 ] || fail "refused lock creation opened a reclaim mutex with nothing to reclaim (depth $deepest)"
+  ! grep -q 'File name too long' "$dir/acquire.err" 2>/dev/null \
+    || fail "acquirer grew a marker path past the filesystem limit"
+  pass "a lock creation the environment refuses ends with a definite outcome and no reclaim marker"
+}
+
+test_lock_reclaim_marker_chain_is_depth_bounded() {
+  local dir state lockdir shim log bound dead p i runner rc deepest
+  dir=$(make_case lock-marker-depth)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  log="$dir/steal-depths"
+  : > "$log"
+  shim=$(steal_depth_probe "$dir")
+  bound=$(steal_depth_bound "$state")
+  [ -n "$bound" ] || fail "lock library publishes no reclaim-marker depth bound"
+  dead=$(dead_pid)
+  # Seed a chain deeper than the bound: every level is a stale dead-pid holder,
+  # which is exactly the shape a crash inside a reclaim leaves behind.
+  p="$lockdir"
+  i=0
+  while [ "$i" -le "$bound" ]; do
+    mkdir "$p"
+    printf '%s\n' "$dead" > "$p/pid"
+    p="$p.steal"
+    i=$((i + 1))
+  done
+  FM_TEST_STEAL_DEPTH_LOG="$log" FM_STATE_OVERRIDE="$state" PATH="$shim:$PATH" \
+    bash -c '. "$1"; fm_lock_try_acquire "$2"' _ "$LIB" "$lockdir" \
+    >/dev/null 2>"$dir/acquire.err" &
+  runner=$!
+  i=0
+  while [ "$i" -lt 100 ] && is_live_non_zombie "$runner"; do
+    sleep 0.1
+    i=$((i + 1))
+  done
+  if is_live_non_zombie "$runner"; then
+    deepest=$(deepest_steal_depth "$log")
+    kill -9 "$runner" 2>/dev/null || true
+    wait "$runner" 2>/dev/null || true
+    fail "stale reclaim chain never terminated; markers reached depth $deepest and were still growing"
+  fi
+  rc=0
+  wait "$runner" || rc=$?
+  deepest=$(deepest_steal_depth "$log")
+  [ "$deepest" -le "$bound" ] \
+    || fail "reclaim markers nested to depth $deepest, past the published bound of $bound"
+  pass "the reclaim-marker chain terminates at its published depth bound"
+}
+
+test_lock_unreadable_age_decides_instead_of_erroring() {
+  local dir state lockdir shim rc err
+  dir=$(make_case lock-unreadable-age)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  err="$dir/fresh.err"
+  shim="$dir/probe-bin"
+  mkdir -p "$shim"
+  # A path whose modification time cannot be resolved leaves fm_path_age with
+  # nothing to print, which is how the 2026-08-24 runaway ended: a bare
+  # "[: : integer expected" where a freshness decision belonged.
+  cat > "$shim/stat" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' 'cannot read: Value too large for defined data type'
+exit 0
+SH
+  chmod +x "$shim/stat"
+  mkdir "$lockdir"
+  : > "$lockdir/pid"
+  rc=0
+  PATH="$shim:$PATH" FM_STATE_OVERRIDE="$state" \
+    bash -c '. "$1"; fm_lock_mid_acquire_is_fresh "$2" ""' _ "$LIB" "$lockdir" \
+    2>"$err" || rc=$?
+  ! grep -q 'integer expected' "$err" \
+    || fail "unreadable lock age produced a shell error instead of a decision: $(cat "$err")"
+  [ "$rc" -eq 0 ] \
+    || fail "unreadable lock age did not decline the reclaim (rc=$rc)"
+  pass "an unreadable lock age decides 'still fresh' rather than erroring"
+}
+
+test_autoarm_dead_arming_owner_is_reclaimed() {
+  local dir state lock epoch dead newpid rc
+  dir=$(make_case autoarm-dead-arming)
+  state="$dir/state"
+  lock="$state/.claude-autoarm.lock"
+  epoch="$state/.claude-autoarm-epoch"
+  dead=$(dead_pid)
+  # The shape a failed arm leaves behind: the ledger frozen at "arming" naming
+  # an owner the operating system has already reaped. The ledger alone never
+  # proves that abandoned, so recovery has to come from the ordinary dead-holder
+  # reclaim - which is the path the marker runaway used to consume.
+  mkdir "$lock"
+  printf '%s\n' "$dead" > "$lock/pid"
+  printf '%s\n' autoarm > "$lock/role"
+  printf 'epoch=1 owner_pid=%s outcome=arming updated_at=1\n' "$dead" > "$epoch"
+  rc=0
+  FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    fm_autoarm_claim_abandoned "$2" && exit 9
+    exit 0
+  ' _ "$LIB" "$state" || rc=$?
+  [ "$rc" -eq 0 ] || fail "ledger frozen at arming was treated as proven abandoned"
+  rc=0
+  newpid=$(FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    if fm_lock_try_acquire "$2"; then cat "$2/pid"; else exit 7; fi
+  ' _ "$LIB" "$lock") || rc=$?
+  [ "$rc" -eq 0 ] || fail "a failed arm left the auto-arm claim unrecoverable (rc=$rc)"
+  [ "$newpid" != "$dead" ] || fail "auto-arm claim still names the dead arming owner"
+  pass "a failed arm's dead owner is reclaimed despite a ledger frozen at arming"
+}
+
 test_watch_restart_rejects_reused_pid() {
   local dir state fakebin out live pid i
   dir=$(make_case restart-reused-pid)
@@ -1137,6 +1318,10 @@ test_lock_does_not_steal_live_lock
 test_lock_empty_pid_uses_minimum_grace
 test_lock_late_claim_loses_after_recreate
 test_lock_paused_mid_acquire_claim_fails_during_steal
+test_lock_creation_failure_does_not_nest_reclaim_markers
+test_lock_reclaim_marker_chain_is_depth_bounded
+test_lock_unreadable_age_decides_instead_of_erroring
+test_autoarm_dead_arming_owner_is_reclaimed
 test_watch_restart_rejects_reused_pid
 test_watch_restart_attaches_to_healthy_peer
 test_watcher_self_evicts_on_lock_takeover
