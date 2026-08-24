@@ -1309,6 +1309,18 @@ for (const row of mainOnlyRows) {
   if (scope.corrupted) throw new Error(`an ordinary main-only row must not read as corrupted: ${row}`);
 }
 
+writeFileSync(
+  `${state}/.wake-queue`,
+  [
+    "1\t1\tcheck\tx-inbox",
+    "1\t2\tsignal\ttask-a.status\tsignal: task-a.status",
+  ].join("\n"),
+);
+const truncated = scopeForUnreadWake(state, false);
+if (!truncated.corrupted || truncated.eligible || truncated.eligibleSeqs.length !== 0) {
+  throw new Error(`a four-field queue row was not classified as corruption: ${JSON.stringify(truncated)}`);
+}
+
 // A mixed queue: the main-only row (seq 1) never vetoes the task-local rows
 // (seq 2, 3) - the reproduction from the task.
 writeFileSync(
