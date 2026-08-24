@@ -624,7 +624,7 @@ ${context.command}
           wakeGrantScript,
           String(acceptedGeneration),
         );
-        if (grant === "main-owned") return;
+        if (grant === "main-owned") throw new Error("the wake rows are already claimed by main");
         if (grant !== "published") throw new Error("could not record the branch's eligible row snapshot");
         // A row can still arrive between this re-check and the model starting
         // the drain; that residual is accepted by the confused-agent-grade boundary.

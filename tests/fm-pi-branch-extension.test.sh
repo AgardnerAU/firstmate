@@ -699,6 +699,46 @@ EOF
   pass "pre-drain eligibility re-check excludes a newly main-owned row without deferring eligible work"
 }
 
+test_main_owned_grant_result_falls_back_to_main() {
+  local repo home out status
+  repo="$TMP_ROOT/main-owned-fallback-root"
+  home="$TMP_ROOT/main-owned-fallback-home"
+  mkdir -p "$home/state" "$home/config"
+  install_pi_branch_extension_fixture "$repo"
+  PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+const prelude = process.env.DRIVER_PRELUDE;
+await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
+const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
+import { writeFileSync } from "node:fs";
+
+fire("session_start", {});
+const offer = dispatch("signal: interrupted main claim");
+if (!offer.accepted) throw new Error("eligible wake was not accepted before the ownership recheck");
+writeFileSync(`${home}/state/.main-eligible-rows`, "1\n");
+for (let i = 0; i < 250 && mainUserMessages.length === 0; i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+if ((globalThis.__fmPrompts ?? []).length !== 0) {
+  throw new Error("branch prompted for a row already claimed by main");
+}
+if (mainUserMessages.length !== 1) {
+  throw new Error(`main-owned row was silently absorbed: ${JSON.stringify(mainUserMessages)}`);
+}
+if (!String(mainUserMessages[0].content).includes("FIRSTMATE WATCHER WAKE: signal: interrupted main claim")) {
+  throw new Error(`fallback lost the durable wake: ${mainUserMessages[0].content}`);
+}
+if (mainUserMessages[0].options.deliverAs !== "followUp") {
+  throw new Error("main-owned fallback was not delivered as a follow-up");
+}
+process.exit(0);
+EOF
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  expect_code 0 "$status" "a main-owned grant result must still deliver the wake to main: $out"
+  pass "a stale main claim cannot silently suppress later wake delivery"
+}
+
 test_branch_predrain_recheck_noops_already_drained_wake() {
   local repo home out status
   repo="$TMP_ROOT/predrain-empty-root"
@@ -1273,6 +1313,7 @@ test_branch_cache_key_is_per_home_stable
 test_branch_default_on_heartbeat_afk_and_fallback
 test_branch_predrain_recheck_defers_new_main_owned_row
 test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligible_work
+test_main_owned_grant_result_falls_back_to_main
 test_branch_predrain_recheck_noops_already_drained_wake
 test_branch_mirror_filters_order_and_cursor
 test_branch_session_persists_across_process_restarts
