@@ -1,4 +1,5 @@
-import { mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 
 // Shared wake-dispatch handshake between the Pi watcher extension (the
 // dispatcher) and the supervision-branch extension (the handler), carried over
@@ -147,25 +148,48 @@ export const BRANCH_ELIGIBLE_ROWS_FILE = ".branch-eligible-rows";
 
 // Atomically publish the exact row set a branch turn may drain and
 // acknowledge. One sequence number per line - an opaque handoff, never
-// reclassified by the consumer. Returns false only on a write failure; the
-// caller must not prompt the branch when this fails, because a stale or
-// missing snapshot must never be read as "nothing eligible" by
-// bin/fm-wake-drain.sh's require_branch_eligible_rows guard.
-export function writeEligibleRowsSnapshot(state: string, seqs: readonly string[]): boolean {
-  if (seqs.length === 0) return false;
-  const target = `${state}/${BRANCH_ELIGIBLE_ROWS_FILE}`;
-  const tmp = `${target}.tmp.${process.pid}`;
+// reclassified by the consumer. A main-owned result means the competing main
+// turn won the queue-lock claim and already owns presentation; error means no
+// actor acquired the requested rows.
+export type EligibleRowsSnapshotResult = "published" | "main-owned" | "error";
+
+export function writeEligibleRowsSnapshot(
+  state: string,
+  seqs: readonly string[],
+  grantScript: string,
+): EligibleRowsSnapshotResult {
+  if (seqs.length === 0 || seqs.some((seq) => !/^[0-9]+$/.test(seq))) return "error";
   try {
-    mkdirSync(state, { recursive: true });
-    writeFileSync(tmp, `${seqs.join("\n")}\n`);
-    renameSync(tmp, target);
-    return true;
+    const result = spawnSync("bash", [grantScript, "publish", ...seqs], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FM_STATE_OVERRIDE: state,
+        FM_WAKE_QUEUE: `${state}/.wake-queue`,
+        FM_WAKE_QUEUE_LOCK: `${state}/.wake-queue.lock`,
+      },
+    });
+    if (result.status === 0) return "published";
+    if (result.status === 3) return "main-owned";
+    return "error";
   } catch {
-    try {
-      unlinkSync(tmp);
-    } catch {
-      // Best effort cleanup only.
-    }
+    return "error";
+  }
+}
+
+export function releaseEligibleRowsSnapshot(state: string, grantScript: string): boolean {
+  try {
+    const result = spawnSync("bash", [grantScript, "release"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FM_STATE_OVERRIDE: state,
+        FM_WAKE_QUEUE: `${state}/.wake-queue`,
+        FM_WAKE_QUEUE_LOCK: `${state}/.wake-queue.lock`,
+      },
+    });
+    return result.status === 0;
+  } catch {
     return false;
   }
 }

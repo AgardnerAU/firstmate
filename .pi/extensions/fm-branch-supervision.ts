@@ -59,6 +59,7 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import {
   FM_BRANCH_DISPATCH_EVENT,
+  releaseEligibleRowsSnapshot,
   scopeForUnreadWake,
   writeEligibleRowsSnapshot,
   type BranchDispatchOffer,
@@ -79,6 +80,7 @@ const mirrorCursorFile = join(state, ".branch-mirror-cursor");
 const promptScript = join(fmRoot, "bin", "fm-branch-prompt.sh");
 const outcomeScript = join(fmRoot, "bin", "fm-branch-outcome.sh");
 const leaseScript = join(fmRoot, "bin", "fm-lease.sh");
+const wakeGrantScript = join(fmRoot, "bin", "fm-wake-grant.sh");
 const loadedMarker = join(state, ".pi-branch-extension-loaded");
 
 // Same tool set in the same order on every request (part of the cached
@@ -609,9 +611,9 @@ ${context.command}
         if (scope.corrupted) {
           throw new Error("the unread wake queue could not be read safely");
         }
-        if (!writeEligibleRowsSnapshot(state, scope.eligibleSeqs)) {
-          throw new Error("could not record the branch's eligible row snapshot");
-        }
+        const grant = writeEligibleRowsSnapshot(state, scope.eligibleSeqs, wakeGrantScript);
+        if (grant === "main-owned") return;
+        if (grant !== "published") throw new Error("could not record the branch's eligible row snapshot");
         // A row can still arrive between this re-check and the model starting
         // the drain; that residual is accepted by the confused-agent-grade boundary.
         await session.prompt(
@@ -619,8 +621,7 @@ ${context.command}
         );
       })
       .catch(async (error: unknown) => {
-        // Return the wake to main rather than losing it; the durable wake
-        // queue additionally re-presents anything never acknowledged.
+        releaseEligibleRowsSnapshot(state, wakeGrantScript);
         try {
           await fallbackToMain(message, error instanceof Error ? error.message : String(error));
         } catch {}
@@ -691,10 +692,11 @@ ${context.command}
     shuttingDown = false;
     branchBroken = "";
     generation += 1;
-    actingAsOwner(generation);
+    if (actingAsOwner(generation)) releaseEligibleRowsSnapshot(state, wakeGrantScript);
   });
 
   pi.on?.("session_shutdown", () => {
+    if (actingAsOwner()) releaseEligibleRowsSnapshot(state, wakeGrantScript);
     shuttingDown = true;
     generation += 1;
     pendingMirror.length = 0;

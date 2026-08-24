@@ -1186,12 +1186,12 @@ test_branch_dispatch_classifies_main_only_rows_and_writes_the_eligible_snapshot(
   mkdir -p "$repo/.pi/extensions/lib" "$home/state" "$home/projects/approved"
   cp "$ROOT/.pi/extensions/lib/fm-branch-dispatch.ts" "$repo/.pi/extensions/lib/fm-branch-dispatch.ts"
   printf 'project=%s/projects/approved\nwindow=fm-window\n' "$home" > "$home/state/task-a.meta"
-  LIB="$repo/.pi/extensions/lib/fm-branch-dispatch.ts" FM_HOME="$home" \
+  LIB="$repo/.pi/extensions/lib/fm-branch-dispatch.ts" FM_HOME="$home" GRANT="$ROOT/bin/fm-wake-grant.sh" \
     node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const { scopeForUnreadWake, writeEligibleRowsSnapshot, BRANCH_ELIGIBLE_ROWS_FILE } =
+const { scopeForUnreadWake, writeEligibleRowsSnapshot, releaseEligibleRowsSnapshot, BRANCH_ELIGIBLE_ROWS_FILE } =
   await import(pathToFileURL(process.env.LIB).href);
 const state = `${process.env.FM_HOME}/state`;
 const project = `${process.env.FM_HOME}/projects/approved`;
@@ -1232,13 +1232,22 @@ if (!mixed.projects.includes(project)) {
   throw new Error(`eligible project context lost: ${JSON.stringify(mixed.projects)}`);
 }
 
-if (!writeEligibleRowsSnapshot(state, mixed.eligibleSeqs)) throw new Error("snapshot write reported failure");
+if (writeEligibleRowsSnapshot(state, mixed.eligibleSeqs, process.env.GRANT) !== "published") {
+  throw new Error("snapshot write reported failure");
+}
 const snapshot = readFileSync(`${state}/${BRANCH_ELIGIBLE_ROWS_FILE}`, "utf8").trim().split("\n");
 if (snapshot.join(",") !== "2,3") throw new Error(`snapshot did not name exactly the eligible rows: ${snapshot}`);
 
 // An empty eligible set is refused rather than clearing the snapshot to
 // nothing - a caller must never overwrite a live snapshot with an empty one.
-if (writeEligibleRowsSnapshot(state, [])) throw new Error("an empty eligible set must not be written");
+if (writeEligibleRowsSnapshot(state, [], process.env.GRANT) !== "error") {
+  throw new Error("an empty eligible set must not be written");
+}
+if (!releaseEligibleRowsSnapshot(state, process.env.GRANT)) throw new Error("snapshot release failed");
+writeFileSync(`${state}/.main-eligible-rows`, "2\n");
+if (writeEligibleRowsSnapshot(state, ["2"], process.env.GRANT) !== "main-owned") {
+  throw new Error("a row already claimed by main was not reported as main-owned");
+}
 
 // heartbeat keeps its own unchanged all-or-nothing rule: the same main-only
 // row that is merely excluded for a non-heartbeat scan still vetoes a

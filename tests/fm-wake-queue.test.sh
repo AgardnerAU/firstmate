@@ -13,6 +13,7 @@ set -u
 
 WATCH="$ROOT/bin/fm-watch.sh"
 DRAIN="$ROOT/bin/fm-wake-drain.sh"
+GRANT="$ROOT/bin/fm-wake-grant.sh"
 
 TMP_ROOT=$(fm_test_tmproot fm-wake-tests)
 
@@ -667,6 +668,62 @@ test_branch_actor_scoped_ack_never_swallows_a_main_owned_row() {
   pass "a branch-actor scoped ack never swallows an unacked main-owned row, and main's later drain sees exactly what remains"
 }
 
+test_main_drain_excludes_rows_already_granted_to_branch() {
+  local dir state out err sequence generation
+  dir=$(make_case main-excludes-branch-grant)
+  state="$dir/state"
+
+  append_wake "$state" check "some-poll.check.sh" "check: some-poll.check.sh: merged" \
+    || fail "main-only append failed"
+  append_wake "$state" signal "task-a.status" "signal: task-a" || fail "signal append failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish 2 || fail "branch grant publication failed"
+
+  out="$dir/main-drain.out"
+  err="$dir/main-drain.err"
+  FM_STATE_OVERRIDE="$state" "$DRAIN" > "$out" 2> "$err" || fail "main drain failed: $(cat "$err")"
+  grep -Fq "$(printf '\tcheck\tsome-poll.check.sh\t')" "$out" || fail "main drain omitted its main-owned row"
+  ! grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$out" || fail "main drain presented a branch-granted row"
+  sequence=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through \([0-9][0-9]*\) --recovery-generation [A-Za-z0-9._-][A-Za-z0-9._-]*$/\1/p' "$err")
+  generation=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through [0-9][0-9]* --recovery-generation \([A-Za-z0-9._-][A-Za-z0-9._-]*\)$/\1/p' "$err")
+  [ "$sequence" = 1 ] && [ -n "$generation" ] || fail "main acknowledgement did not bind only its presented row"
+  FM_STATE_OVERRIDE="$state" "$DRAIN" --ack-through "$sequence" --recovery-generation "$generation" \
+    || fail "main acknowledgement failed"
+  grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$state/.wake-queue" \
+    || fail "main acknowledgement consumed the branch-granted row"
+
+  out="$dir/branch-drain.out"
+  err="$dir/branch-drain.err"
+  FM_STATE_OVERRIDE="$state" FM_SUPERVISION_ACTOR=branch "$DRAIN" > "$out" 2> "$err" \
+    || fail "branch drain failed: $(cat "$err")"
+  grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$out" || fail "branch lost its granted row"
+  sequence=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through \([0-9][0-9]*\) --recovery-generation [A-Za-z0-9._-][A-Za-z0-9._-]*$/\1/p' "$err")
+  generation=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through [0-9][0-9]* --recovery-generation \([A-Za-z0-9._-][A-Za-z0-9._-]*\)$/\1/p' "$err")
+  FM_STATE_OVERRIDE="$state" FM_SUPERVISION_ACTOR=branch "$DRAIN" --ack-through "$sequence" --recovery-generation "$generation" \
+    || fail "branch acknowledgement failed"
+  [ ! -s "$state/.wake-queue" ] || fail "branch acknowledgement left its handled row queued"
+  [ ! -e "$state/.branch-eligible-rows" ] || fail "branch acknowledgement retained its completed grant"
+
+  pass "main drain and acknowledgement exclude an active branch grant"
+}
+
+test_branch_grant_refuses_rows_already_claimed_by_main() {
+  local dir state rc
+  dir=$(make_case branch-refuses-main-claim)
+  state="$dir/state"
+
+  append_wake "$state" signal "task-a.status" "signal: task-a" || fail "signal append failed"
+  FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/main.out" 2> "$dir/main.err" \
+    || fail "main presentation failed"
+  rc=0
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish 1 || rc=$?
+  [ "$rc" -eq 3 ] || fail "branch grant did not report the existing main ownership: rc=$rc"
+  [ ! -e "$state/.branch-eligible-rows" ] || fail "refused branch grant published an ownership snapshot"
+  grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$dir/main.out" \
+    || fail "the main owner did not present its claimed row"
+
+  pass "branch grant cannot take a row already claimed by main"
+}
+
 # A branch-actor drain or ack without a snapshot is a wiring bug, never
 # "nothing eligible": it must refuse loudly rather than silently draining or
 # acking nothing.
@@ -1093,6 +1150,8 @@ test_structural_signal_enrichment_preserves_raw_rows
 test_enrichment_preserves_all_unread_lines_and_status_file_failures
 test_slow_annotation_does_not_block_append_and_deleted_file_fails_open
 test_branch_actor_scoped_ack_never_swallows_a_main_owned_row
+test_main_drain_excludes_rows_already_granted_to_branch
+test_branch_grant_refuses_rows_already_claimed_by_main
 test_branch_actor_without_eligible_snapshot_refuses
 test_wake_publish_requires_atomic_recovery_evidence
 test_legacy_generationless_wake_is_adopted
