@@ -666,22 +666,24 @@ test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligi
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
 const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 
 fire("session_start", {});
+let releasePrompt;
+globalThis.__fmPromptGate = new Promise((resolve) => { releasePrompt = resolve; });
 const offer = dispatch("signal: task-local wake");
 if (!offer.accepted) throw new Error("eligible task-local offer was not accepted");
 // A main-only notice arrives while main is still finishing its own earlier
 // turn - unacked, still sitting in the queue - between offer acceptance and
 // the branch's own drain.
 appendFileSync(`${home}/state/.wake-queue`, "2\t2\tcheck\tx-inbox\tcheck: pending x mention\n");
-for (let i = 0; i < 250 && (globalThis.__fmPrompts ?? []).length === 0 && mainUserMessages.length === 0; i += 1) {
+for (let i = 0; i < 250 && !globalThis.__fmPromptStarted && mainUserMessages.length === 0; i += 1) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (mainUserMessages.length !== 0) {
   throw new Error(`a co-present main-owned row bounced the whole mixed queue to main: ${JSON.stringify(mainUserMessages)}`);
 }
-if ((globalThis.__fmPrompts ?? []).length !== 1) {
+if (!globalThis.__fmPromptStarted) {
   throw new Error("the branch was never prompted even though its own row stayed eligible");
 }
 const snapshot = readFileSync(`${home}/state/.branch-eligible-rows`, "utf8").trim().split("\n");
@@ -691,12 +693,66 @@ const queue = readFileSync(`${home}/state/.wake-queue`, "utf8");
 if (!queue.includes("\tcheck\tx-inbox\t")) {
   throw new Error(`the main-owned row must remain queued for main, untouched: ${queue}`);
 }
+releasePrompt();
+for (let i = 0; i < 250 && (globalThis.__fmPrompts ?? []).length === 0; i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+for (let i = 0; i < 250 && existsSync(`${home}/state/.branch-eligible-rows`); i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+if (existsSync(`${home}/state/.branch-eligible-rows`)) {
+  throw new Error("settled branch prompt retained its row grant");
+}
 process.exit(0);
 EOF
   status=$?
   out=$(cat "$TMP_ROOT/node-output")
   expect_code 0 "$status" "pre-drain eligibility re-check must exclude only the new main-owned row: $out"
   pass "pre-drain eligibility re-check excludes a newly main-owned row without deferring eligible work"
+}
+
+test_settled_branch_prompt_releases_unacknowledged_grant() {
+  local repo home out status
+  repo="$TMP_ROOT/settled-grant-root"
+  home="$TMP_ROOT/settled-grant-home"
+  mkdir -p "$home/state" "$home/config"
+  install_pi_branch_extension_fixture "$repo"
+  PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+const prelude = process.env.DRIVER_PRELUDE;
+await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, realRoot }; })()`);
+const { dispatch, fire, home, realRoot } = globalThis.__t;
+const { spawnSync } = await import("node:child_process");
+const { existsSync } = await import("node:fs");
+
+fire("session_start", {});
+if (!dispatch("signal: unacknowledged branch wake").accepted) {
+  throw new Error("eligible wake was not accepted");
+}
+for (let i = 0; i < 250 && (globalThis.__fmPrompts ?? []).length === 0; i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+if ((globalThis.__fmPrompts ?? []).length !== 1) throw new Error("branch prompt did not settle");
+for (let i = 0; i < 250 && existsSync(`${home}/state/.branch-eligible-rows`); i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+if (existsSync(`${home}/state/.branch-eligible-rows`)) {
+  throw new Error("settled prompt left its unacknowledged grant active");
+}
+const drain = spawnSync("bash", [`${realRoot}/bin/fm-wake-drain.sh`], {
+  encoding: "utf8",
+  env: { ...process.env, FM_HOME: home, FM_STATE_OVERRIDE: `${home}/state`, FM_ROOT_OVERRIDE: realRoot },
+});
+if (drain.status !== 0) throw new Error(`main drain failed after grant release: ${drain.stderr}`);
+if (!drain.stdout.includes("\tsignal\tbranch-driver.status\t")) {
+  throw new Error(`main could not replay the unacknowledged branch row: ${drain.stdout}`);
+}
+process.exit(0);
+EOF
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  expect_code 0 "$status" "settled branch turns must release residual grants for main replay: $out"
+  pass "a settled branch turn releases an unacknowledged grant for main replay"
 }
 
 test_main_owned_grant_result_falls_back_to_main() {
@@ -1313,6 +1369,7 @@ test_branch_cache_key_is_per_home_stable
 test_branch_default_on_heartbeat_afk_and_fallback
 test_branch_predrain_recheck_defers_new_main_owned_row
 test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligible_work
+test_settled_branch_prompt_releases_unacknowledged_grant
 test_main_owned_grant_result_falls_back_to_main
 test_branch_predrain_recheck_noops_already_drained_wake
 test_branch_mirror_filters_order_and_cursor
