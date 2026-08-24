@@ -103,7 +103,7 @@ state/               runtime records and signals; gitignored
   <id>.pr-poll       private validated data sidecar for the byte-static PR merge poll
   <id>.pr-poll-registration  private transactional provenance record binding the task, canonical metadata identity, sidecar, and static poll publication
   <id>.pr-poll-retirement  private identity-bound crash-recovery receipt for one exact validated merged result; removed after its poll artifacts retire
-  <id>.pr-poll-merge-notified  once-per-task marker that a merged-PR result already reached main; survives a poll re-registered for the same, already-merged task, so a repeat identical detection is absorbed instead of enqueued again; bin/fm-pr-lib.sh owns the contract
+  <id>.pr-poll-merge-notified  per-task marker binding the last merged-PR result delivered to main to its canonical provider/host/path/number identity; survives re-registration so only a repeat of that same PR is absorbed, while a different PR for the task gets its own first notification; bin/fm-pr-lib.sh owns the contract
   branch-outcomes.jsonl .branch-outcomes-cursor  Pi supervision-branch durable outcome store and its read cursor; bin/fm-branch-outcome.sh owns the format
   branch-session/ .branch-session .branch-mirror-cursor  the branch's persistent conversation, its pointer, and the dialog-mirror cursor; extension-owned (docs/pi-supervision-branch.md)
   .branch-eligible-rows  the branch's current turn's exact eligible wake-queue row sequence numbers; written atomically by the extension before every branch prompt, consumed as an opaque row set by a branch-actor bin/fm-wake-drain.sh drain or ack (docs/watcher-continuity.md "Per-actor acknowledgement")

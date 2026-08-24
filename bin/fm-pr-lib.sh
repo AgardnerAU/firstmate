@@ -941,34 +941,65 @@ fm_pr_poll_retirement_recover_all() {
   [ -z "$FM_PR_POLL_RETIREMENT_REJECTED" ]
 }
 
-# --- merge-notification once-per-task marker ---------------------------------
+# --- merge-notification canonical-identity marker ----------------------------
 # A merged-PR poll retires (fm_pr_poll_retirement_recover_one) in the same
 # watcher cycle that detects it, which is normally enough on its own to stop a
 # duplicate detection: the check.sh is gone, so nothing re-polls it. The
-# exception is a poll re-registered for a task whose PR is already merged
-# (e.g. bin/fm-pr-check.sh re-armed after the merge was already surfaced): the
-# poll's own retirement state is scoped to ONE registration and cannot see a
-# PRIOR registration's outcome, so its first cycle would otherwise surface an
-# identical "merged" notice a second time. This marker is scoped to the task
-# id instead, so it survives across re-registrations: the first merged
-# detection for a task is main-relevant and reaches main; a later identical
-# one is a no-op, absorbed rather than enqueued as another main-blocking wake
-# (AGENTS.md section 8 - a repeat is not captain-facing progress).
-fm_pr_poll_merge_already_notified() {  # <state> <id>
-  local state=$1 id=$2
-  fm_pr_task_id_valid "$id" || return 1
-  [ -f "$state/$id.pr-poll-merge-notified" ] && [ ! -L "$state/$id.pr-poll-merge-notified" ]
+# exception is the same poll re-registered after its merge was already
+# surfaced. Its retirement state is scoped to one registration, so this marker
+# carries the canonical PR identity across registrations for the task. Only a
+# matching identity is a no-op; a different PR for the same task reaches main
+# and replaces the marker when its first notification is published.
+fm_pr_poll_merge_marker_matches() {  # <marker> <device> <provider> <host> <path> <number>
+  local marker=$1 device=$2 expected_provider=$3 expected_host=$4 expected_path=$5 expected_number=$6
+  local version provider host path number
+  fm_pr_private_file_valid "$marker" 600 "$device" || return 1
+  exec 8< "$marker" || return 1
+  IFS= read -r version <&8 || { exec 8<&-; return 1; }
+  IFS= read -r provider <&8 || { exec 8<&-; return 1; }
+  IFS= read -r host <&8 || { exec 8<&-; return 1; }
+  IFS= read -r path <&8 || { exec 8<&-; return 1; }
+  IFS= read -r number <&8 || { exec 8<&-; return 1; }
+  if IFS= read -r _extra <&8; then
+    exec 8<&-
+    return 1
+  fi
+  exec 8<&-
+  [ "$version" = fm-pr-poll-merge-notified-v1 ] \
+    && [ "$provider" = "$expected_provider" ] \
+    && [ "$host" = "$expected_host" ] \
+    && [ "$path" = "$expected_path" ] \
+    && [ "$number" = "$expected_number" ]
 }
 
-fm_pr_poll_merge_mark_notified() {  # <state> <id>
-  local state=$1 id=$2 marker tmp
+fm_pr_poll_merge_already_notified() {  # <state> <id> <provider> <host> <path> <number>
+  local state=$1 id=$2 provider=$3 host=$4 path=$5 number=$6 marker state_device
   fm_pr_task_id_valid "$id" || return 1
+  [ -d "$state" ] && [ ! -L "$state" ] || return 1
+  state_device=$(fm_pr_file_device "$state") || return 1
   marker="$state/$id.pr-poll-merge-notified"
-  fm_pr_regular_destination_or_absent "$marker" || return 1
-  [ ! -e "$marker" ] || return 0
+  fm_pr_poll_merge_marker_matches "$marker" "$state_device" \
+    "$provider" "$host" "$path" "$number"
+}
+
+fm_pr_poll_merge_mark_notified() {  # <state> <id> <provider> <host> <path> <number>
+  local state=$1 id=$2 provider=$3 host=$4 path=$5 number=$6 marker tmp state_device
+  fm_pr_task_id_valid "$id" || return 1
+  [ -d "$state" ] && [ ! -L "$state" ] || return 1
+  state_device=$(fm_pr_file_device "$state") || return 1
+  marker="$state/$id.pr-poll-merge-notified"
+  fm_pr_regular_destination_on_device_or_absent "$marker" "$state_device" || return 1
   umask 077
   tmp=$(mktemp "$state/.fm-pr-poll-merge-notified.XXXXXX") || return 1
-  if ! printf 'merged\n' > "$tmp" || ! chmod 0600 "$tmp" || ! mv -f -- "$tmp" "$marker"; then
+  if ! printf '%s\n%s\n%s\n%s\n%s\n' \
+      fm-pr-poll-merge-notified-v1 "$provider" "$host" "$path" "$number" > "$tmp" \
+    || ! chmod 0600 "$tmp" \
+    || ! fm_pr_poll_merge_marker_matches "$tmp" "$state_device" \
+      "$provider" "$host" "$path" "$number" \
+    || ! fm_pr_regular_destination_on_device_or_absent "$marker" "$state_device" \
+    || ! mv -f -- "$tmp" "$marker" \
+    || ! fm_pr_poll_merge_marker_matches "$marker" "$state_device" \
+      "$provider" "$host" "$path" "$number"; then
     rm -f -- "$tmp"
     return 1
   fi

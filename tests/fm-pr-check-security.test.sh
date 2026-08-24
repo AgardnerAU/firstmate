@@ -3048,6 +3048,48 @@ test_merged_poll_reregistration_after_notification_is_absorbed() {
   pass "a repeat identical merged poll for an already-notified task is absorbed, never queued as a main-blocking row"
 }
 
+test_different_merged_pr_for_same_task_is_not_absorbed() {
+  local dir state rc
+  dir=$(make_case different-merged-pr-not-absorbed)
+  state="$dir/home/state"
+  write_poll_meta "$state" task-a https://github.com/o/r/pull/1
+  seed_canonical_poll "$dir" task-a https://github.com/o/r/pull/1
+
+  set +e
+  FM_TEST_GH_STATE=MERGED run_watcher_bounded "$dir/home" "$dir/fakebin" > "$dir/watch-1.out" 2> "$dir/watch-1.err"
+  rc=$?
+  set -e
+  [ "$rc" -eq 0 ] || fail "first merged watcher cycle failed: $(cat "$dir/watch-1.err")"
+  case "$(cat "$dir/watch-1.out")" in
+    check:*task-a.check.sh:*merged) ;;
+    *) fail "first PR merge confirmation was not delivered: $(cat "$dir/watch-1.out")" ;;
+  esac
+  ack_watcher_cycle "$state" || fail "first PR merge confirmation acknowledgement failed"
+  assert_poll_absent "$state" task-a
+
+  write_poll_meta "$state" task-a https://github.com/o/r/pull/2
+  seed_canonical_poll "$dir" task-a https://github.com/o/r/pull/2
+  rm -f "$state/.last-check"
+
+  set +e
+  FM_TEST_GH_STATE=MERGED run_watcher_bounded "$dir/home" "$dir/fakebin" > "$dir/watch-2.out" 2> "$dir/watch-2.err"
+  rc=$?
+  set -e
+  [ "$rc" -eq 0 ] || fail "different-PR watcher cycle failed: $(cat "$dir/watch-2.err")"
+  case "$(cat "$dir/watch-2.out")" in
+    check:*task-a.check.sh:*merged) ;;
+    *) fail "a different PR merge was absorbed: $(cat "$dir/watch-2.out")" ;;
+  esac
+  grep -F "$(printf '\tcheck\t%s/task-a.check.sh\t' "$state")" "$state/.wake-queue" >/dev/null 2>&1 \
+    || fail "the different PR merge did not create a main-blocking wake row"
+  fm_pr_poll_merge_already_notified "$state" task-a github github.com o/r 2 \
+    || fail "the marker was not advanced to the different PR identity"
+  ! fm_pr_poll_merge_already_notified "$state" task-a github github.com o/r 1 \
+    || fail "the marker still matched the superseded PR identity"
+  assert_poll_absent "$state" task-a
+  pass "a different merged PR for the same task gets its own first notification"
+}
+
 test_persistent_secondmate_retirement_is_poll_only() {
   local dir state meta_before status_before registry_before endpoint_before rc
   dir=$(make_case merged-retirement-secondmate)
@@ -3425,6 +3467,7 @@ test_parser_matrix
 test_gitlab_merge_watch
 test_merged_poll_retires_once
 test_merged_poll_reregistration_after_notification_is_absorbed
+test_different_merged_pr_for_same_task_is_not_absorbed
 test_persistent_secondmate_retirement_is_poll_only
 test_retirement_crash_recovery
 test_external_merge_transition_retires_only_terminal_poll

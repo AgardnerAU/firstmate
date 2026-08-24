@@ -1231,7 +1231,8 @@ while :; do
       if [ -n "$out" ]; then
         reason="check: $c: $out"
         if [ "$is_pr_poll" -eq 1 ] && [ "$out" = merged ] \
-          && fm_pr_poll_merge_already_notified "$STATE" "$id"; then
+          && fm_pr_poll_merge_already_notified "$STATE" "$id" \
+            "$provider" "$host" "$path" "$number"; then
           # This exact merge was already surfaced to main once for this task
           # (fm_pr_poll_merge_mark_notified below records that at first
           # notification, and it survives a later re-registered poll for the
@@ -1247,6 +1248,7 @@ while :; do
         fm_wake_append check "$c" "$reason" || exit 1
         if [ "$is_pr_poll" -eq 1 ] && [ "$out" = merged ]; then
           fm_pr_poll_merge_mark_notified "$STATE" "$id" \
+            "$provider" "$host" "$path" "$number" \
             || triage_log "merge notification receipt could not be recorded for $id"
           retire_merged_pr_poll "$id"
         fi
