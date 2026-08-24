@@ -624,7 +624,8 @@ test_branch_actor_scoped_ack_never_swallows_a_main_owned_row() {
   # The extension's own job (fm-branch-dispatch.ts) is granting exactly the
   # two task-local rows; this test drives the bash consume contract those
   # sequence numbers gate, independent of the Pi SDK.
-  printf '2\n3\n' > "$state/.branch-eligible-rows"
+  FM_STATE_OVERRIDE="$state" "$GRANT" activate "$$" actor-scope || fail "branch owner activation failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish actor-scope 2 3 || fail "branch grant publication failed"
 
   out="$dir/branch-drain.out"
   err="$dir/branch-drain.err"
@@ -676,7 +677,8 @@ test_main_drain_excludes_rows_already_granted_to_branch() {
   append_wake "$state" check "some-poll.check.sh" "check: some-poll.check.sh: merged" \
     || fail "main-only append failed"
   append_wake "$state" signal "task-a.status" "signal: task-a" || fail "signal append failed"
-  FM_STATE_OVERRIDE="$state" "$GRANT" publish 2 || fail "branch grant publication failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" activate "$$" main-excludes || fail "branch owner activation failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish main-excludes 2 || fail "branch grant publication failed"
 
   out="$dir/main-drain.out"
   err="$dir/main-drain.err"
@@ -714,14 +716,79 @@ test_branch_grant_refuses_rows_already_claimed_by_main() {
   append_wake "$state" signal "task-a.status" "signal: task-a" || fail "signal append failed"
   FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/main.out" 2> "$dir/main.err" \
     || fail "main presentation failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" activate "$$" branch-refuses || fail "branch owner activation failed"
   rc=0
-  FM_STATE_OVERRIDE="$state" "$GRANT" publish 1 || rc=$?
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish branch-refuses 1 || rc=$?
   [ "$rc" -eq 3 ] || fail "branch grant did not report the existing main ownership: rc=$rc"
   [ ! -e "$state/.branch-eligible-rows" ] || fail "refused branch grant published an ownership snapshot"
   grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$dir/main.out" \
     || fail "the main owner did not present its claimed row"
 
   pass "branch grant cannot take a row already claimed by main"
+}
+
+test_actor_filter_precedes_same_key_deduplication() {
+  local dir state main_sequence main_generation branch_sequence branch_generation
+  dir=$(make_case actor-dedup-order)
+  state="$dir/state"
+
+  append_wake "$state" signal "task-a.status" "signal: branch version" || fail "branch row append failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" activate "$$" actor-dedup || fail "branch owner activation failed"
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish actor-dedup 1 || fail "branch grant publication failed"
+  append_wake "$state" signal "task-a.status" "signal: main version" || fail "main row append failed"
+
+  FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/main.out" 2> "$dir/main.err" || fail "main drain failed"
+  [ "$(awk -F '\t' '$3 == "signal" { print $2 }' "$dir/main.out")" = 2 ] \
+    || fail "main did not present its same-key claimed row"
+  FM_STATE_OVERRIDE="$state" FM_SUPERVISION_ACTOR=branch "$DRAIN" > "$dir/branch.out" 2> "$dir/branch.err" \
+    || fail "branch drain failed"
+  [ "$(awk -F '\t' '$3 == "signal" { print $2 }' "$dir/branch.out")" = 1 ] \
+    || fail "global deduplication hid the branch's older same-key row"
+
+  main_sequence=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through \([0-9][0-9]*\) --recovery-generation [A-Za-z0-9._-][A-Za-z0-9._-]*$/\1/p' "$dir/main.err")
+  main_generation=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through [0-9][0-9]* --recovery-generation \([A-Za-z0-9._-][A-Za-z0-9._-]*\)$/\1/p' "$dir/main.err")
+  branch_sequence=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through \([0-9][0-9]*\) --recovery-generation [A-Za-z0-9._-][A-Za-z0-9._-]*$/\1/p' "$dir/branch.err")
+  branch_generation=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through [0-9][0-9]* --recovery-generation \([A-Za-z0-9._-][A-Za-z0-9._-]*\)$/\1/p' "$dir/branch.err")
+  FM_STATE_OVERRIDE="$state" "$DRAIN" --ack-through "$main_sequence" --recovery-generation "$main_generation" \
+    || fail "main same-key acknowledgement failed"
+  FM_STATE_OVERRIDE="$state" FM_SUPERVISION_ACTOR=branch "$DRAIN" --ack-through "$branch_sequence" --recovery-generation "$branch_generation" \
+    || fail "branch same-key acknowledgement failed"
+  [ ! -s "$state/.wake-queue" ] || fail "same-key actor rows remained stranded"
+
+  pass "actor ownership filtering precedes same-key deduplication"
+}
+
+test_main_reclaims_a_grant_whose_branch_owner_exited() {
+  local dir state owner sequence generation
+  dir=$(make_case stale-branch-owner)
+  state="$dir/state"
+
+  append_wake "$state" signal "task-a.status" "signal: task-a" || fail "signal append failed"
+  sleep 30 &
+  owner=$!
+  FM_STATE_OVERRIDE="$state" "$GRANT" activate "$owner" stale-owner || {
+    kill "$owner" 2>/dev/null || true
+    fail "branch owner activation failed"
+  }
+  FM_STATE_OVERRIDE="$state" "$GRANT" publish stale-owner 1 || {
+    kill "$owner" 2>/dev/null || true
+    fail "branch grant publication failed"
+  }
+  kill "$owner" 2>/dev/null || true
+  wait "$owner" 2>/dev/null || true
+
+  FM_STATE_OVERRIDE="$state" "$DRAIN" > "$dir/main.out" 2> "$dir/main.err" || fail "main reclaim drain failed"
+  grep -Fq "$(printf '\tsignal\ttask-a.status\t')" "$dir/main.out" \
+    || fail "main did not reclaim the dead branch owner's row"
+  [ ! -e "$state/.branch-eligible-rows" ] && [ ! -e "$state/.branch-eligible-owner" ] \
+    || fail "dead branch ownership evidence survived reclaim"
+  sequence=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through \([0-9][0-9]*\) --recovery-generation [A-Za-z0-9._-][A-Za-z0-9._-]*$/\1/p' "$dir/main.err")
+  generation=$(sed -n 's/^WAKE_ACK_REQUIRED:.*--ack-through [0-9][0-9]* --recovery-generation \([A-Za-z0-9._-][A-Za-z0-9._-]*\)$/\1/p' "$dir/main.err")
+  FM_STATE_OVERRIDE="$state" "$DRAIN" --ack-through "$sequence" --recovery-generation "$generation" \
+    || fail "reclaimed row acknowledgement failed"
+  [ ! -s "$state/.wake-queue" ] || fail "reclaimed branch row remained queued"
+
+  pass "main reclaims rows granted to an exited branch owner"
 }
 
 # A branch-actor drain or ack without a snapshot is a wiring bug, never
@@ -1152,6 +1219,8 @@ test_slow_annotation_does_not_block_append_and_deleted_file_fails_open
 test_branch_actor_scoped_ack_never_swallows_a_main_owned_row
 test_main_drain_excludes_rows_already_granted_to_branch
 test_branch_grant_refuses_rows_already_claimed_by_main
+test_actor_filter_precedes_same_key_deduplication
+test_main_reclaims_a_grant_whose_branch_owner_exited
 test_branch_actor_without_eligible_snapshot_refuses
 test_wake_publish_requires_atomic_recovery_evidence
 test_legacy_generationless_wake_is_adopted

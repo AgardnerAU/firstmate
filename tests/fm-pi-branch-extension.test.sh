@@ -472,7 +472,7 @@ test_branch_default_on_heartbeat_afk_and_fallback() {
   home="$TMP_ROOT/gating-home"
   mkdir -p "$home/state" "$home/config" "$broken/bin"
   install_pi_branch_extension_fixture "$repo"
-  cp "$ROOT/bin/fm-lease.sh" "$ROOT/bin/fm-lease-lib.sh" "$ROOT/bin/fm-wake-lib.sh" "$broken/bin/"
+  cp "$ROOT/bin/fm-lease.sh" "$ROOT/bin/fm-lease-lib.sh" "$ROOT/bin/fm-wake-lib.sh" "$ROOT/bin/fm-wake-grant.sh" "$broken/bin/"
   cat > "$broken/bin/fm-branch-prompt.sh" <<'SH'
 #!/usr/bin/env bash
 echo "synthetic generator failure" >&2
@@ -1191,7 +1191,7 @@ test_branch_dispatch_classifies_main_only_rows_and_writes_the_eligible_snapshot(
 import { pathToFileURL } from "node:url";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const { scopeForUnreadWake, writeEligibleRowsSnapshot, releaseEligibleRowsSnapshot, BRANCH_ELIGIBLE_ROWS_FILE } =
+const { activateEligibleRowsOwner, scopeForUnreadWake, writeEligibleRowsSnapshot, releaseEligibleRowsSnapshot, BRANCH_ELIGIBLE_ROWS_FILE } =
   await import(pathToFileURL(process.env.LIB).href);
 const state = `${process.env.FM_HOME}/state`;
 const project = `${process.env.FM_HOME}/projects/approved`;
@@ -1232,7 +1232,10 @@ if (!mixed.projects.includes(project)) {
   throw new Error(`eligible project context lost: ${JSON.stringify(mixed.projects)}`);
 }
 
-if (writeEligibleRowsSnapshot(state, mixed.eligibleSeqs, process.env.GRANT) !== "published") {
+if (!activateEligibleRowsOwner(state, process.env.GRANT, process.pid, "fixture")) {
+  throw new Error("branch owner activation failed");
+}
+if (writeEligibleRowsSnapshot(state, mixed.eligibleSeqs, process.env.GRANT, "fixture") !== "published") {
   throw new Error("snapshot write reported failure");
 }
 const snapshot = readFileSync(`${state}/${BRANCH_ELIGIBLE_ROWS_FILE}`, "utf8").trim().split("\n");
@@ -1240,12 +1243,12 @@ if (snapshot.join(",") !== "2,3") throw new Error(`snapshot did not name exactly
 
 // An empty eligible set is refused rather than clearing the snapshot to
 // nothing - a caller must never overwrite a live snapshot with an empty one.
-if (writeEligibleRowsSnapshot(state, [], process.env.GRANT) !== "error") {
+if (writeEligibleRowsSnapshot(state, [], process.env.GRANT, "fixture") !== "error") {
   throw new Error("an empty eligible set must not be written");
 }
-if (!releaseEligibleRowsSnapshot(state, process.env.GRANT)) throw new Error("snapshot release failed");
+if (!releaseEligibleRowsSnapshot(state, process.env.GRANT, "fixture")) throw new Error("snapshot release failed");
 writeFileSync(`${state}/.main-eligible-rows`, "2\n");
-if (writeEligibleRowsSnapshot(state, ["2"], process.env.GRANT) !== "main-owned") {
+if (writeEligibleRowsSnapshot(state, ["2"], process.env.GRANT, "fixture") !== "main-owned") {
   throw new Error("a row already claimed by main was not reported as main-owned");
 }
 

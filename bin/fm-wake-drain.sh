@@ -21,6 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/fm-lease-lib.sh"
 
 DRAIN_TMP=
+DRAIN_VIEW_TMP=
 DRAIN_LOCK_HELD=false
 RAW_ROWS=
 RECOVERY_MARKER="$STATE/.watcher-down"
@@ -56,10 +57,35 @@ ACK_NOTICE_FINGERPRINTS=
 # so it can never swallow a main-owned row still waiting for main.
 ACTOR=$(fm_lease_actor) || exit 2
 ELIGIBLE_ROWS_FILE="$STATE/.branch-eligible-rows"
+ELIGIBLE_OWNER_FILE="$STATE/.branch-eligible-owner"
 MAIN_ROWS_FILE="$STATE/.main-eligible-rows"
 
 rows_file_valid() {
   [ -s "$1" ] && awk 'BEGIN { ok=1 } !/^[0-9]+$/ || seen[$0]++ { ok=0 } END { exit !ok }' "$1"
+}
+
+branch_grant_live_locked() {
+  local version pid identity generation current
+  [ -f "$ELIGIBLE_OWNER_FILE" ] && [ ! -L "$ELIGIBLE_OWNER_FILE" ] || return 1
+  exec 8< "$ELIGIBLE_OWNER_FILE" || return 1
+  IFS= read -r version <&8 || { exec 8<&-; return 1; }
+  IFS= read -r pid <&8 || { exec 8<&-; return 1; }
+  IFS= read -r identity <&8 || { exec 8<&-; return 1; }
+  IFS= read -r generation <&8 || { exec 8<&-; return 1; }
+  if IFS= read -r _extra <&8; then exec 8<&-; return 1; fi
+  exec 8<&-
+  [ "$version" = fm-branch-eligible-owner-v1 ] || return 1
+  case "$pid" in ''|*[!0-9]*|1) return 1 ;; esac
+  case "$generation" in ''|*[!A-Za-z0-9._-]*) return 1 ;; esac
+  current=$(fm_pid_identity "$pid" 2>/dev/null) || return 1
+  [ -n "$current" ] && [ "$current" = "$identity" ]
+}
+
+reclaim_stale_branch_grant_locked() {
+  [ -e "$ELIGIBLE_ROWS_FILE" ] || [ -L "$ELIGIBLE_ROWS_FILE" ] || return 0
+  if ! rows_file_valid "$ELIGIBLE_ROWS_FILE" || ! branch_grant_live_locked; then
+    rm -f -- "$ELIGIBLE_ROWS_FILE" "$ELIGIBLE_OWNER_FILE"
+  fi
 }
 
 write_rows_file_locked() { # <target> <source>
@@ -354,6 +380,7 @@ print_status_presentation() {  # [<deduped-raw-rows>]
 cleanup() {
   local status=$?
   [ -z "$DRAIN_TMP" ] || rm -f -- "$DRAIN_TMP" 2>/dev/null || true
+  [ -z "$DRAIN_VIEW_TMP" ] || rm -f -- "$DRAIN_VIEW_TMP" 2>/dev/null || true
   if [ "$DRAIN_LOCK_HELD" = true ]; then
     fm_lock_release "$FM_WAKE_QUEUE_LOCK"
   fi
@@ -366,6 +393,8 @@ trap 'exit 143' TERM
 
 fm_lock_acquire_wait "$FM_WAKE_QUEUE_LOCK"
 DRAIN_LOCK_HELD=true
+reclaim_stale_branch_grant_locked || exit 1
+[ "$ACTOR" != branch ] || require_branch_eligible_rows || exit 1
 
 if [ -n "$ACK_THROUGH" ]; then
   if [ "$ACTOR" = branch ]; then
@@ -513,25 +542,20 @@ fm_recovery_marker_begin_handling "$RECOVERY_MARKER" || {
 }
 RECOVERY_MARKER_TOKEN=$FM_RECOVERY_MARKER_TOKEN
 
-RAW_ROWS=$(fm_wake_print_deduped "$FM_WAKE_QUEUE") || exit "$?"
+DRAIN_VIEW_TMP=$(mktemp "$STATE/.wake-queue.actor-view.XXXXXX") || exit 1
 if [ "$ACTOR" = branch ]; then
-  # Present only the rows the extension already proved eligible: filter the
-  # deduped rows to those whose CURRENT sequence (the row a key last landed
-  # at, after dedup) is named in the snapshot, and derive the cutoff from
-  # that filtered set alone so a co-present main-owned row - whatever its
-  # sequence - is neither presented nor later acked by this actor.
-  RAW_ROWS=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' -v seqs="$ELIGIBLE_ROWS_FILE" '
-    BEGIN { while ((getline line < seqs) > 0) if (line ~ /^[0-9]+$/) keep[line] = 1 }
-    NF >= 5 && ($2 in keep)
-  ') || exit 1
-  ACK_THROUGH=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }') || exit 1
+  ACTOR_ROWS_FILE=$ELIGIBLE_ROWS_FILE
 else
-  RAW_ROWS=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' -v seqs="$MAIN_ROWS_FILE" '
-    BEGIN { while ((getline line < seqs) > 0) keep[line] = 1 }
-    NF >= 5 && ($2 in keep)
-  ') || exit 1
-  ACK_THROUGH=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }') || exit 1
+  ACTOR_ROWS_FILE=$MAIN_ROWS_FILE
 fi
+awk -F '\t' -v seqs="$ACTOR_ROWS_FILE" '
+  BEGIN { while ((getline line < seqs) > 0) keep[line]=1 }
+  NF >= 5 && ($2 in keep)
+' "$FM_WAKE_QUEUE" > "$DRAIN_VIEW_TMP" || exit 1
+RAW_ROWS=$(fm_wake_print_deduped "$DRAIN_VIEW_TMP") || exit "$?"
+rm -f -- "$DRAIN_VIEW_TMP" || exit 1
+DRAIN_VIEW_TMP=
+ACK_THROUGH=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }') || exit 1
 case "${FM_WAKE_DRAIN_TEST_DELAY_BEFORE_COMMIT:-0}" in
   0) ;;
   ''|*[!0-9]*) ;;

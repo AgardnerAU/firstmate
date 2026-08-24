@@ -153,45 +153,56 @@ export const BRANCH_ELIGIBLE_ROWS_FILE = ".branch-eligible-rows";
 // actor acquired the requested rows.
 export type EligibleRowsSnapshotResult = "published" | "main-owned" | "error";
 
+function runGrantScript(state: string, grantScript: string, args: readonly string[]): number | null {
+  try {
+    const result = spawnSync("bash", [grantScript, ...args], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FM_STATE_OVERRIDE: state,
+        FM_WAKE_QUEUE: `${state}/.wake-queue`,
+        FM_WAKE_QUEUE_LOCK: `${state}/.wake-queue.lock`,
+      },
+    });
+    return result.status;
+  } catch {
+    return null;
+  }
+}
+
+export function activateEligibleRowsOwner(
+  state: string,
+  grantScript: string,
+  ownerPid: number,
+  generation: string,
+): boolean {
+  return runGrantScript(state, grantScript, ["activate", String(ownerPid), generation]) === 0;
+}
+
 export function writeEligibleRowsSnapshot(
   state: string,
   seqs: readonly string[],
   grantScript: string,
+  generation: string,
 ): EligibleRowsSnapshotResult {
   if (seqs.length === 0 || seqs.some((seq) => !/^[0-9]+$/.test(seq))) return "error";
-  try {
-    const result = spawnSync("bash", [grantScript, "publish", ...seqs], {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        FM_STATE_OVERRIDE: state,
-        FM_WAKE_QUEUE: `${state}/.wake-queue`,
-        FM_WAKE_QUEUE_LOCK: `${state}/.wake-queue.lock`,
-      },
-    });
-    if (result.status === 0) return "published";
-    if (result.status === 3) return "main-owned";
-    return "error";
-  } catch {
-    return "error";
-  }
+  const status = runGrantScript(state, grantScript, ["publish", generation, ...seqs]);
+  if (status === 0) return "published";
+  if (status === 3) return "main-owned";
+  return "error";
 }
 
-export function releaseEligibleRowsSnapshot(state: string, grantScript: string): boolean {
-  try {
-    const result = spawnSync("bash", [grantScript, "release"], {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        FM_STATE_OVERRIDE: state,
-        FM_WAKE_QUEUE: `${state}/.wake-queue`,
-        FM_WAKE_QUEUE_LOCK: `${state}/.wake-queue.lock`,
-      },
-    });
-    return result.status === 0;
-  } catch {
-    return false;
-  }
+export function releaseEligibleRowsSnapshot(state: string, grantScript: string, generation: string): boolean {
+  return runGrantScript(state, grantScript, ["release", generation]) === 0;
+}
+
+export function deactivateEligibleRowsOwner(
+  state: string,
+  grantScript: string,
+  ownerPid: number,
+  generation: string,
+): boolean {
+  return runGrantScript(state, grantScript, ["deactivate", String(ownerPid), generation]) === 0;
 }
 
 export interface BranchDispatchOffer {
