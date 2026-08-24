@@ -2,6 +2,7 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=bin/fm-wake-lib.sh
 . "$SCRIPT_DIR/fm-wake-lib.sh"
 
 BRANCH_ROWS="$STATE/.branch-eligible-rows"
@@ -10,6 +11,7 @@ MAIN_ROWS="$STATE/.main-eligible-rows"
 TMP=
 LOCK_HELD=false
 
+# shellcheck disable=SC2329 # Registered by the EXIT trap below.
 cleanup() {
   local status=$?
   [ -z "$TMP" ] || rm -f -- "$TMP" 2>/dev/null || true
