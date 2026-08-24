@@ -52,12 +52,27 @@ An unacknowledged downtime generation is announced at most once: the first recov
 A non-successor watcher start after an announced-but-unacked episode is a new down stretch and mints a fresh generation so buried decisions still resurface once.
 Every watcher close and every durable queue append publishes downtime, so a downtime republication of any pending episode reuses its generation instead of minting a new one, and an already-announced generation stays announced.
 That reuse keeps a watcher close inside the handling window from orphaning the acknowledgement already presented and trapping later arms in repeated recovery presentation.
-An acknowledgement carries two separable facts: queue-row consumption is bound to the monotonic `--ack-through` sequence, while only retiring the episode is bound to `--recovery-generation`.
+An acknowledgement carries two separable facts: queue-row consumption is bound to the monotonic `--ack-through` sequence (further scoped per actor - see "Per-actor acknowledgement" below), while only retiring the episode is bound to `--recovery-generation`.
 A generation mismatch therefore does not block consumption of rows through that sequence; it is a non-fatal result that names its own remedy - re-drain, then acknowledge the newer episode.
 The acknowledgement retires the marker only when no rows remain after sequence-bound consumption.
 A concurrently appended wake has a higher sequence, remains queued, and keeps the episode pending for presentation.
 Consequently, an empty-queue downtime publication during handling can be retired by the outstanding acknowledgement without a dedicated recovery turn.
 An acknowledged episode does not freeze the generation, because the next downtime after it opens an episode of its own.
+
+## Per-actor acknowledgement
+
+`bin/fm-wake-drain.sh` consumes the queue per actor, not per whole-queue cutoff, using `bin/fm-lease-lib.sh`'s existing `fm_lease_actor` identity (`FM_SUPERVISION_ACTOR`, unset or `main` for every non-Pi harness and Pi's own main session; `branch` only inside the Pi supervision branch's own bash tool calls, injected deterministically by the extension - never agent memory).
+A `main`-actor drain and ack are byte-for-byte the original whole-queue behavior: every unread row is presented, and `--ack-through <SEQ>` deletes every row with sequence at or below `<SEQ>`.
+That whole-queue cutoff is safe there because main is the only actor consuming what it presented.
+It is unsafe for a scoped actor, and that unsafety is exactly what motivated this section: a mixed queue - an unacked main-only row sitting alongside task-local rows the branch was offered - would let a branch cutoff-ack silently delete the main-only row too, even though the branch never touched it.
+So a `branch`-actor drain or ack is scoped to an explicit row set instead of a cutoff comparison: `.pi/extensions/lib/fm-branch-dispatch.ts`'s `scopeForUnreadWake` is the single owner of which rows are branch-eligible (a `signal`/`stale` row that resolves to a known project; every row when a heartbeat review has already proved the whole unread queue safe, preserving that review's own all-or-nothing rule unchanged), and its `writeEligibleRowsSnapshot` publishes the exact sequence numbers atomically to `state/.branch-eligible-rows` immediately before every branch prompt.
+`fm-wake-drain.sh` never reclassifies a row itself: for a `branch` actor it treats that snapshot as an opaque handoff, presents only the rows it names, and its `--ack-through <SEQ>` deletes a row only when the sequence is at or below `<SEQ>` **and** named in the snapshot - never a row outside that set, whatever its sequence.
+A missing or empty snapshot is refused loudly (`require_branch_eligible_rows`) rather than read as "nothing eligible", because the extension always writes a non-empty snapshot before it ever prompts the branch; reaching the drain without one is a wiring bug.
+check-kind rows (inactive-outcome receipts, secondmate stall markers) are never branch-eligible by construction, so a `branch`-actor ack skips their fingerprint scans entirely rather than intersecting them with the snapshot.
+The pre-drain recheck in `fm-branch-supervision.ts`'s `enqueueWake` recomputes this same scope immediately before prompting: a newly-arrived main-owned row no longer defers the whole queue to main (the prior all-or-nothing behavior) - it is simply excluded from the eligible set, so whatever else is currently eligible still reaches the branch, and the main-owned row stays queued, untouched, for main's own later drain.
+Heartbeat keeps its original all-or-nothing recheck unchanged: a main-owned row anywhere in the unread queue still defers a heartbeat review to main, because that review needs the whole fleet's context.
+A row can still arrive in the residual window between that recheck and the branch's own drain call; this is the same accepted confused-agent-grade residual the "Autonomy" section of `docs/pi-supervision-branch.md` already documents, not a new gap.
+`tests/fm-wake-queue.test.sh`'s `test_branch_actor_scoped_ack_never_swallows_a_main_owned_row` drives a mixed snapshot directly against the real script and is the regression that pins the no-swallow property; `tests/fm-pi-branch-extension.test.sh` pins the extension-side classification and the pre-drain recheck.
 
 ## Arm-layer cycle contract
 

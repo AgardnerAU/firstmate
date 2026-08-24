@@ -17,6 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/fm-line-cap-lib.sh"
 # shellcheck source=bin/fm-timeout-lib.sh
 . "$SCRIPT_DIR/fm-timeout-lib.sh"
+# shellcheck source=bin/fm-lease-lib.sh
+. "$SCRIPT_DIR/fm-lease-lib.sh"
 
 DRAIN_TMP=
 DRAIN_LOCK_HELD=false
@@ -29,6 +31,45 @@ ACK_THROUGH=
 ACK_GENERATION=
 ACK_FINGERPRINTS=
 ACK_NOTICE_FINGERPRINTS=
+
+# --- per-actor consume (docs/watcher-continuity.md "Per-actor acknowledgement") --
+# main (FM_SUPERVISION_ACTOR unset or "main", via fm-lease-lib.sh's fm_lease_actor
+# - the same actor identity fm-send.sh/fm-control.sh/fm-teardown.sh already use)
+# drains and acks the WHOLE unread queue exactly as before this change: every
+# non-Pi harness, and Pi's own main session, are byte-for-byte unaffected.
+# branch (FM_SUPERVISION_ACTOR=branch, injected deterministically by the Pi
+# branch extension's bash tool - never agent memory) drains and acks ONLY the
+# row set the extension already proved eligible for it.
+# .pi/extensions/lib/fm-branch-dispatch.ts is the single owner of that
+# eligibility classification (which signal/stale rows resolve to a known
+# project, and the existing all-unread-rows-safe rule for a heartbeat); this
+# script never reclassifies a row itself, it only consumes the extension's
+# already-computed verdict. The extension writes the exact eligible sequence
+# numbers to ELIGIBLE_ROWS_FILE, atomically, immediately before every branch
+# prompt, so the file is always fresh for the one wake that prompt is about to
+# handle (the branch drains and acks exactly once per prompt, serialized by
+# its own branchChain, before the next wake can overwrite the file).
+# A row whose sequence number is not in that file is left completely
+# untouched by a branch-actor drain or ack, no matter its sequence number
+# relative to what the branch presents or consumes - that per-row scoping,
+# not a cutoff comparison, is what makes a mixed main-only + task-local queue
+# safe to split: the branch's ack can never remove a row it was not granted,
+# so it can never swallow a main-owned row still waiting for main.
+ACTOR=$(fm_lease_actor) || exit 2
+ELIGIBLE_ROWS_FILE="$STATE/.branch-eligible-rows"
+
+# A branch-actor drain or ack requires a snapshot to already exist and name at
+# least one row. The extension always writes a non-empty snapshot before it
+# ever prompts the branch (an empty eligible set means no prompt at all), so a
+# missing or empty file here means this ran outside that handoff - a wiring
+# bug, never "nothing eligible" - and must fail loudly rather than silently
+# draining or acking nothing.
+require_branch_eligible_rows() {
+  [ -s "$ELIGIBLE_ROWS_FILE" ] || {
+    echo "wake drain: no branch-eligible row snapshot at $ELIGIBLE_ROWS_FILE; refusing to guess what this actor may consume" >&2
+    return 1
+  }
+}
 
 case "${1:-}" in
   '') ;;
@@ -43,6 +84,8 @@ case "${1:-}" in
     ;;
   *) echo "usage: fm-wake-drain.sh [--ack-through SEQUENCE --recovery-generation GENERATION]" >&2; exit 2 ;;
 esac
+
+[ "$ACTOR" != branch ] || require_branch_eligible_rows || exit 1
 
 # Defense in depth for the supervision chain: this script runs at the top of
 # every wake-handling and recovery turn, so assert supervision health here too. A
@@ -282,8 +325,17 @@ fm_lock_acquire_wait "$FM_WAKE_QUEUE_LOCK"
 DRAIN_LOCK_HELD=true
 
 if [ -n "$ACK_THROUGH" ]; then
-  ACK_FINGERPRINTS=$(inactive_outcome_fingerprints "$ACK_THROUGH" 'inactive-outcome:') || exit 1
-  ACK_NOTICE_FINGERPRINTS=$(inactive_outcome_fingerprints "$ACK_THROUGH" 'inactive-reconcile:') || exit 1
+  if [ "$ACTOR" = branch ]; then
+    # check-kind rows (inactive-outcome receipts, secondmate stall markers)
+    # are never in a branch's eligible snapshot - they are main-only by
+    # construction (docs/pi-supervision-branch.md) - so a branch-actor ack
+    # never removes one and these scans would find nothing relevant anyway.
+    ACK_FINGERPRINTS=
+    ACK_NOTICE_FINGERPRINTS=
+  else
+    ACK_FINGERPRINTS=$(inactive_outcome_fingerprints "$ACK_THROUGH" 'inactive-outcome:') || exit 1
+    ACK_NOTICE_FINGERPRINTS=$(inactive_outcome_fingerprints "$ACK_THROUGH" 'inactive-reconcile:') || exit 1
+  fi
   fm_lock_release "$FM_WAKE_QUEUE_LOCK"
   DRAIN_LOCK_HELD=false
   if ! acknowledge_inactive_outcomes acknowledge "$ACK_FINGERPRINTS" \
@@ -295,13 +347,24 @@ if [ -n "$ACK_THROUGH" ]; then
   DRAIN_LOCK_HELD=true
   DRAIN_TMP=$(mktemp "$STATE/.wake-queue.ack.XXXXXX") || exit 1
   chmod 0600 "$DRAIN_TMP" || exit 1
-  awk -F '\t' -v cutoff="$ACK_THROUGH" '
-    NF < 5 || $2 !~ /^[0-9]+$/ || $2 > cutoff { print }
-  ' "$FM_WAKE_QUEUE" > "$DRAIN_TMP" || exit 1
-  fm_wake_commit_secondmate_stall_receipts_through "$ACK_THROUGH" || {
-    echo "wake drain: secondmate stall receipt could not be recorded safely" >&2
-    exit 1
-  }
+  if [ "$ACTOR" = branch ]; then
+    require_branch_eligible_rows || exit 1
+    # Delete a row only when its sequence is <= cutoff AND it is named in the
+    # extension's eligible snapshot; every other row - including one whose
+    # sequence is below cutoff but not in the snapshot - is kept untouched.
+    awk -F '\t' -v cutoff="$ACK_THROUGH" -v seqs="$ELIGIBLE_ROWS_FILE" '
+      BEGIN { while ((getline line < seqs) > 0) if (line ~ /^[0-9]+$/) keep[line] = 1 }
+      NF < 5 || $2 !~ /^[0-9]+$/ || $2 > cutoff || !($2 in keep) { print }
+    ' "$FM_WAKE_QUEUE" > "$DRAIN_TMP" || exit 1
+  else
+    awk -F '\t' -v cutoff="$ACK_THROUGH" '
+      NF < 5 || $2 !~ /^[0-9]+$/ || $2 > cutoff { print }
+    ' "$FM_WAKE_QUEUE" > "$DRAIN_TMP" || exit 1
+    fm_wake_commit_secondmate_stall_receipts_through "$ACK_THROUGH" || {
+      echo "wake drain: secondmate stall receipt could not be recorded safely" >&2
+      exit 1
+    }
+  fi
   if [ ! -s "$DRAIN_TMP" ]; then
     fm_recovery_marker_ack "$RECOVERY_MARKER" "$ACK_GENERATION"
     RECOVERY_ACK_STATUS=$?
@@ -383,7 +446,20 @@ fm_recovery_marker_begin_handling "$RECOVERY_MARKER" || {
 RECOVERY_MARKER_TOKEN=$FM_RECOVERY_MARKER_TOKEN
 
 RAW_ROWS=$(fm_wake_print_deduped "$FM_WAKE_QUEUE") || exit "$?"
-ACK_THROUGH=$(awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }' "$FM_WAKE_QUEUE") || exit 1
+if [ "$ACTOR" = branch ]; then
+  # Present only the rows the extension already proved eligible: filter the
+  # deduped rows to those whose CURRENT sequence (the row a key last landed
+  # at, after dedup) is named in the snapshot, and derive the cutoff from
+  # that filtered set alone so a co-present main-owned row - whatever its
+  # sequence - is neither presented nor later acked by this actor.
+  RAW_ROWS=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' -v seqs="$ELIGIBLE_ROWS_FILE" '
+    BEGIN { while ((getline line < seqs) > 0) if (line ~ /^[0-9]+$/) keep[line] = 1 }
+    NF >= 5 && ($2 in keep)
+  ') || exit 1
+  ACK_THROUGH=$(printf '%s\n' "$RAW_ROWS" | awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }') || exit 1
+else
+  ACK_THROUGH=$(awk -F '\t' '$2 ~ /^[0-9]+$/ && $2 > max { max=$2 } END { print max + 0 }' "$FM_WAKE_QUEUE") || exit 1
+fi
 case "${FM_WAKE_DRAIN_TEST_DELAY_BEFORE_COMMIT:-0}" in
   0) ;;
   ''|*[!0-9]*) ;;

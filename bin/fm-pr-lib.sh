@@ -940,3 +940,47 @@ fm_pr_poll_retirement_recover_all() {
   done
   [ -z "$FM_PR_POLL_RETIREMENT_REJECTED" ]
 }
+
+# --- merge-notification once-per-task marker ---------------------------------
+# A merged-PR poll retires (fm_pr_poll_retirement_recover_one) in the same
+# watcher cycle that detects it, which is normally enough on its own to stop a
+# duplicate detection: the check.sh is gone, so nothing re-polls it. The
+# exception is a poll re-registered for a task whose PR is already merged
+# (e.g. bin/fm-pr-check.sh re-armed after the merge was already surfaced): the
+# poll's own retirement state is scoped to ONE registration and cannot see a
+# PRIOR registration's outcome, so its first cycle would otherwise surface an
+# identical "merged" notice a second time. This marker is scoped to the task
+# id instead, so it survives across re-registrations: the first merged
+# detection for a task is main-relevant and reaches main; a later identical
+# one is a no-op, absorbed rather than enqueued as another main-blocking wake
+# (AGENTS.md section 8 - a repeat is not captain-facing progress).
+fm_pr_poll_merge_already_notified() {  # <state> <id>
+  local state=$1 id=$2
+  fm_pr_task_id_valid "$id" || return 1
+  [ -f "$state/$id.pr-poll-merge-notified" ] && [ ! -L "$state/$id.pr-poll-merge-notified" ]
+}
+
+fm_pr_poll_merge_mark_notified() {  # <state> <id>
+  local state=$1 id=$2 marker tmp
+  fm_pr_task_id_valid "$id" || return 1
+  marker="$state/$id.pr-poll-merge-notified"
+  fm_pr_regular_destination_or_absent "$marker" || return 1
+  [ ! -e "$marker" ] || return 0
+  umask 077
+  tmp=$(mktemp "$state/.fm-pr-poll-merge-notified.XXXXXX") || return 1
+  if ! printf 'merged\n' > "$tmp" || ! chmod 0600 "$tmp" || ! mv -f -- "$tmp" "$marker"; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+}
+
+# Removed at teardown alongside the other per-task PR-poll artifacts
+# (bin/fm-teardown.sh) so a retired task id leaves no residue behind.
+fm_pr_poll_merge_notified_remove() {  # <state> <id>
+  local state=$1 id=$2 marker
+  fm_pr_task_id_valid "$id" || return 1
+  marker="$state/$id.pr-poll-merge-notified"
+  [ -e "$marker" ] || [ -L "$marker" ] || return 0
+  [ -f "$marker" ] && [ ! -L "$marker" ] || return 1
+  rm -f -- "$marker"
+}

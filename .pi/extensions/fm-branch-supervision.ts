@@ -60,6 +60,7 @@ import { Type } from "typebox";
 import {
   FM_BRANCH_DISPATCH_EVENT,
   scopeForUnreadWake,
+  writeEligibleRowsSnapshot,
   type BranchDispatchOffer,
 } from "./lib/fm-branch-dispatch.ts";
 import { encodeFirstmateOperationalInput } from "./lib/fm-operational-input.ts";
@@ -592,9 +593,24 @@ ${context.command}
         if (!actingAsOwner(acceptedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
         const heartbeat = /^heartbeat($|:)/.test(message);
         const scope = scopeForUnreadWake(state, heartbeat);
-        if (scope.status === "empty") return;
-        if (scope.status === "unsafe") {
-          throw new Error("unread wake queue now contains a main-owned row or could not be read safely");
+        // A newly-arrived main-owned (check-kind) row never bounces this
+        // whole recheck back to main any more - scopeForUnreadWake already
+        // excludes it from eligibleSeqs rather than vetoing the scan, so it
+        // stays queued for main while whatever else is eligible right now
+        // still reaches the branch. A genuinely empty queue, or a queue that
+        // simply has nothing (or nothing further) eligible for the branch
+        // right now, is an ordinary quiet no-op - not a fault, so it is
+        // never reported back to main. Only a scan scopeForUnreadWake itself
+        // marks corrupted (the queue or its metadata could not be read
+        // safely, or - for a heartbeat review - a main-owned row anywhere in
+        // the unread queue, since a heartbeat needs full-fleet context)
+        // still falls back to main.
+        if (scope.status === "empty" || (!scope.corrupted && scope.eligibleSeqs.length === 0)) return;
+        if (scope.corrupted) {
+          throw new Error("the unread wake queue could not be read safely");
+        }
+        if (!writeEligibleRowsSnapshot(state, scope.eligibleSeqs)) {
+          throw new Error("could not record the branch's eligible row snapshot");
         }
         // A row can still arrive between this re-check and the model starting
         // the drain; that residual is accepted by the confused-agent-grade boundary.

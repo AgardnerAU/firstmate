@@ -649,6 +649,56 @@ EOF
   pass "pre-drain eligibility re-check defers a newly main-owned row"
 }
 
+# The non-heartbeat half of the same recheck: a check-kind row that arrives
+# after a signal/stale offer is accepted must stay main-owned WITHOUT bouncing
+# the branch's own eligible row back to main - the reproduction from the task
+# (docs/watcher-continuity.md "Per-actor acknowledgement"). Heartbeat keeps
+# its own, unchanged, all-or-nothing rule (proven above); this is the case
+# scopeForUnreadWake changed.
+test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligible_work() {
+  local repo home out status
+  repo="$TMP_ROOT/predrain-partial-root"
+  home="$TMP_ROOT/predrain-partial-home"
+  mkdir -p "$home/state" "$home/config"
+  install_pi_branch_extension_fixture "$repo"
+  PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+const prelude = process.env.DRIVER_PRELUDE;
+await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
+const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
+import { appendFileSync, readFileSync } from "node:fs";
+
+fire("session_start", {});
+const offer = dispatch("signal: task-local wake");
+if (!offer.accepted) throw new Error("eligible task-local offer was not accepted");
+// A main-only notice arrives while main is still finishing its own earlier
+// turn - unacked, still sitting in the queue - between offer acceptance and
+// the branch's own drain.
+appendFileSync(`${home}/state/.wake-queue`, "2\t2\tcheck\tx-inbox\tcheck: pending x mention\n");
+for (let i = 0; i < 250 && (globalThis.__fmPrompts ?? []).length === 0 && mainUserMessages.length === 0; i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+}
+if (mainUserMessages.length !== 0) {
+  throw new Error(`a co-present main-owned row bounced the whole mixed queue to main: ${JSON.stringify(mainUserMessages)}`);
+}
+if ((globalThis.__fmPrompts ?? []).length !== 1) {
+  throw new Error("the branch was never prompted even though its own row stayed eligible");
+}
+const snapshot = readFileSync(`${home}/state/.branch-eligible-rows`, "utf8").trim().split("\n");
+if (!snapshot.includes("1")) throw new Error(`eligible-row snapshot omitted the task-local row: ${snapshot}`);
+if (snapshot.includes("2")) throw new Error(`eligible-row snapshot granted the main-owned row: ${snapshot}`);
+const queue = readFileSync(`${home}/state/.wake-queue`, "utf8");
+if (!queue.includes("\tcheck\tx-inbox\t")) {
+  throw new Error(`the main-owned row must remain queued for main, untouched: ${queue}`);
+}
+process.exit(0);
+EOF
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  expect_code 0 "$status" "pre-drain eligibility re-check must exclude only the new main-owned row: $out"
+  pass "pre-drain eligibility re-check excludes a newly main-owned row without deferring eligible work"
+}
+
 test_branch_predrain_recheck_noops_already_drained_wake() {
   local repo home out status
   repo="$TMP_ROOT/predrain-empty-root"
@@ -1123,10 +1173,94 @@ EOF
   pass "an extension rebind re-mirrors undelivered dialog instead of dropping it"
 }
 
+# Direct unit coverage of fm-branch-dispatch.ts's classification, independent
+# of the Pi SDK stub: every legitimately main-only class (docs/pi-supervision-
+# branch.md) stays excluded from eligibleSeqs no matter its check-kind key,
+# a mixed queue keeps its task-local rows eligible without those main-only
+# rows vetoing the scan, and the eligible-row snapshot writer names exactly
+# the eligible set.
+test_branch_dispatch_classifies_main_only_rows_and_writes_the_eligible_snapshot() {
+  local repo home out status
+  repo="$TMP_ROOT/dispatch-classify-root"
+  home="$TMP_ROOT/dispatch-classify-home"
+  mkdir -p "$repo/.pi/extensions/lib" "$home/state" "$home/projects/approved"
+  cp "$ROOT/.pi/extensions/lib/fm-branch-dispatch.ts" "$repo/.pi/extensions/lib/fm-branch-dispatch.ts"
+  printf 'project=%s/projects/approved\nwindow=fm-window\n' "$home" > "$home/state/task-a.meta"
+  LIB="$repo/.pi/extensions/lib/fm-branch-dispatch.ts" FM_HOME="$home" \
+    node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+import { pathToFileURL } from "node:url";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const { scopeForUnreadWake, writeEligibleRowsSnapshot, BRANCH_ELIGIBLE_ROWS_FILE } =
+  await import(pathToFileURL(process.env.LIB).href);
+const state = `${process.env.FM_HOME}/state`;
+const project = `${process.env.FM_HOME}/projects/approved`;
+
+// Every legitimately main-only class is a check-kind row under a different
+// key; classification never looks at the key, only the kind, so one
+// representative per named class is sufficient coverage.
+const mainOnlyRows = [
+  "1\t1\tcheck\tx-inbox\tcheck: pending x mention",
+  "1\t1\tcheck\tsome-poll.check.sh\tcheck: some-poll.check.sh: merged",
+  "1\t1\tcheck\tunauthenticated-state-checks\tcheck: rejected unauthenticated state checks",
+];
+for (const row of mainOnlyRows) {
+  writeFileSync(`${state}/.wake-queue`, row);
+  const scope = scopeForUnreadWake(state, false);
+  if (scope.eligible || scope.eligibleSeqs.length !== 0) {
+    throw new Error(`a main-only class was offered to the branch: ${row} -> ${JSON.stringify(scope)}`);
+  }
+  if (scope.corrupted) throw new Error(`an ordinary main-only row must not read as corrupted: ${row}`);
+}
+
+// A mixed queue: the main-only row (seq 1) never vetoes the task-local rows
+// (seq 2, 3) - the reproduction from the task.
+writeFileSync(
+  `${state}/.wake-queue`,
+  [
+    "1\t1\tcheck\tx-inbox\tcheck: pending x mention",
+    "1\t2\tsignal\ttask-a.status\tsignal: task-a.status",
+    "1\t3\tstale\tfm-window\tstale: fm-window",
+  ].join("\n"),
+);
+const mixed = scopeForUnreadWake(state, false);
+if (!mixed.eligible) throw new Error(`mixed queue with eligible task-local rows must stay eligible: ${JSON.stringify(mixed)}`);
+if (mixed.eligibleSeqs.slice().sort().join(",") !== "2,3") {
+  throw new Error(`eligibleSeqs must name exactly the task-local rows: ${JSON.stringify(mixed)}`);
+}
+if (!mixed.projects.includes(project)) {
+  throw new Error(`eligible project context lost: ${JSON.stringify(mixed.projects)}`);
+}
+
+if (!writeEligibleRowsSnapshot(state, mixed.eligibleSeqs)) throw new Error("snapshot write reported failure");
+const snapshot = readFileSync(`${state}/${BRANCH_ELIGIBLE_ROWS_FILE}`, "utf8").trim().split("\n");
+if (snapshot.join(",") !== "2,3") throw new Error(`snapshot did not name exactly the eligible rows: ${snapshot}`);
+
+// An empty eligible set is refused rather than clearing the snapshot to
+// nothing - a caller must never overwrite a live snapshot with an empty one.
+if (writeEligibleRowsSnapshot(state, [])) throw new Error("an empty eligible set must not be written");
+
+// heartbeat keeps its own unchanged all-or-nothing rule: the same main-only
+// row that is merely excluded for a non-heartbeat scan still vetoes a
+// heartbeat review outright.
+const heartbeatMixed = scopeForUnreadWake(state, true);
+if (heartbeatMixed.eligible || !heartbeatMixed.corrupted) {
+  throw new Error(`a main-only row must still veto a heartbeat review: ${JSON.stringify(heartbeatMixed)}`);
+}
+process.exit(0);
+EOF
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  expect_code 0 "$status" "main-only classification and eligible-row snapshot contract must hold: $out"
+  pass "scopeForUnreadWake excludes every main-only class without vetoing eligible task-local rows, and writes the eligible snapshot"
+}
+
 test_branch_dispatch_two_stage_filter_and_prefix_contract
+test_branch_dispatch_classifies_main_only_rows_and_writes_the_eligible_snapshot
 test_branch_cache_key_is_per_home_stable
 test_branch_default_on_heartbeat_afk_and_fallback
 test_branch_predrain_recheck_defers_new_main_owned_row
+test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligible_work
 test_branch_predrain_recheck_noops_already_drained_wake
 test_branch_mirror_filters_order_and_cursor
 test_branch_session_persists_across_process_restarts

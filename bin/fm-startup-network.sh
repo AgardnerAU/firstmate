@@ -24,10 +24,17 @@
 #     undelivered handoff. There is no once-only signal to miss.
 #   - The result is durable and always surfaces. It lands in
 #     state/.startup-network.report and reaches the agent either inline in the
-#     digest or as a `check: startup-network` wake. Only a durable acknowledgement
-#     written after harvest prints the finished result suppresses that wake, so a
-#     claimant that exits first cannot lose the result. While the worker is still
-#     running the digest states by name what is not yet confirmed.
+#     digest or, when it finishes too late for the digest to inline it, as a
+#     `check: startup-network` wake - but only when the late result is itself
+#     actionable (state is not "done", or the report carries one of
+#     bootstrap-diagnostics' actionable prefixes; report_is_actionable owns
+#     that test). A late-finishing clean run is not captain-facing progress
+#     (AGENTS.md section 8) and never becomes a wake row; it is still durable
+#     in the report file for `... report` to read on demand. Only a durable
+#     acknowledgement written after harvest prints the finished result
+#     suppresses the wake, so a claimant that exits first cannot lose the
+#     result. While the worker is still running the digest states by name what
+#     is not yet confirmed.
 #   - Mutation authority is leased. The worker outlives the command that launched
 #     it, so it takes the same acquisition lease a new session must hold before
 #     replacing a dead owner, re-checks the captured owner under that lease, and
@@ -294,6 +301,21 @@ lock_unchanged() {  # <expected-pid>
   [ "$current" = "$expected" ]
 }
 
+# A successful ("done") run with a silent or BOOTSTRAP_INFO-only report is not
+# captain-facing progress (AGENTS.md section 8): it must never become a
+# main-blocking wake row. Only a run whose state is not "done", or whose
+# report carries one of bootstrap-diagnostics' actionable prefixes, is
+# actionable. This is the single owner of that "actionable network-checks
+# report" test; bootstrap-diagnostics (AGENTS.md section 13) owns the prefix
+# list itself.
+report_is_actionable() {  # <state>
+  local state=$1
+  [ "$state" = "done" ] || return 0
+  [ -s "$REPORT_FILE" ] || return 1
+  grep -Eq '^(MISSING:|MISSING_MANUAL:|NEEDS_GH_AUTH$|BACKEND_INVALID:|STARTUP_MEMORY_BUDGET:|CREW_DISPATCH: invalid|FLEET_SYNC:|PR_CHECK_MIGRATION:|TANGLE:|SECONDMATE_SYNC:|NUDGE_SECONDMATES:|SECONDMATE_LIVENESS:|SECONDMATE_HANDOFF:|FMX:|NETWORK_CHECKS:)' \
+    "$REPORT_FILE" 2>/dev/null
+}
+
 await_delivery() {  # <generation> <state>
   local generation=$1 state=$2 limit waited=0 claim_record claim_generation claim_pid claim_live
   limit=$(( $(delivery_budget) * 10 ))
@@ -322,9 +344,11 @@ EOF
       [ "$claim_live" -eq 1 ] || rm -f "$CLAIM_FILE" 2>/dev/null || true
     fi
     if [ "$claim_live" -eq 0 ]; then
-      fm_wake_append check startup-network \
-        "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
-        || true
+      if report_is_actionable "$state"; then
+        fm_wake_append check startup-network \
+          "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
+          || true
+      fi
       fm_lock_release "$PUBLISH_LOCK"
       return 0
     fi
@@ -337,9 +361,11 @@ EOF
     fm_lock_release "$PUBLISH_LOCK"
     return 0
   fi
-  fm_wake_append check startup-network \
-    "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
-    || true
+  if report_is_actionable "$state"; then
+    fm_wake_append check startup-network \
+      "check: startup-network: deferred startup network checks finished ($state); read them with $FM_ROOT/bin/fm-startup-network.sh report" \
+      || true
+  fi
   fm_lock_release "$PUBLISH_LOCK"
 }
 
