@@ -136,7 +136,7 @@ wait_for_startup_network_wake() {  # <home> [tenths]
 # path, so this asserts both halves: start returns fast, AND the pipe closes
 # while the worker is still running.
 test_start_returns_without_holding_the_callers_stdout() {
-  local rec home root log started elapsed
+  local rec home root log started elapsed pending
   rec=$(new_world start-nonblocking)
   IFS='|' read -r home root log <<EOF
 $rec
@@ -151,8 +151,13 @@ EOF
 
   [ "$elapsed" -lt 4 ] || fail "start blocked for ${elapsed}s behind a 10s worker"
   await_worker_record "$home"
-  [ "$(run_stage "$home" "$root" report | head -1)" = "IN PROGRESS - the deferred network checks have not finished yet." ] \
-    || fail "the worker was not actually still running: $(run_stage "$home" "$root" report)"
+  pending=$(run_stage "$home" "$root" report)
+  [ "$(printf '%s\n' "$pending" | head -1)" = "IN PROGRESS - the deferred network checks have not finished yet." ] \
+    || fail "the worker was not actually still running: $pending"
+  assert_contains "$pending" 'Only a FAILED or otherwise actionable result arrives as a `check: startup-network` wake; a clean success stays silent.' \
+    "the pending guidance still promised a wake for clean success"
+  assert_contains "$pending" "$root/bin/fm-startup-network.sh report" \
+    "the pending guidance omitted the durable on-demand report path"
   run_stage "$home" "$root" wait 30 >/dev/null || fail "the worker never published"
   assert_grep 'network=only' "$log" "the worker did not run bootstrap's network-only phase"
   pass "fm-startup-network: start returns immediately and never holds the caller's stdout open"
