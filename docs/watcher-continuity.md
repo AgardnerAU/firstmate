@@ -462,6 +462,7 @@ The same suite drives the real lock functions over the reclaim-marker chain that
 - A seeded chain deeper than the bound stops rather than growing the marker path further.
 - A lock age that reaches the comparison as a non-number yields a freshness decision instead of a shell error.
 - An auto-arm claim frozen at `arming` behind a dead owner is still reclaimed through the ordinary dead-holder path.
+- A lock released while another process is acquiring it ends in an acquisition rather than in a claim that supervision already exists.
 
 ### Claude auto-arm and turn-end guard
 
