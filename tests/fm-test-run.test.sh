@@ -778,6 +778,7 @@ SH
 
 test_env_isolation_helper_clears_every_pointer() {
   local out survivors name pattern
+  local -a pointers
   # Drive the assertion from the lib's own list, so a pointer added there is
   # exported and asserted here without a second copy to keep in step.
   . "$ROOT/bin/fm-test-env-lib.sh"
@@ -792,7 +793,8 @@ test_env_isolation_helper_clears_every_pointer() {
     bash -c '. "$1/bin/fm-test-env-lib.sh"; fm_test_env_isolate || exit 1; env' \
       _ "$ROOT"
   ) || fail "fm_test_env_isolate refused with a clearable environment"
-  pattern=$(printf '%s\n' $FM_TEST_ENV_FLEET_POINTERS | paste -sd'|' -)
+  read -r -a pointers <<<"$FM_TEST_ENV_FLEET_POINTERS"
+  pattern=$(IFS='|'; printf '%s' "${pointers[*]}")
   survivors=$(printf '%s\n' "$out" | grep -E "^($pattern)=" || true)
   [ -z "$survivors" ] || fail "fleet pointers survived isolation: $survivors"
   pass "the shared isolation helper clears every fleet pointer it owns"
