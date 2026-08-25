@@ -485,11 +485,15 @@ fm_lock_mid_acquire_is_fresh() {
       mid_acquire_stale=$FM_LOCK_STALE_AFTER
       [ "$mid_acquire_stale" -lt 2 ] && mid_acquire_stale=2
       age=$(fm_path_age "$lockdir")
-      # A non-numeric age means the path could not be read at all - the same
-      # unreadable over-long path the 2026-08-24 marker runaway produced, which
-      # turned this comparison into a bare "[: : integer expected". Answer
-      # "still fresh" so an unreadable lock is declined rather than reclaimed:
-      # a shell error is not a licence to steal.
+      # This case prevents one thing only: the bare "[: : integer expected"
+      # shell error the 2026-08-24 marker runaway produced, when fm_path_age
+      # printed nothing at all and an empty string reached the comparison.
+      # It does NOT stop the steal, and it does not cover the over-long
+      # unresolvable path. For that path fm_path_mtime fails, so fm_path_age
+      # returns its sentinel 999999; 999999 is numeric, so the case below never
+      # fires, and the sentinel compares as not fresh, so the lock is still
+      # reclaimed. Declining that reclaim is unfinished work, not something
+      # this guard achieves - it is tracked in fm-lock-failure-reporting.
       case "$age" in
         ''|*[!0-9]*) return 0 ;;
       esac
