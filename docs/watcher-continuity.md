@@ -460,7 +460,7 @@ The same suite drives the real lock functions over the reclaim-marker chain that
 
 - A creation the environment refuses reports a definite outcome instead of nesting another marker.
 - A seeded chain deeper than the bound stops rather than growing the marker path further.
-- A lock age that reaches the comparison as a non-number yields a freshness decision instead of a shell error.
+- A lock age that reaches the comparison as a non-number makes the freshness comparison decide instead of erroring.
 - An auto-arm claim frozen at `arming` behind a dead owner is still reclaimed through the ordinary dead-holder path.
 - A lock released while another process is acquiring it ends in an acquisition rather than in a claim that supervision already exists.
 
