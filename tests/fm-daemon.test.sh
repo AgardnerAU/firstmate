@@ -1772,6 +1772,119 @@ test_pane_is_busy_herdr_native_busy_state() {
   pass "pane_is_busy: herdr native busy_state='busy' short-circuits without a capture fallback"
 }
 
+# --- self-hosted daemon: native busy is the daemon's own reflection ---------
+#
+# Regression for the away-mode silent-forever stall (fm-afk-inject-never-
+# delivers). On the native-hosted path the daemon is a background job of the
+# agent it injects into, and the backend's native agent-state answers "is
+# anything running in this pane", not "is the agent mid-turn". So the daemon
+# pins its own target busy for as long as away mode lasts, the busy guard never
+# clears, and every escalation defers forever. Observed live on 2026-08-25:
+# 6,910 consecutive "supervisor pane busy (agent mid-turn)" deferrals with no
+# gap over 8.7 hours, one buffer held 31,396s, and zero escalations delivered.
+#
+# These pin the exact condition. If native busy is ever again read as evidence
+# about the AGENT while the daemon is self-hosted, the first case fails loudly
+# instead of stalling silently.
+test_supervisor_pane_hosts_daemon_identifies_self_hosting() {
+  TMUX_PANE='%7' HERDR_ENV='' HERDR_PANE_ID='' supervisor_pane_hosts_daemon '%7' \
+    || fail "a tmux daemon inside the target pane should be self-hosted"
+  if TMUX_PANE='%7' HERDR_ENV='' HERDR_PANE_ID='' supervisor_pane_hosts_daemon '%9'; then
+    fail "a tmux daemon in a different pane must not be self-hosted"
+  fi
+  TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION='' supervisor_pane_hosts_daemon 'default:w1:p2' \
+    || fail "a herdr daemon inside the target pane should be self-hosted (default session)"
+  TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=iso1 supervisor_pane_hosts_daemon 'iso1:w1:p2' \
+    || fail "a herdr daemon inside the target pane should be self-hosted (named session)"
+  if TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=iso1 supervisor_pane_hosts_daemon 'iso1:w1:p9'; then
+    fail "a herdr daemon in a different pane must not be self-hosted"
+  fi
+  if TMUX_PANE='' HERDR_ENV='' HERDR_PANE_ID='' supervisor_pane_hosts_daemon 'default:w1:p2'; then
+    fail "a daemon with no inherited pane identity must not be self-hosted"
+  fi
+  if TMUX_PANE='%7' HERDR_ENV='' HERDR_PANE_ID='' supervisor_pane_hosts_daemon ''; then
+    fail "an empty target must never be self-hosted"
+  fi
+  pass "supervisor_pane_hosts_daemon: recognizes only a daemon running inside the target pane itself"
+}
+
+test_pane_is_busy_self_hosted_native_busy_falls_through_to_rendered() {
+  local dir
+  dir=$(make_supercase self-hosted-native-busy)
+  (
+    # The exact stalling condition: herdr reports the pane busy because this
+    # daemon is the background job running in it, while the harness's own
+    # rendered footer shows a finished turn.
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
+    if TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$dir/state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      pane_is_busy "default:w1:p2" herdr; then
+      fail "a self-hosted daemon must not read its own native busy as the agent being mid-turn"
+    fi
+  ) || fail "self-hosted native-busy pane_is_busy subshell failed"
+  pass "pane_is_busy: self-hosted daemon falls through native busy to the rendered delivery signature"
+}
+
+test_pane_is_busy_self_hosted_still_defers_on_a_real_turn() {
+  local dir
+  dir=$(make_supercase self-hosted-really-busy)
+  (
+    # Same self-hosting, but the harness really IS mid-turn. The guard must
+    # still defer: falling through native busy must not become a free pass.
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { printf '%s\n' 'Cogitating... (12s - esc to interrupt)'; }
+    TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$dir/state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      pane_is_busy "default:w1:p2" herdr \
+      || fail "a self-hosted daemon must still defer while the harness renders a live turn"
+  ) || fail "self-hosted real-turn pane_is_busy subshell failed"
+  pass "pane_is_busy: self-hosted fall-through still defers on a genuinely mid-turn harness"
+}
+
+test_pane_is_busy_terminal_hosted_native_busy_stays_conclusive() {
+  local dir
+  dir=$(make_supercase terminal-hosted-native-busy)
+  (
+    # The terminal-backed hosting: the daemon has its own pane, so nothing it
+    # does can pin the captain pane's native state. Native busy stays
+    # conclusive and the rendered fallback is never consulted.
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { fail "capture must not be consulted when the daemon is not self-hosted"; }
+    TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w9:p9 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$dir/state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      pane_is_busy "default:w1:p2" herdr \
+      || fail "native busy must stay conclusive for a daemon hosted in its own terminal"
+  ) || fail "terminal-hosted native-busy pane_is_busy subshell failed"
+  pass "pane_is_busy: native busy stays conclusive when the daemon runs outside the target pane"
+}
+
+# The acceptance case, end to end through inject_msg: an escalation raised while
+# away mode is active, on a self-hosted daemon whose target reports native busy,
+# is DELIVERED rather than buffered forever.
+test_inject_msg_delivers_while_self_hosted_native_busy() {
+  local dir state
+  dir=$(make_supercase inject-self-hosted-native-busy)
+  state="$dir/state"
+  afk_enter "$state"
+  (
+    fm_backend_target_exists() { return 0; }
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
+    fm_backend_composer_state() { printf 'empty'; }
+    fm_backend_send_text_submit() {
+      case "$3" in *"three jobs parked"*) : ;; *) fail "digest text missing from submit: $3" ;; esac
+      printf 'empty'
+    }
+    TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      FM_SUPERVISOR_BACKEND=herdr FM_SUPERVISOR_TARGET="default:w1:p2" \
+      inject_msg "three jobs parked awaiting decisions" "$state" \
+      || fail "an escalation must be delivered while away mode is active and the daemon is self-hosted"
+  ) || fail "self-hosted delivery inject_msg subshell failed"
+  pass "inject_msg: delivers an away-mode escalation whose target reads native busy only because the daemon hosts it"
+}
+
 test_primary_busy_guard_is_harness_scoped() {
   (
     fm_backend_busy_state() { printf 'unknown'; }
@@ -2017,6 +2130,11 @@ test_fm_send_exits_nonzero_on_unproven_submit
 test_discover_supervisor_backend_precedence
 test_discover_supervisor_target_herdr
 test_pane_is_busy_herdr_native_busy_state
+test_supervisor_pane_hosts_daemon_identifies_self_hosting
+test_pane_is_busy_self_hosted_native_busy_falls_through_to_rendered
+test_pane_is_busy_self_hosted_still_defers_on_a_real_turn
+test_pane_is_busy_terminal_hosted_native_busy_stays_conclusive
+test_inject_msg_delivers_while_self_hosted_native_busy
 test_primary_busy_guard_is_harness_scoped
 test_pane_is_busy_defaults_to_tmux_when_backend_omitted
 test_pane_input_pending_herdr_dispatch

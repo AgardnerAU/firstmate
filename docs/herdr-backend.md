@@ -234,6 +234,8 @@ This generous floor is required for small composer and peek reads.
 Herdr's native agent state can read idle while a harness waits on its own long foreground tool.
 The shared crew-state path therefore accepts a native `busy` as evidence of activity but never a native `idle` as evidence that a worker has stopped; the task's own semantic busy state (`bin/fm-busy-lib.sh`) decides that.
 A human-blocked permission dialog has no busy banner and still surfaces.
+Native `busy` reports that something is running in the pane, not that the AGENT is mid-turn: a Claude pane keeps `agent_status=working` for as long as a harness-hosted background job runs in it, after the turn has ended and while the harness's own title glyph and rendered footer both show idle (measured below in `docs/verification/runtime-backends.md`).
+So a caller whose own process is that background job must not read native `busy` as evidence about the agent; `supervisor_pane_hosts_daemon` in `bin/fm-supervisor-target-lib.sh` is the predicate for that case.
 
 ## Composer and injection safety
 
