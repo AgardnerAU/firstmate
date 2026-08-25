@@ -463,6 +463,7 @@ The same suite drives the real lock functions over the reclaim-marker chain that
 - A lock age that reaches the comparison as a non-number makes the freshness comparison decide instead of erroring.
 - An auto-arm claim frozen at `arming` behind a dead owner is still reclaimed through the ordinary dead-holder path.
 - A lock released while another process is acquiring it ends in an acquisition rather than in a claim that supervision already exists.
+- A peer that wins that retried creation is named as the holder on the losing frame's non-acquiring return.
 
 ### Claude auto-arm and turn-end guard
 
