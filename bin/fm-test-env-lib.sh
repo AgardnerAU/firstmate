@@ -27,11 +27,23 @@
 # records, plus the runtime control variables a session start creates. Extend
 # this list, not a runner, whenever Firstmate starts exporting another one.
 #
-# FM_SESSION_START_STAGE_FILE is in the second class and matters as much as the
-# home pointers: bin/fm-session-start.sh treats its presence as "I am already
-# the bounded child" and skips its own runtime bound, so a leaked one removes
-# the bound a test is asserting and the suite hangs on the fixture instead of
-# failing.
+# The second class is every runtime control variable a live session exports to
+# tell a child what it already is or already decided, because a Firstmate script
+# then honors it ahead of its own detection - so a leaked one silently replaces
+# the very thing a test asserts:
+#   FM_SESSION_START_STAGE_FILE  bin/fm-session-start.sh treats its presence as
+#     "I am already the bounded child" and skips its own runtime bound, so a
+#     leaked one removes the bound a test is asserting and the suite hangs on
+#     the fixture instead of failing.
+#   FM_SUPERVISION_MODEL  bin/fm-wake-lib.sh returns it verbatim instead of
+#     detecting the harness, so a leaked autoarm from a secondmate worker makes
+#     the watcher verdict short-circuit and a supervision-health assertion pass
+#     without ever checking watcher health.
+#   FM_TRACE_CONTEXT  bin/fm-trace-context-lib.sh lets a non-empty value beat
+#     config/trace-context, so a leaked one decides the capability a test set
+#     that file to control.
+# bin/fm-spawn.sh exports both of the latter on the same secondmate launch line
+# that carries FM_HOME and FM_PUBLIC_FOLLOWUP_PRIMARY_HOME.
 FM_TEST_ENV_FLEET_POINTERS="\
 FM_HOME \
 FM_ROOT \
@@ -45,7 +57,9 @@ FM_PUBLIC_FOLLOWUP_PRIMARY_HOME \
 FM_WAKE_QUEUE \
 FM_WAKE_QUEUE_LOCK \
 FM_BACKEND \
-FM_SESSION_START_STAGE_FILE"
+FM_SESSION_START_STAGE_FILE \
+FM_SUPERVISION_MODEL \
+FM_TRACE_CONTEXT"
 
 fm_test_env_isolate() {
   local name rc=0
