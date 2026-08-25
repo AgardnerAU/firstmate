@@ -777,22 +777,23 @@ SH
 }
 
 test_env_isolation_helper_clears_every_pointer() {
-  local out survivors
+  local out survivors name pattern
+  # Drive the assertion from the lib's own list, so a pointer added there is
+  # exported and asserted here without a second copy to keep in step.
+  . "$ROOT/bin/fm-test-env-lib.sh"
+  [ -n "${FM_TEST_ENV_FLEET_POINTERS:-}" ] \
+    || fail "the shared library published no fleet pointer list"
   # The helper is what both runners call; drive it directly with every pointer
   # exported and confirm nothing survives into a child process.
   out=$(
-    FM_HOME=/live FM_ROOT=/live FM_ROOT_OVERRIDE=/live \
-    FM_STATE_OVERRIDE=/live/state FM_DATA_OVERRIDE=/live/data \
-    FM_PROJECTS_OVERRIDE=/live/projects FM_CONFIG_OVERRIDE=/live/config \
-    FM_PENDING_REPLY_DIR_OVERRIDE=/live/state/pending-replies \
-    FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=/live \
-    FM_WAKE_QUEUE=/live/state/.wake-queue \
-    FM_WAKE_QUEUE_LOCK=/live/state/.wake-queue.lock \
-    FM_BACKEND=tmux FM_SESSION_START_STAGE_FILE=/live/stage \
+    for name in $FM_TEST_ENV_FLEET_POINTERS; do
+      export "$name=/live-sentinel"
+    done
     bash -c '. "$1/bin/fm-test-env-lib.sh"; fm_test_env_isolate || exit 1; env' \
-    _ "$ROOT"
+      _ "$ROOT"
   ) || fail "fm_test_env_isolate refused with a clearable environment"
-  survivors=$(printf '%s\n' "$out" | grep -E '^(FM_HOME|FM_ROOT|FM_ROOT_OVERRIDE|FM_STATE_OVERRIDE|FM_DATA_OVERRIDE|FM_PROJECTS_OVERRIDE|FM_CONFIG_OVERRIDE|FM_PENDING_REPLY_DIR_OVERRIDE|FM_PUBLIC_FOLLOWUP_PRIMARY_HOME|FM_WAKE_QUEUE|FM_WAKE_QUEUE_LOCK|FM_BACKEND|FM_SESSION_START_STAGE_FILE)=' || true)
+  pattern=$(printf '%s\n' $FM_TEST_ENV_FLEET_POINTERS | paste -sd'|' -)
+  survivors=$(printf '%s\n' "$out" | grep -E "^($pattern)=" || true)
   [ -z "$survivors" ] || fail "fleet pointers survived isolation: $survivors"
   pass "the shared isolation helper clears every fleet pointer it owns"
 }
