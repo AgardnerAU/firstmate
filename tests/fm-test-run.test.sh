@@ -800,6 +800,36 @@ test_env_isolation_helper_clears_every_pointer() {
   pass "the shared isolation helper clears every fleet pointer it owns"
 }
 
+test_shared_test_library_isolates_a_direct_invocation() {
+  local out survivors name pattern
+  local -a pointers
+  # The runner covers every suite it starts, but a suite run directly - `bash
+  # tests/<file>.test.sh` from a firstmate worker - never passes through it, and
+  # the pointers reach the production scripts that suite drives. Sourcing
+  # tests/lib.sh must therefore isolate too. Driven from the lib's own list so a
+  # pointer added there is asserted here without a second copy.
+  . "$ROOT/bin/fm-test-env-lib.sh"
+  [ -n "${FM_TEST_ENV_FLEET_POINTERS:-}" ] \
+    || fail "the shared library published no fleet pointer list"
+  out=$(
+    for name in $FM_TEST_ENV_FLEET_POINTERS; do
+      export "$name=/live-sentinel"
+    done
+    bash -c '. "$1/tests/lib.sh"; env' _ "$ROOT"
+  ) || fail "sourcing tests/lib.sh refused with a clearable environment"
+  read -r -a pointers <<<"$FM_TEST_ENV_FLEET_POINTERS"
+  pattern=$(IFS='|'; printf '%s' "${pointers[*]}")
+  survivors=$(printf '%s\n' "$out" | grep -E "^($pattern)=/live-sentinel$" || true)
+  [ -z "$survivors" ] || fail "fleet pointers survived a direct suite invocation: $survivors"
+  # The sentinel must actually reach a child that does NOT source the library,
+  # so the assertion above cannot pass merely because the export did nothing.
+  # shellcheck disable=SC2016 # Expands in the probe child, not in this shell.
+  out=$(env FM_HOME=/live-sentinel bash -c 'printf "%s\n" "${FM_HOME:-none}"')
+  [ "$out" = /live-sentinel ] \
+    || fail "fixture setup wrong: the sentinel never reached an unisolated child"
+  pass "sourcing tests/lib.sh isolates a directly invoked suite"
+}
+
 test_list_all_exact_suite_coverage
 test_family_selection
 test_single_script_selection
@@ -820,3 +850,4 @@ test_herdr_ci_family_run_has_a_step_timeout
 test_aggregate_json
 test_run_cannot_reach_the_live_home
 test_env_isolation_helper_clears_every_pointer
+test_shared_test_library_isolates_a_direct_invocation

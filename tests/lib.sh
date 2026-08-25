@@ -39,6 +39,19 @@ export FM_GATE_REFUSE_BYPASS=1
 # shellcheck disable=SC2034
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Isolate the process from the ambient fleet environment before any fixture is
+# built. bin/fm-test-run.sh already does this for every suite it starts, so a
+# run through the runner is covered; a suite invoked directly - `bash
+# tests/<file>.test.sh` from a firstmate worker - is not, and inherits the live
+# home. That is not a cosmetic gap: the pointers reach the production scripts a
+# suite drives, so a fixture that exports only the subset it cares about leaves
+# the rest aimed at the live home, and a suite asserting a bound can lose the
+# bound it is asserting. bin/fm-test-env-lib.sh owns the pointer list; this is a
+# second CALLER of that one owner, never a second copy of the list.
+# shellcheck source=bin/fm-test-env-lib.sh
+. "$ROOT/bin/fm-test-env-lib.sh"
+fm_test_env_isolate || return 1
+
 # --- reporters --------------------------------------------------------------
 
 fail() {
