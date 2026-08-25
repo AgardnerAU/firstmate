@@ -1168,6 +1168,125 @@ EOF
   pass "a captain call with no routed work, a verified transfer, an open decision, and an answered call all stay silent"
 }
 
+# Answered captain calls do not stay in the live backlog forever: tasks-axi
+# prune moves closed tasks into the archive. The completion gate must still
+# find them there, or a finished investigation whose calls were correctly
+# answered fails its own gate permanently and its cleanup is refused. The
+# other direction is what the gate is for, so it is pinned in the same pass: a
+# call closed with no recorded captain answer must keep failing after it is
+# archived, and an archive that cannot be read must refuse rather than count
+# as "nothing left to answer".
+test_archived_captain_calls_resolve_without_waving_work_through() {
+  local home answered dropped unreadable rc
+  home=$(make_home archived-calls)
+
+  # Direction one: answered, then archived. The gate must pass and cleanup
+  # must proceed.
+  answered=sample-archived-review
+  mkdir -p "$home/data/$answered"
+  tasks_in "$home" add "$answered" "Review the archived path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the answered-call origin"
+  write_origin_meta "$home" "$answered"
+  printf 'done: report complete\n' > "$home/state/$answered.status"
+  printf '# Archived review\n\nOne captain choice remained.\n' > "$home/data/$answered/report.md"
+  run_captain "$home" hold sample-archived-call \
+    --title "Choose the archived option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the answered captain call"
+  run_captain "$home" complete "$answered" sample-archived-call >/dev/null \
+    || fail "completion failed while the captain call was still live"
+  printf 'Take the northern route.\n' > "$home/answer.txt"
+  run_captain "$home" answer sample-archived-call --decision-file "$home/answer.txt" >/dev/null \
+    || fail "could not record the captain answer"
+
+  # Direction two: held, inventoried, then closed with no recorded captain
+  # answer - the question the captain still owes.
+  dropped=sample-dropped-review
+  mkdir -p "$home/data/$dropped"
+  tasks_in "$home" add "$dropped" "Review the dropped path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the dropped-call origin"
+  write_origin_meta "$home" "$dropped"
+  printf 'done: report complete\n' > "$home/state/$dropped.status"
+  printf '# Dropped review\n\nOne captain choice remained.\n' > "$home/data/$dropped/report.md"
+  run_captain "$home" hold sample-dropped-call \
+    --title "Choose the dropped option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the dropped captain call"
+  run_captain "$home" complete "$dropped" sample-dropped-call >/dev/null \
+    || fail "completion failed while the dropped call was still live"
+  tasks_in "$home" "done" sample-dropped-call >/dev/null \
+    || fail "could not close the dropped call outside the answer path"
+
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the closed captain calls"
+  if tasks_in "$home" show sample-archived-call >/dev/null 2>&1; then
+    fail "setup error: the answered call is still in the live backlog"
+  fi
+  assert_grep "sample-archived-call" "$home/data/done-archive.md" "the answered call was not archived"
+  assert_grep "sample-dropped-call" "$home/data/done-archive.md" "the dropped call was not archived"
+
+  run_captain "$home" verify "$answered" >/dev/null 2> "$home/verify-answered.err" \
+    || fail "an answered, archived captain call failed its own completion gate: $(cat "$home/verify-answered.err")"
+  run_captain "$home" complete "$answered" sample-archived-call >/dev/null 2>&1 \
+    || fail "a later completion pass failed on an answered, archived captain call"
+  run_teardown "$home" "$answered" >/dev/null 2> "$home/teardown.err" \
+    || fail "cleanup was refused for an answered, archived captain call: $(cat "$home/teardown.err")"
+
+  set +e
+  run_captain "$home" verify "$dropped" > "$home/verify-dropped.out" 2> "$home/verify-dropped.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || fail "an archived captain call closed with no recorded answer passed the gate: $(cat "$home/verify-dropped.out")"
+  assert_grep "recorded captain answer" "$home/verify-dropped.err" \
+    "the refusal must name the missing captain answer"
+  set +e
+  run_teardown "$home" "$dropped" > "$home/teardown-dropped.out" 2> "$home/teardown-dropped.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] || fail "cleanup erased an investigation whose archived captain call was never answered"
+  assert_grep "fm-captain-hold.sh" "$home/teardown-dropped.err" \
+    "cleanup must be refused by the captain-call gate, not incidentally"
+
+  # An archive that cannot be read is not evidence that everything was
+  # answered. The gate must refuse and say so.
+  unreadable=sample-unreadable-review
+  mkdir -p "$home/data/$unreadable"
+  tasks_in "$home" add "$unreadable" "Review the unreadable path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the unreadable-archive origin"
+  write_origin_meta "$home" "$unreadable"
+  printf 'done: report complete\n' > "$home/state/$unreadable.status"
+  run_captain "$home" hold sample-unreadable-call \
+    --title "Choose the unreadable option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the unreadable-archive captain call"
+  run_captain "$home" complete "$unreadable" sample-unreadable-call >/dev/null \
+    || fail "completion failed while the unreadable-archive call was still live"
+  printf 'Take the southern route.\n' > "$home/answer2.txt"
+  run_captain "$home" answer sample-unreadable-call --decision-file "$home/answer2.txt" >/dev/null \
+    || fail "could not record the second captain answer"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the second answered call"
+  run_captain "$home" verify "$unreadable" >/dev/null 2>&1 \
+    || fail "setup error: the second answered call should pass with a readable archive"
+  chmod 000 "$home/data/done-archive.md"
+  if [ -r "$home/data/done-archive.md" ]; then
+    chmod 644 "$home/data/done-archive.md"
+    echo "skip: this user can read a mode-000 archive; unreadable-archive case not exercised"
+  else
+    set +e
+    run_captain "$home" verify "$unreadable" > "$home/verify-unreadable.out" 2> "$home/verify-unreadable.err"
+    rc=$?
+    set -e
+    chmod 644 "$home/data/done-archive.md"
+    [ "$rc" -ne 0 ] \
+      || fail "an unreadable archive was read as proof the captain owed nothing: $(cat "$home/verify-unreadable.out")"
+    assert_grep "cannot read the closed-task archive" "$home/verify-unreadable.err" \
+      "the refusal must say the archive could not be read, not that the call was absent"
+  fi
+  pass "archived captain calls resolve, unanswered and unreadable ones still refuse"
+}
+
 test_uninventoried_report_decision_refuses_completion
 test_completion_gate_attests_and_transfers
 test_answer_records_and_closes
@@ -1185,3 +1304,4 @@ test_chat_channel_feeds_the_same_keyed_answer_intake
 test_origin_slug_validation_precedes_path_construction
 test_status_resolution_over_an_open_hold_is_signalled
 test_legitimate_holds_produce_no_divergence_signal
+test_archived_captain_calls_resolve_without_waving_work_through
