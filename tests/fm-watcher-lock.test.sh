@@ -615,10 +615,14 @@ test_lock_non_numeric_age_decides_instead_of_erroring() {
   # string reaches the comparison: the bare "[: : integer expected" the
   # 2026-08-24 runaway ended on, where a freshness decision belonged.
   #
-  # This case covers that shell error and nothing more. It is deliberately not
-  # the unreadable over-long path: there fm_path_mtime FAILS, fm_path_age
-  # returns its numeric 999999 sentinel, the guard below never fires, and the
-  # lock is still reclaimed - see the comment on fm_lock_mid_acquire_is_fresh
+  # This case covers that one comparison and nothing more. The fixture also
+  # makes fm_path_age's own arithmetic error on stderr before the comparison is
+  # reached; that error is upstream of the guard, the assertion below does not
+  # claim it is absent, and moving it into fm_path_age's scope is separate work.
+  #
+  # It is deliberately not the unreadable over-long path either: there
+  # fm_path_mtime FAILS, fm_path_age returns its numeric 999999 sentinel, the
+  # guard below never fires, and the lock is still reclaimed - see the comment on fm_lock_mid_acquire_is_fresh
   # in bin/fm-wake-lib.sh, which says so in the code itself. Declining that
   # reclaim is separate unfinished work, so nothing here may claim to cover it.
   cat > "$shim/stat" <<'SH'
@@ -634,10 +638,10 @@ SH
     bash -c '. "$1"; fm_lock_mid_acquire_is_fresh "$2" ""' _ "$LIB" "$lockdir" \
     2>"$err" || rc=$?
   ! grep -q 'integer expected' "$err" \
-    || fail "a non-numeric lock age produced a shell error instead of a decision: $(cat "$err")"
+    || fail "a non-numeric lock age made the freshness comparison error instead of decide: $(cat "$err")"
   [ "$rc" -eq 0 ] \
     || fail "a non-numeric lock age did not decline the reclaim (rc=$rc)"
-  pass "a lock age that reaches the comparison as a non-number decides 'still fresh' rather than erroring"
+  pass "a lock age that reaches the comparison as a non-number makes the freshness comparison decide 'still fresh' rather than error"
 }
 
 test_autoarm_dead_arming_owner_is_reclaimed() {
