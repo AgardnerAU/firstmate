@@ -1766,7 +1766,8 @@ test_pane_is_busy_herdr_native_busy_state() {
   (
     fm_backend_busy_state() { [ "$1" = herdr ] && [ "$2" = "default:w1:p2" ] || fail "unexpected busy_state args: $1 $2"; printf 'busy'; }
     fm_backend_capture() { fail "capture should not be consulted when busy_state is conclusive"; }
-    FM_STATE_OVERRIDE="$dir/state" FM_DAEMON_PRIMARY_HARNESS=claude pane_is_busy "default:w1:p2" herdr \
+    TMUX_PANE='' HERDR_ENV='' HERDR_PANE_ID='' \
+      FM_STATE_OVERRIDE="$dir/state" FM_DAEMON_PRIMARY_HARNESS=claude pane_is_busy "default:w1:p2" herdr \
       || fail "pane_is_busy should report busy from herdr's native busy_state"
   ) || fail "herdr native-busy pane_is_busy subshell failed"
   pass "pane_is_busy: herdr native busy_state='busy' short-circuits without a capture fallback"
@@ -1883,6 +1884,42 @@ test_inject_msg_delivers_while_self_hosted_native_busy() {
       || fail "an escalation must be delivered while away mode is active and the daemon is self-hosted"
   ) || fail "self-hosted delivery inject_msg subshell failed"
   pass "inject_msg: delivers an away-mode escalation whose target reads native busy only because the daemon hosts it"
+}
+
+# The other half of the same boundary: delivery must not be ASSUMED either.
+# On the native hosting the pane's native agent_status is pinned `working` by
+# the daemon's own background job, and the retries-exhausted queued-Enter
+# conversion used to read that as proof the harness had queued our Enter. A
+# genuinely swallowed Enter then reported delivery, so the buffer was truncated
+# and the wedge marker deleted for an escalation still sitting in the composer.
+# bin/backends/herdr.sh now returns `pending` for that sequence (pinned by
+# tests/fm-backend-herdr.test.sh's self-hosted submit cases); this is what the
+# daemon must do with it.
+test_escalate_flush_preserves_a_swallowed_self_hosted_escalation() {
+  local dir state
+  dir=$(make_supercase flush-self-hosted-swallowed)
+  state="$dir/state"
+  escalate_add "$state" "event A: worker died"
+  afk_enter "$state"
+  : > "$state/.subsuper-inject-wedged"
+  (
+    fm_backend_target_exists() { return 0; }
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
+    fm_backend_composer_state() { printf 'empty'; }
+    fm_backend_send_text_submit() { printf 'pending'; }
+    if TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      FM_SUPERVISOR_BACKEND=herdr FM_SUPERVISOR_TARGET="default:w1:p2" \
+      escalate_flush "$state"; then
+      fail "a submit that never left the composer must not report the escalation as flushed"
+    fi
+  ) || fail "self-hosted swallowed-flush subshell failed"
+  grep -F "event A: worker died" "$state/.subsuper-escalations" >/dev/null \
+    || fail "the escalation buffer was truncated for a submit that never left the composer"
+  [ -e "$state/.subsuper-inject-wedged" ] \
+    || fail "the wedge marker was cleared for an escalation that was never delivered"
+  pass "escalate_flush: a swallowed self-hosted submit keeps the buffer and leaves the wedge marker raised"
 }
 
 test_primary_busy_guard_is_harness_scoped() {
@@ -2135,6 +2172,7 @@ test_pane_is_busy_self_hosted_native_busy_falls_through_to_rendered
 test_pane_is_busy_self_hosted_still_defers_on_a_real_turn
 test_pane_is_busy_terminal_hosted_native_busy_stays_conclusive
 test_inject_msg_delivers_while_self_hosted_native_busy
+test_escalate_flush_preserves_a_swallowed_self_hosted_escalation
 test_primary_busy_guard_is_harness_scoped
 test_pane_is_busy_defaults_to_tmux_when_backend_omitted
 test_pane_input_pending_herdr_dispatch
