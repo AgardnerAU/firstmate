@@ -456,6 +456,13 @@ It checks that a newly appended keyed decision is classified without rereading e
 - Bounded and successor-linked lifecycle rows.
 - A SIGSTOP counterfactual that distinguishes a live PID from a stale beacon before classifying termination.
 
+The same suite drives the real lock functions over the reclaim-marker chain that a lock steal publishes, and proves:
+
+- A creation the environment refuses reports a definite outcome instead of nesting another marker.
+- A seeded chain deeper than the bound stops rather than growing the marker path further.
+- A lock age that reaches the comparison as a non-number yields a freshness decision instead of a shell error.
+- An auto-arm claim frozen at `arming` behind a dead owner is still reclaimed through the ordinary dead-holder path.
+
 ### Claude auto-arm and turn-end guard
 
 `tests/fm-subagent-pretool-check.test.sh` proves Claude retains only the non-status Bash seatbelts.
