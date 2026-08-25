@@ -79,7 +79,8 @@ This record is the concurrent isolation proof for the portable parallel candidat
 ## Scope
 
 Each worker used a separate mode-`0700` temporary root and private `TMPDIR` and `TMP`.
-The harness cleared ambient `FM_HOME` and `FM_*_OVERRIDE` values for every worker and verified that global Git configuration was unchanged.
+The harness clears the ambient fleet environment once for the whole run, so every worker inherits an environment with no pointer at a live home (`bin/fm-test-env-lib.sh` owns that pointer list).
+The proof run also verified that global Git configuration was unchanged.
 A candidate failure fails the aggregate run and requires investigation rather than a retry.
 
 ## Re-run
