@@ -731,6 +731,7 @@ set -u
 fm_wake_append check live-home-probe probe >/dev/null 2>&1 || true
 printf 'PROBE_HOME=%s\n' "$FM_HOME"
 printf 'PROBE_STATE=%s\n' "$STATE"
+printf 'PROBE_STAGE_FILE=%s\n' "${FM_SESSION_START_STAGE_FILE:-none}"
 echo "ok - probe"
 SH
   chmod +x "$repo/bin/fm-test-run.sh" "$repo/$probe"
@@ -746,6 +747,10 @@ SH
     export FM_STATE_OVERRIDE="$sentinel/state"
     export FM_DATA_OVERRIDE="$sentinel/data"
     export FM_ROOT="$sentinel"
+    # A live session start leaves this behind in a worker's environment, and
+    # bin/fm-session-start.sh reads its presence as "the runtime bound is
+    # already applied", so a test that inherits one loses the bound it asserts.
+    export FM_SESSION_START_STAGE_FILE="$sentinel/stage"
     bin/fm-test-run.sh "$probe"
   ) >"$tmp/out" 2>"$tmp/err"
   rc=$?
@@ -759,6 +764,8 @@ SH
     || fail "probe resolved a home outside its own repo: $(grep PROBE_ "$tmp/out")"
   grep -Fq "PROBE_STATE=$repo/state" "$tmp/out" \
     || fail "probe resolved a state directory outside its own repo: $(grep PROBE_ "$tmp/out")"
+  grep -Fq "PROBE_STAGE_FILE=none" "$tmp/out" \
+    || fail "a live session's control variable reached a test script: $(grep PROBE_STAGE "$tmp/out")"
 
   [ "$(cat "$sentinel/state/.wake-queue")" = "sentinel" ] \
     || fail "a test script wrote to the live home's durable queue"
@@ -781,11 +788,11 @@ test_env_isolation_helper_clears_every_pointer() {
     FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=/live \
     FM_WAKE_QUEUE=/live/state/.wake-queue \
     FM_WAKE_QUEUE_LOCK=/live/state/.wake-queue.lock \
-    FM_BACKEND=tmux \
+    FM_BACKEND=tmux FM_SESSION_START_STAGE_FILE=/live/stage \
     bash -c '. "$1/bin/fm-test-env-lib.sh"; fm_test_env_isolate || exit 1; env' \
     _ "$ROOT"
   ) || fail "fm_test_env_isolate refused with a clearable environment"
-  survivors=$(printf '%s\n' "$out" | grep -E '^(FM_HOME|FM_ROOT|FM_ROOT_OVERRIDE|FM_STATE_OVERRIDE|FM_DATA_OVERRIDE|FM_PROJECTS_OVERRIDE|FM_CONFIG_OVERRIDE|FM_PENDING_REPLY_DIR_OVERRIDE|FM_PUBLIC_FOLLOWUP_PRIMARY_HOME|FM_WAKE_QUEUE|FM_WAKE_QUEUE_LOCK|FM_BACKEND)=' || true)
+  survivors=$(printf '%s\n' "$out" | grep -E '^(FM_HOME|FM_ROOT|FM_ROOT_OVERRIDE|FM_STATE_OVERRIDE|FM_DATA_OVERRIDE|FM_PROJECTS_OVERRIDE|FM_CONFIG_OVERRIDE|FM_PENDING_REPLY_DIR_OVERRIDE|FM_PUBLIC_FOLLOWUP_PRIMARY_HOME|FM_WAKE_QUEUE|FM_WAKE_QUEUE_LOCK|FM_BACKEND|FM_SESSION_START_STAGE_FILE)=' || true)
   [ -z "$survivors" ] || fail "fleet pointers survived isolation: $survivors"
   pass "the shared isolation helper clears every fleet pointer it owns"
 }
