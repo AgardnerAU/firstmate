@@ -602,17 +602,25 @@ test_lock_reclaim_marker_chain_is_depth_bounded() {
   pass "the reclaim-marker chain terminates at its published depth bound"
 }
 
-test_lock_unreadable_age_decides_instead_of_erroring() {
+test_lock_non_numeric_age_decides_instead_of_erroring() {
   local dir state lockdir shim rc err
-  dir=$(make_case lock-unreadable-age)
+  dir=$(make_case lock-non-numeric-age)
   state="$dir/state"
   lockdir="$state/.contend.lock"
   err="$dir/fresh.err"
   shim="$dir/probe-bin"
   mkdir -p "$shim"
-  # A path whose modification time cannot be resolved leaves fm_path_age with
-  # nothing to print, which is how the 2026-08-24 runaway ended: a bare
-  # "[: : integer expected" where a freshness decision belonged.
+  # A modification time read that SUCCEEDS while printing something the age
+  # arithmetic cannot use, so fm_path_age prints nothing at all and an empty
+  # string reaches the comparison: the bare "[: : integer expected" the
+  # 2026-08-24 runaway ended on, where a freshness decision belonged.
+  #
+  # This case covers that shell error and nothing more. It is deliberately not
+  # the unreadable over-long path: there fm_path_mtime FAILS, fm_path_age
+  # returns its numeric 999999 sentinel, the guard below never fires, and the
+  # lock is still reclaimed - see the comment on fm_lock_mid_acquire_is_fresh
+  # in bin/fm-wake-lib.sh, which says so in the code itself. Declining that
+  # reclaim is separate unfinished work, so nothing here may claim to cover it.
   cat > "$shim/stat" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' 'cannot read: Value too large for defined data type'
@@ -626,10 +634,10 @@ SH
     bash -c '. "$1"; fm_lock_mid_acquire_is_fresh "$2" ""' _ "$LIB" "$lockdir" \
     2>"$err" || rc=$?
   ! grep -q 'integer expected' "$err" \
-    || fail "unreadable lock age produced a shell error instead of a decision: $(cat "$err")"
+    || fail "a non-numeric lock age produced a shell error instead of a decision: $(cat "$err")"
   [ "$rc" -eq 0 ] \
-    || fail "unreadable lock age did not decline the reclaim (rc=$rc)"
-  pass "an unreadable lock age decides 'still fresh' rather than erroring"
+    || fail "a non-numeric lock age did not decline the reclaim (rc=$rc)"
+  pass "a lock age that reaches the comparison as a non-number decides 'still fresh' rather than erroring"
 }
 
 test_autoarm_dead_arming_owner_is_reclaimed() {
@@ -1377,7 +1385,7 @@ test_lock_paused_mid_acquire_claim_fails_during_steal
 test_lock_creation_failure_does_not_nest_reclaim_markers
 test_lock_release_race_ends_in_an_acquisition
 test_lock_reclaim_marker_chain_is_depth_bounded
-test_lock_unreadable_age_decides_instead_of_erroring
+test_lock_non_numeric_age_decides_instead_of_erroring
 test_autoarm_dead_arming_owner_is_reclaimed
 test_watch_restart_rejects_reused_pid
 test_watch_restart_attaches_to_healthy_peer
