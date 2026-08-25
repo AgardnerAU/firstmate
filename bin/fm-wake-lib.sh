@@ -876,11 +876,22 @@ fm_lock_try_acquire() {
   steal=$FM_LOCK_STEAL_PATH
   # fm_lock_try_create can fail with nothing on disk to reclaim: the environment
   # refused the creation (no space, no permission, no fork), not another holder.
-  # Reclaiming needs something to reclaim FROM, so report "not acquired" rather
-  # than publishing a reclaim mutex for a lock that does not exist. This is where
-  # the 2026-08-24 runaway entered the marker chain.
+  # Reclaiming needs something to reclaim FROM, so do not publish a reclaim mutex
+  # for a lock that does not exist. This is where the 2026-08-24 runaway entered
+  # the marker chain.
+  #
+  # Absence alone does not say WHICH of those happened: an ordinary release
+  # landing between the first creation attempt and here leaves exactly the same
+  # empty disk as a refusal. Answer that by asking the filesystem for the lock
+  # again rather than by concluding from the absence - a creation that now
+  # succeeds is the ordinary handover this frame should win, and one that fails
+  # again reports "not acquired" as before. One extra attempt, never a loop, so
+  # the outcome stays definite and no marker is opened either way.
   if [ ! -e "$lockdir" ] && [ ! -L "$lockdir" ] \
     && [ ! -e "$steal" ] && [ ! -L "$steal" ]; then
+    if fm_lock_try_create "$lockdir"; then
+      return 0
+    fi
     return 1
   fi
   if ! fm_lock_try_acquire "$steal"; then

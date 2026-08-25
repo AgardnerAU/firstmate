@@ -502,6 +502,62 @@ test_lock_creation_failure_does_not_nest_reclaim_markers() {
   pass "a lock creation the environment refuses ends with a definite outcome and no reclaim marker"
 }
 
+# The other side of the same guard. A holder releasing while another process is
+# acquiring leaves the lock path empty, exactly as a refused creation does, and
+# the release is an ordinary handover that must end in an acquisition. Treating
+# that absence as a refusal returns "not acquired, no holder", which is what
+# makes bin/fm-watch.sh print "watcher: already running" and exit 0 with no lock
+# on disk and no watcher anywhere.
+test_lock_release_race_ends_in_an_acquisition() {
+  local dir state lockdir owner dead shim rmdir_bin out rc self lockpid
+  dir=$(make_case lock-release-race)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  dead=$(dead_pid)
+  owner="$lockdir.owner.crashed"
+  mkdir "$owner"
+  printf '%s\n' "$dead" > "$owner/pid"
+  ln -s "$owner" "$lockdir"
+  rmdir_bin=$(command -v rmdir)
+  [ -n "$rmdir_bin" ] || fail "no rmdir on PATH to build the release fork point from"
+  shim="$dir/probe-bin"
+  mkdir -p "$shim"
+  # The release lands in a real fork point: fm_lock_try_create discards its own
+  # "<lock>.owner.XXXXXX" temp directory through rmdir when it finds the lock
+  # already present. Fire once, never on the crashed holder's own directory, and
+  # hand every other call to the real rmdir, so the rest of the run is ordinary.
+  cat > "$shim/rmdir" <<SH
+#!/usr/bin/env bash
+if [ ! -e "$dir/released" ] && [ "\$*" != "$owner" ]; then
+  case "\$*" in
+    *.owner.*)
+      rm -f "$lockdir"
+      rm -f "$owner/pid"
+      $rmdir_bin "$owner" 2>/dev/null || true
+      : > "$dir/released"
+      ;;
+  esac
+fi
+exec $rmdir_bin "\$@"
+SH
+  chmod +x "$shim/rmdir"
+  out=$(PATH="$shim:$PATH" FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    if fm_lock_try_acquire "$2"; then rc=0; else rc=1; fi
+    printf "rc=%s self=%s lockpid=%s\n" "$rc" "${BASHPID:-$$}" "$(cat "$2/pid" 2>/dev/null || true)"
+  ' _ "$LIB" "$lockdir")
+  # Assert the release actually happened, so a shim that quietly did nothing
+  # cannot pass this case by never exercising the race at all.
+  [ -e "$dir/released" ] || fail "the release never fired, so the race was never exercised: $out"
+  rc=${out#rc=}; rc=${rc%% *}
+  self=${out#*self=}; self=${self%% *}
+  lockpid=${out#*lockpid=}; lockpid=${lockpid%% *}
+  [ "$rc" = 0 ] || fail "a lock released mid-acquire was not acquired: $out"
+  [ "$lockpid" = "$self" ] \
+    || fail "acquirer reported success but the lock does not record its pid: $out"
+  pass "a lock released mid-acquire ends in an acquisition"
+}
+
 test_lock_reclaim_marker_chain_is_depth_bounded() {
   local dir state lockdir shim log bound dead p i runner rc deepest
   dir=$(make_case lock-marker-depth)
@@ -1319,6 +1375,7 @@ test_lock_empty_pid_uses_minimum_grace
 test_lock_late_claim_loses_after_recreate
 test_lock_paused_mid_acquire_claim_fails_during_steal
 test_lock_creation_failure_does_not_nest_reclaim_markers
+test_lock_release_race_ends_in_an_acquisition
 test_lock_reclaim_marker_chain_is_depth_bounded
 test_lock_unreadable_age_decides_instead_of_erroring
 test_autoarm_dead_arming_owner_is_reclaimed
