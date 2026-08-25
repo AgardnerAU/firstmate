@@ -558,6 +558,87 @@ SH
   pass "a lock released mid-acquire ends in an acquisition"
 }
 
+# The losing side of the same guard. When the lock is gone at the guard but a
+# peer wins the retried creation, this frame does not acquire - and its failure
+# return must name that peer like every other non-acquiring return in
+# fm_lock_try_acquire does. A "not acquired" with an empty holder is what makes
+# bin/fm-watch.sh skip its stale-heartbeat checks and print a bare "watcher:
+# already running" for a watcher that is genuinely there.
+test_lock_guard_retry_reports_the_peer_that_wins() {
+  local dir state lockdir owner dead peer shim rmdir_bin mktemp_bin out rc held lockpid
+  dir=$(make_case lock-guard-retry-peer)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  dead=$(dead_pid)
+  owner="$lockdir.owner.crashed"
+  peer=$$
+  mkdir "$owner"
+  printf '%s\n' "$dead" > "$owner/pid"
+  ln -s "$owner" "$lockdir"
+  rmdir_bin=$(command -v rmdir)
+  mktemp_bin=$(command -v mktemp)
+  [ -n "$rmdir_bin" ] && [ -n "$mktemp_bin" ] \
+    || fail "no rmdir/mktemp on PATH to build the guard fork points from"
+  shim="$dir/probe-bin"
+  mkdir -p "$shim"
+  # Fork point one, as in the release race above: the holder releases while this
+  # frame is acquiring, so both the lock and its reclaim marker are absent when
+  # the guard tests for them.
+  cat > "$shim/rmdir" <<SH
+#!/usr/bin/env bash
+if [ ! -e "$dir/released" ] && [ "\$*" != "$owner" ]; then
+  case "\$*" in
+    *.owner.*)
+      rm -f "$lockdir"
+      rm -f "$owner/pid"
+      $rmdir_bin "$owner" 2>/dev/null || true
+      : > "$dir/released"
+      ;;
+  esac
+fi
+exec $rmdir_bin "\$@"
+SH
+  chmod +x "$shim/rmdir"
+  # Fork point two: a live peer creates the lock after the guard has seen the
+  # absence but before this frame's one retry can link its own owner directory,
+  # so the retry loses and the peer's pid is readable on disk.
+  cat > "$shim/mktemp" <<SH
+#!/usr/bin/env bash
+if [ -e "$dir/released" ] && [ ! -e "$dir/peer-won" ]; then
+  case "\$*" in
+    *.owner.XXXXXX)
+      mkdir -p "$lockdir.owner.peer"
+      printf '%s\n' "$peer" > "$lockdir.owner.peer/pid"
+      ln -s "$lockdir.owner.peer" "$lockdir"
+      : > "$dir/peer-won"
+      ;;
+  esac
+fi
+exec $mktemp_bin "\$@"
+SH
+  chmod +x "$shim/mktemp"
+  out=$(PATH="$shim:$PATH" FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    if fm_lock_try_acquire "$2"; then rc=0; else rc=1; fi
+    printf "rc=%s held=%s lockpid=%s\n" "$rc" "${FM_LOCK_HELD_PID:-}" "$(cat "$2/pid" 2>/dev/null || true)"
+  ' _ "$LIB" "$lockdir")
+  # Both fork points must have fired, so a shim that quietly did nothing cannot
+  # pass this case by never reaching the guard or never losing the retry.
+  [ -e "$dir/released" ] \
+    || fail "the release never fired, so the guard was never reached: $out"
+  [ -e "$dir/peer-won" ] \
+    || fail "the peer never took the lock, so the retry never lost: $out"
+  rc=${out#rc=}; rc=${rc%% *}
+  held=${out#*held=}; held=${held%% *}
+  lockpid=${out#*lockpid=}; lockpid=${lockpid%% *}
+  [ "$rc" = 1 ] || fail "a lock a peer already holds was reported acquired: $out"
+  [ "$lockpid" = "$peer" ] \
+    || fail "the peer's lock is not the one left on disk: $out"
+  [ "$held" = "$peer" ] \
+    || fail "not acquired, but the peer holding the lock was not reported: $out"
+  pass "losing the retried creation reports the peer that holds the lock"
+}
+
 test_lock_reclaim_marker_chain_is_depth_bounded() {
   local dir state lockdir shim log bound dead p i runner rc deepest
   dir=$(make_case lock-marker-depth)
@@ -1388,6 +1469,7 @@ test_lock_late_claim_loses_after_recreate
 test_lock_paused_mid_acquire_claim_fails_during_steal
 test_lock_creation_failure_does_not_nest_reclaim_markers
 test_lock_release_race_ends_in_an_acquisition
+test_lock_guard_retry_reports_the_peer_that_wins
 test_lock_reclaim_marker_chain_is_depth_bounded
 test_lock_non_numeric_age_decides_instead_of_erroring
 test_autoarm_dead_arming_owner_is_reclaimed
