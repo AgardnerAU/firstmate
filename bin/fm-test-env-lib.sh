@@ -22,8 +22,16 @@
 # It returns non-zero if any pointer survives, so a runner that cannot isolate
 # refuses instead of running the suite against the live home.
 
-# Every environment variable a Firstmate script consults to locate a home or its
-# durable records. Extend this list, not a runner.
+# Every environment variable a live Firstmate session puts into a worker's
+# environment and a Firstmate script then consults: the home and its durable
+# records, plus the runtime control variables a session start creates. Extend
+# this list, not a runner, whenever Firstmate starts exporting another one.
+#
+# FM_SESSION_START_STAGE_FILE is in the second class and matters as much as the
+# home pointers: bin/fm-session-start.sh treats its presence as "I am already
+# the bounded child" and skips its own runtime bound, so a leaked one removes
+# the bound a test is asserting and the suite hangs on the fixture instead of
+# failing.
 FM_TEST_ENV_FLEET_POINTERS="\
 FM_HOME \
 FM_ROOT \
@@ -36,7 +44,8 @@ FM_PENDING_REPLY_DIR_OVERRIDE \
 FM_PUBLIC_FOLLOWUP_PRIMARY_HOME \
 FM_WAKE_QUEUE \
 FM_WAKE_QUEUE_LOCK \
-FM_BACKEND"
+FM_BACKEND \
+FM_SESSION_START_STAGE_FILE"
 
 fm_test_env_isolate() {
   local name rc=0
