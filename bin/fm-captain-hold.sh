@@ -241,10 +241,23 @@ task_show() {  # <id>
 # The closed-task archive beside this home's backlog, as an absolute path.
 # tasks-axi's own `[markdown] archive` setting is the owner; the default below
 # only covers a home whose config omits it.
+#
+# This must read the setting the way tasks-axi does, or the gate resolves
+# against a DIFFERENT file than the one tasks-axi prunes into and a correctly
+# answered call fails the gate anyway - the same defect this lookup exists to
+# remove, wearing a config-parsing disguise. tasks-axi honours a basic
+# (double-quoted) string, a literal (single-quoted) string, and an inline
+# comment after either, so all of those are read here. Matching the value by
+# its own quote delimiters rather than to end-of-line is what keeps a `#`
+# INSIDE the path from being mistaken for the start of a comment. An escaped
+# quote within a basic string is not decoded; that needs a real TOML parser,
+# and no such path has ever been configured here.
 archive_path() {
   local configured=''
   if [ -f "$FM_HOME/.tasks.toml" ]; then
-    configured=$(sed -n 's/^[[:space:]]*archive[[:space:]]*=[[:space:]]*"\(.*\)"[[:space:]]*$/\1/p' \
+    configured=$(sed -n \
+      -e 's/^[[:space:]]*archive[[:space:]]*=[[:space:]]*"\([^"]*\)".*$/\1/p' \
+      -e "s/^[[:space:]]*archive[[:space:]]*=[[:space:]]*'\([^']*\)'.*\$/\1/p" \
       "$FM_HOME/.tasks.toml" | head -1)
   fi
   [ -n "$configured" ] || configured=data/done-archive.md

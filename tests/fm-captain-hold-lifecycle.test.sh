@@ -1287,6 +1287,73 @@ test_archived_captain_calls_resolve_without_waving_work_through() {
   pass "archived captain calls resolve, unanswered and unreadable ones still refuse"
 }
 
+# The archive the gate resolves against is whichever one tasks-axi actually
+# writes, so this home must read that setting the way tasks-axi does. tasks-axi
+# accepts a double-quoted path, a single-quoted (TOML literal) path, and an
+# inline comment after either. Reading only the first form makes the gate fall
+# back to the default path and miss a correctly answered, pruned call - the very
+# failure this suite exists to prevent, reappearing as a config misparse.
+test_configured_archive_is_read_the_way_tasks_axi_reads_it() {
+  local home origin call form line archive rc
+  form=0
+  while IFS='|' read -r line archive; do
+    [ -n "$line" ] || continue
+    form=$((form + 1))
+    home=$(make_home "archive-toml-$form")
+    cat > "$home/.tasks.toml" <<EOF
+backend = "markdown"
+
+[markdown]
+path = "data/backlog.md"
+$line
+done_keep = 10
+EOF
+    origin="sample-toml-review-$form"
+    call="sample-toml-call-$form"
+    mkdir -p "$home/data/$origin"
+    tasks_in "$home" add "$origin" "Review the configured archive" \
+      --kind scout --repo sample --start >/dev/null \
+      || fail "form $form: could not create the origin"
+    write_origin_meta "$home" "$origin"
+    printf 'done: report complete\n' > "$home/state/$origin.status"
+    printf '# Configured archive review\n\nOne captain choice remained.\n' \
+      > "$home/data/$origin/report.md"
+    run_captain "$home" hold "$call" \
+      --title "Choose the configured option" --reason "captain choice pending" --repo sample >/dev/null \
+      || fail "form $form: could not register the captain call"
+    run_captain "$home" complete "$origin" "$call" >/dev/null \
+      || fail "form $form: completion failed while the call was still live"
+    printf 'Take the configured route.\n' > "$home/answer.txt"
+    run_captain "$home" answer "$call" --decision-file "$home/answer.txt" >/dev/null \
+      || fail "form $form: could not record the captain answer"
+    tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+      || fail "form $form: could not archive the answered call"
+
+    # tasks-axi honours this form: it must have written the configured archive,
+    # not the default one. If this fails the fixture is wrong, not the gate.
+    assert_present "$home/$archive" "form $form: tasks-axi did not write the configured archive"
+    if [ -e "$home/data/done-archive.md" ]; then
+      fail "form $form: setup error - tasks-axi used the default archive path"
+    fi
+
+    set +e
+    run_captain "$home" verify "$origin" > "$home/verify.out" 2> "$home/verify.err"
+    rc=$?
+    set -e
+    [ "$rc" -eq 0 ] \
+      || fail "form $form ($line): an answered call archived at the CONFIGURED path failed the gate: $(cat "$home/verify.err")"
+    run_teardown "$home" "$origin" >/dev/null 2> "$home/teardown.err" \
+      || fail "form $form ($line): cleanup was refused for a call archived at the configured path: $(cat "$home/teardown.err")"
+  done <<'EOF'
+archive = "data/arc-basic.md"|data/arc-basic.md
+archive = 'data/arc-literal.md'|data/arc-literal.md
+archive = "data/arc-comment.md" # where closed tasks go|data/arc-comment.md
+archive = 'data/arc-literal-comment.md'   # where closed tasks go|data/arc-literal-comment.md
+EOF
+  [ "$form" -eq 4 ] || fail "expected 4 configured-archive forms, exercised $form"
+  pass "the configured archive is read for every TOML form tasks-axi honours"
+}
+
 test_uninventoried_report_decision_refuses_completion
 test_completion_gate_attests_and_transfers
 test_answer_records_and_closes
@@ -1305,3 +1372,4 @@ test_origin_slug_validation_precedes_path_construction
 test_status_resolution_over_an_open_hold_is_signalled
 test_legitimate_holds_produce_no_divergence_signal
 test_archived_captain_calls_resolve_without_waving_work_through
+test_configured_archive_is_read_the_way_tasks_axi_reads_it
