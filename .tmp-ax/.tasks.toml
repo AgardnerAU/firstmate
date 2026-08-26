@@ -1,5 +1,0 @@
-backend = "markdown"
-
-[markdown]
-path = "data/backlog.md"
-done_keep = 10
