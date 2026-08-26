@@ -120,6 +120,7 @@ init_changed_fixture_repo() {
   # It is deliberately the sole member of its family here, so a reference scan
   # that reads only the suites cannot be rescued by family expansion pulling it
   # in behind some sibling that does name the library.
+  # shellcheck disable=SC2016 # The fixture helper, not this test shell, expands the source path.
   printf '#!/usr/bin/env bash\n. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"\n' \
     >"$repo/tests/wake-helpers.sh"
   printf '#!/usr/bin/env bash\n# tests/wake-helpers.sh\n' \
