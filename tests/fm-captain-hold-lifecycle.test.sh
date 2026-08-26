@@ -1354,6 +1354,68 @@ EOF
   pass "the configured archive is read for every TOML form tasks-axi honours"
 }
 
+# An `archive` key belongs to the table heading above it, so a home is free to
+# carry one in some other table - or in the root table before the first heading
+# - and tasks-axi ignores both. Reading the first `archive` line in the file
+# regardless of heading points the gate at that unrelated value, so a correctly
+# answered call pruned into the REAL archive is not found and fails the gate:
+# the same miss this suite exists to prevent, this time through a decoy key.
+test_archive_setting_is_read_from_the_markdown_table_only() {
+  local home origin call rc
+  home=$(make_home archive-toml-table-scope)
+  cat > "$home/.tasks.toml" <<'EOF'
+backend = "markdown"
+archive = "data/root-decoy-archive.md"
+
+[other]
+archive = "data/other-decoy-archive.md"
+
+[markdown]
+path = "data/backlog.md"
+archive = "data/scoped-archive.md"
+done_keep = 10
+EOF
+  origin=sample-scoped-review
+  call=sample-scoped-call
+  mkdir -p "$home/data/$origin"
+  tasks_in "$home" add "$origin" "Review the scoped archive" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the table-scope origin"
+  write_origin_meta "$home" "$origin"
+  printf 'done: report complete\n' > "$home/state/$origin.status"
+  printf '# Scoped archive review\n\nOne captain choice remained.\n' \
+    > "$home/data/$origin/report.md"
+  run_captain "$home" hold "$call" \
+    --title "Choose the scoped option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the table-scope captain call"
+  run_captain "$home" complete "$origin" "$call" >/dev/null \
+    || fail "completion failed while the table-scope call was still live"
+  printf 'Take the scoped route.\n' > "$home/answer.txt"
+  run_captain "$home" answer "$call" --decision-file "$home/answer.txt" >/dev/null \
+    || fail "could not record the table-scope captain answer"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the table-scope answered call"
+
+  # tasks-axi ignores both decoys and prunes into `[markdown] archive`. If this
+  # fails the fixture no longer matches tasks-axi, not the gate.
+  assert_present "$home/data/scoped-archive.md" \
+    "tasks-axi did not prune into the [markdown] archive"
+  assert_absent "$home/data/root-decoy-archive.md" \
+    "setup error - tasks-axi honoured a root-table archive key"
+  assert_absent "$home/data/other-decoy-archive.md" \
+    "setup error - tasks-axi honoured another table's archive key"
+
+  set +e
+  run_captain "$home" verify "$origin" > "$home/verify.out" 2> "$home/verify.err"
+  rc=$?
+  set -e
+  [ "$rc" -eq 0 ] \
+    || fail "a decoy archive key outside [markdown] made the gate miss an answered, pruned call: $(cat "$home/verify.err")"
+  run_teardown "$home" "$origin" >/dev/null 2> "$home/teardown.err" \
+    || fail "cleanup was refused because a decoy archive key outside [markdown] was read: $(cat "$home/teardown.err")"
+  pass "the archive setting is read from the [markdown] table only"
+}
+
 # An id can carry more than one captain call over a home's life: prune appends
 # a section per run, and a home is free to reuse an id once the earlier call is
 # archived. tasks-axi returns the FIRST row carrying an id, so an archive read
@@ -1445,4 +1507,5 @@ test_status_resolution_over_an_open_hold_is_signalled
 test_legitimate_holds_produce_no_divergence_signal
 test_archived_captain_calls_resolve_without_waving_work_through
 test_configured_archive_is_read_the_way_tasks_axi_reads_it
+test_archive_setting_is_read_from_the_markdown_table_only
 test_reused_id_resolves_to_the_newest_archived_row

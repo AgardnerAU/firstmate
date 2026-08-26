@@ -252,13 +252,30 @@ task_show() {  # <id>
 # INSIDE the path from being mistaken for the start of a comment. An escaped
 # quote within a basic string is not decoded; that needs a real TOML parser,
 # and no such path has ever been configured here.
+#
+# The setting also has to be read from the table tasks-axi reads it from. An
+# `archive` key belongs to whichever table heading precedes it, so any other
+# table - or the root table above the first heading - is free to carry one of
+# its own, and tasks-axi ignores those. Taking the first `archive` line in the
+# file regardless of heading would point the gate at that unrelated value and
+# reopen the same miss, so only lines inside `[markdown]` are considered here.
 archive_path() {
   local configured=''
   if [ -f "$FM_HOME/.tasks.toml" ]; then
-    configured=$(sed -n \
+    configured=$(awk '
+      /^[[:space:]]*\[/ {
+        heading = $0
+        sub(/^[[:space:]]*\[/, "", heading)
+        sub(/\].*$/, "", heading)
+        gsub(/[[:space:]]/, "", heading)
+        in_markdown = (heading == "markdown")
+        next
+      }
+      in_markdown { print }
+    ' "$FM_HOME/.tasks.toml" | sed -n \
       -e 's/^[[:space:]]*archive[[:space:]]*=[[:space:]]*"\([^"]*\)".*$/\1/p' \
       -e "s/^[[:space:]]*archive[[:space:]]*=[[:space:]]*'\([^']*\)'.*\$/\1/p" \
-      "$FM_HOME/.tasks.toml" | head -1)
+      | head -1)
   fi
   [ -n "$configured" ] || configured=data/done-archive.md
   case "$configured" in
