@@ -819,7 +819,7 @@ test_shared_test_library_isolates_a_direct_invocation() {
   ) || fail "sourcing tests/lib.sh refused with a clearable environment"
   read -r -a pointers <<<"$FM_TEST_ENV_FLEET_POINTERS"
   pattern=$(IFS='|'; printf '%s' "${pointers[*]}")
-  survivors=$(printf '%s\n' "$out" | grep -E "^($pattern)=/live-sentinel$" || true)
+  survivors=$(printf '%s\n' "$out" | grep -E "^($pattern)=" || true)
   [ -z "$survivors" ] || fail "fleet pointers survived a direct suite invocation: $survivors"
   # The sentinel must actually reach a child that does NOT source the library,
   # so the assertion above cannot pass merely because the export did nothing.

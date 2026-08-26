@@ -925,7 +925,17 @@ families_for_changed_path() {
       # resolution in the caller; emit a marker family of __script__
       printf '%s\n' "__script__:$(basename "$path")"
       ;;
-    bin/fm-test-run.sh|bin/fm-test-isolation-proof.sh|bin/fm-test-env-lib.sh)
+    bin/fm-test-env-lib.sh)
+      # tests/lib.sh is a caller too, so this file's pointer list shapes the
+      # environment of every suite that sources the shared library, not just
+      # the runner's own contract tests. Select through the same reference scan
+      # tests/lib.sh gets, so a pointer edit here selects the suites it can
+      # break rather than only pure-contract-unit.
+      printf '%s\n' pure-contract-unit
+      families_for_test_reference lib.sh \
+        || printf '%s\n' "__unmapped__:$path"
+      ;;
+    bin/fm-test-run.sh|bin/fm-test-isolation-proof.sh)
       printf '%s\n' pure-contract-unit
       ;;
     bin/backends/herdr*|bin/fm-herdr-lab.sh|tests/herdr-test-safety.sh)
