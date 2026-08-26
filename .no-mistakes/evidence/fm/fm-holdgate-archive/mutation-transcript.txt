@@ -1,0 +1,21 @@
+Mutation testing of tests/fm-captain-hold-lifecycle.test.sh
+Each mutation reintroduces one defect into bin/fm-captain-hold.sh; the new tests must fail.
+The script was restored from a pristine copy after every run.
+
+### M1 (corrected): reintroduce the original bug - gate resolves only against the live backlog
+not ok - an answered, archived captain call failed its own completion gate: fm-captain-hold: no captain-held task sample-archived-call and no legacy identity sample-archived-review-decision-sample-archived-call in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-captain-hold.1AyzHH/archived-calls/data/backlog.md or /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-captain-hold.1AyzHH/archived-calls/data/done-archive.md
+fm-captain-hold: captain-held task  is absent from /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-captain-hold.1AyzHH/archived-calls/data/backlog.md and from /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-captain-hold.1AyzHH/archived-calls/data/done-archive.md
+
+### M2: remove the unreadable-archive refusal
+=== MUTATION: no unreadable-archive refusal ===
+not ok - the refusal must say the archive could not be read, not that the call was absent
+
+### M3: restage archive sections oldest-first (pre-review-fix behaviour)
+=== MUTATION: oldest-first archive restage ===
+ok - archived captain calls resolve, unanswered and unreadable ones still refuse
+ok - the configured archive is read for every TOML form tasks-axi honours
+not ok - a stale archived answer waved through a captain call that was never answered: verified: sample-second-review captain-call inventory
+
+### M4: make the answered check permissive (criterion 2 guard)
+=== MUTATION: permissive durable check ===
+not ok - an archived captain call closed with no recorded answer passed the gate: verified: sample-dropped-review captain-call inventory

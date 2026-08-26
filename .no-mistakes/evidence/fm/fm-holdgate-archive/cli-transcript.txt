@@ -1,0 +1,66 @@
+==================================================================
+SCENARIO A - a captain call that WAS answered, then archived by prune
+==================================================================
+$ grep -n 'demo-idle-timeout-gap' data/backlog.md data/done-archive.md
+data/done-archive.md:3:- [x] demo-idle-timeout-gap - Choose an option (repo: sample) (done 2026-08-26) (hold: captain choice pending) (hold-kind: captain)
+
+--- BEFORE the fix (script at base commit 9a01dea) ---
+$ fm-captain-hold.sh verify agfp-demo-waves
+fm-captain-hold: no captain-held task demo-idle-timeout-gap and no legacy identity agfp-demo-waves-decision-demo-idle-timeout-gap in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-holdgate-demo.4kjsaG/answered/data/backlog.md
+fm-captain-hold: captain-held task  is absent from /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-holdgate-demo.4kjsaG/answered/data/backlog.md
+exit=1
+$ fm-teardown.sh agfp-demo-waves   # cleanup refused
+
+--- AFTER the fix (script at target commit 6fee418) ---
+$ fm-captain-hold.sh verify agfp-demo-waves
+verified: agfp-demo-waves captain-call inventory
+exit=0
+$ fm-teardown.sh agfp-demo-waves
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+teardown agfp-demo-waves complete (window firstmate:fm-agfp-demo-waves, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-holdgate-demo.4kjsaG/answered/projects/missing-agfp-demo-waves)
+Backlog: agfp-demo-waves just finished. Run tasks-axi done agfp-demo-waves --report data/agfp-demo-waves/report.md, then run tasks-axi ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+exit=0
+
+==================================================================
+SCENARIO B - a captain call CLOSED WITH NO ANSWER, then archived
+==================================================================
+$ fm-captain-hold.sh verify agfp-demo-dropped   # fixed script
+fm-captain-hold: captain-held task demo-dropped-call is neither held for the captain nor closed with a recorded captain answer
+exit=1
+$ fm-teardown.sh agfp-demo-dropped
+REFUSED: scout task agfp-demo-dropped has not passed the captain-call completion gate.
+Inventory its report and any visual review through bin/fm-captain-hold.sh before teardown.
+exit=1
+
+==================================================================
+SCENARIO C - the archive exists but cannot be read
+==================================================================
+$ chmod 000 data/done-archive.md
+$ fm-captain-hold.sh verify agfp-demo-unreadable
+fm-captain-hold: cannot read the closed-task archive /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-holdgate-demo.4kjsaG/unreadable/data/done-archive.md; refusing to resolve captain calls against an archive this home cannot read
+exit=1
+
+==================================================================
+SCENARIO D - archive configured elsewhere in .tasks.toml (literal string + comment)
+==================================================================
+$ ls data/*.md
+data/arc-literal.md
+data/backlog.md
+$ fm-captain-hold.sh verify agfp-demo-config
+verified: agfp-demo-config captain-call inventory
+exit=0
+
+==================================================================
+SCENARIO E - id reused: an older ANSWERED row and a newer UNANSWERED row
+==================================================================
+$ grep -c '^- \[x\] demo-reused-call ' data/done-archive.md
+2
+$ fm-captain-hold.sh verify agfp-demo-second   # newest row wins: still unanswered
+fm-captain-hold: captain-held task demo-reused-call is neither held for the captain nor closed with a recorded captain answer
+exit=1
