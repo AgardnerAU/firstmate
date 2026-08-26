@@ -1354,6 +1354,78 @@ EOF
   pass "the configured archive is read for every TOML form tasks-axi honours"
 }
 
+# An id can carry more than one captain call over a home's life: prune appends
+# a section per run, and a home is free to reuse an id once the earlier call is
+# archived. tasks-axi returns the FIRST row carrying an id, so an archive read
+# oldest-first answers with the long-settled call and its recorded answer -
+# waving through a later question the captain never answered. The newest row is
+# the one that describes the call's current durable state.
+test_reused_id_resolves_to_the_newest_archived_row() {
+  local home first second call rc
+  home=$(make_home reused-archived-id)
+  call=sample-reused-call
+
+  # The first life of the id: held, answered, closed and archived.
+  first=sample-first-review
+  mkdir -p "$home/data/$first"
+  tasks_in "$home" add "$first" "Review the first path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the first origin"
+  write_origin_meta "$home" "$first"
+  printf 'done: report complete\n' > "$home/state/$first.status"
+  printf '# First review\n\nOne captain choice remained.\n' > "$home/data/$first/report.md"
+  run_captain "$home" hold "$call" \
+    --title "Choose the first option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the first captain call"
+  run_captain "$home" complete "$first" "$call" >/dev/null \
+    || fail "completion failed while the first call was still live"
+  printf 'Take the northern route.\n' > "$home/answer.txt"
+  run_captain "$home" answer "$call" --decision-file "$home/answer.txt" >/dev/null \
+    || fail "could not record the first captain answer"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the first captain call"
+
+  # The second life of the same id: held for a later investigation, never
+  # answered, closed outside the answer path and archived in its own section.
+  second=sample-second-review
+  mkdir -p "$home/data/$second"
+  tasks_in "$home" add "$second" "Review the second path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the second origin"
+  write_origin_meta "$home" "$second"
+  printf 'done: report complete\n' > "$home/state/$second.status"
+  printf '# Second review\n\nOne captain choice remained.\n' > "$home/data/$second/report.md"
+  run_captain "$home" hold "$call" \
+    --title "Choose the second option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not re-register the reused captain call"
+  run_captain "$home" complete "$second" "$call" >/dev/null \
+    || fail "completion failed while the second call was still live"
+  tasks_in "$home" "done" "$call" >/dev/null \
+    || fail "could not close the second call outside the answer path"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the second captain call"
+
+  [ "$(grep -c "^- \[x\] $call " "$home/data/done-archive.md")" -eq 2 ] \
+    || fail "setup error: the archive does not hold two rows for the reused id"
+
+  set +e
+  run_captain "$home" verify "$second" > "$home/verify-second.out" 2> "$home/verify-second.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || fail "a stale archived answer waved through a captain call that was never answered: $(cat "$home/verify-second.out")"
+  assert_grep "recorded captain answer" "$home/verify-second.err" \
+    "the refusal must name the missing captain answer"
+
+  set +e
+  run_teardown "$home" "$second" > "$home/teardown-second.out" 2> "$home/teardown-second.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || fail "cleanup erased an investigation whose reused captain call was never answered"
+  pass "a reused archived id resolves to its newest row, not a stale answered one"
+}
+
 test_uninventoried_report_decision_refuses_completion
 test_completion_gate_attests_and_transfers
 test_answer_records_and_closes
@@ -1373,3 +1445,4 @@ test_status_resolution_over_an_open_hold_is_signalled
 test_legitimate_holds_produce_no_divergence_signal
 test_archived_captain_calls_resolve_without_waving_work_through
 test_configured_archive_is_read_the_way_tasks_axi_reads_it
+test_reused_id_resolves_to_the_newest_archived_row

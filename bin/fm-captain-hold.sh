@@ -284,13 +284,29 @@ require_readable_archive() {
 # here, so the row format keeps exactly one owner. The archive holds the same
 # rows under dated `## Archived` headings, so they are restaged under the
 # section heading tasks-axi reads before it is asked for the task.
+#
+# An id can appear in more than one section: prune appends a section per run,
+# and a home is free to reuse an id for a later call. tasks-axi returns the
+# FIRST row carrying an id, so the sections are restaged newest-first. The
+# newest row is the one describing that call's current durable state; resolving
+# to an older one would let a long-settled answer stand in for a question the
+# captain still owes. Only an unindented `## ` line starts a section - row
+# bodies are indented - so splitting on that leaves each row with its body.
+restage_archive_newest_first() {  # <archive-path>
+  awk '
+    /^## / { section++; next }
+    { block[section] = block[section] $0 "\n" }
+    END { for (i = section; i >= 0; i--) printf "%s", block[i] }
+  ' "$1"
+}
+
 archived_task_show() {  # <id>
   local id=$1 archive tmp out
   archive=$(archive_path)
   [ -r "$archive" ] || return 1
   tmp=$(umask 077; mktemp "${TMPDIR:-/tmp}/fm-captain-hold-archive.XXXXXX") \
     || fail "cannot stage the closed-task archive for lookup"
-  if ! { printf '## In flight\n\n## Queued\n\n## Done\n'; sed '/^## /d' "$archive"; } > "$tmp" 2>/dev/null; then
+  if ! { printf '## In flight\n\n## Queued\n\n## Done\n'; restage_archive_newest_first "$archive"; } > "$tmp" 2>/dev/null; then
     rm -f -- "$tmp"
     fail "cannot stage the closed-task archive $archive for lookup"
   fi
