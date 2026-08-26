@@ -1,0 +1,11 @@
+Simulated firstmate worker environment used for every 'before/after' run below
+(a live home's pointers, exactly as bin/fm-spawn.sh exports them into a worker):
+
+export FM_HOME="<LIVE_HOME>"
+export FM_ROOT="<LIVE_HOME>"
+export FM_STATE_OVERRIDE="<LIVE_HOME>/state"
+export FM_DATA_OVERRIDE="<LIVE_HOME>/data"
+export FM_PROJECTS_OVERRIDE="<LIVE_HOME>/projects"
+export FM_CONFIG_OVERRIDE="<LIVE_HOME>/config"
+export FM_WAKE_QUEUE="<LIVE_HOME>/state/.wake-queue"
+export FM_SESSION_START_STAGE_FILE="<LIVE_HOME>/state/stage"
