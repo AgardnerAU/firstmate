@@ -11,21 +11,22 @@
 # fm_test_env_isolate clears those pointers in the CALLING process. A runner
 # calls it once, before it starts any test script, so every child inherits the
 # cleared environment whichever path the run takes: serial, a --jobs worker, or
-# an isolation-proof worker. Isolation therefore cannot depend on a flag, and no
-# runner keeps its own copy of the list - two copies drift apart the moment one
-# of them is edited.
+# an isolation-proof worker. tests/lib.sh calls it too, for its own process, so
+# a suite invoked directly rather than through a runner is isolated as well.
+# Isolation therefore cannot depend on a flag, and no caller keeps its own copy
+# of the list - two copies drift apart the moment one of them is edited.
 #
 # Usage (source, then call once, early):
 #   . "$ROOT/bin/fm-test-env-lib.sh"
 #   fm_test_env_isolate || exit 2
 #
-# It returns non-zero if any pointer survives, so a runner that cannot isolate
+# It returns non-zero if any pointer survives, so a caller that cannot isolate
 # refuses instead of running the suite against the live home.
 
 # Every environment variable a live Firstmate session puts into a worker's
 # environment and a Firstmate script then consults: the home and its durable
 # records, plus the runtime control variables a session start creates. Extend
-# this list, not a runner, whenever Firstmate starts exporting another one.
+# this list, not a caller, whenever Firstmate starts exporting another one.
 #
 # The second class is every runtime control variable a live session exports to
 # tell a child what it already is or already decided, because a Firstmate script
