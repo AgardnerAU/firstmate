@@ -115,6 +115,15 @@ init_changed_fixture_repo() {
     chmod +x "$repo/tests/$script"
   done
   : >"$repo/tests/lib.sh"
+  # A suite that reaches tests/lib.sh only through a shared helper and never
+  # spells the library's own name - tests/fm-watch-arm.test.sh is the real one.
+  # It is deliberately the sole member of its family here, so a reference scan
+  # that reads only the suites cannot be rescued by family expansion pulling it
+  # in behind some sibling that does name the library.
+  printf '#!/usr/bin/env bash\n. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"\n' \
+    >"$repo/tests/wake-helpers.sh"
+  printf '#!/usr/bin/env bash\n# tests/wake-helpers.sh\n' \
+    >"$repo/tests/fm-backend-orca.test.sh"
   : >"$repo/tests/fm-backend-herdr-eventwait.test.py"
   : >"$repo/bin/fm-supervisor-target-lib.sh"
   : >"$repo/bin/unmapped-source.sh"
@@ -143,8 +152,20 @@ test_changed_dependency_selection_and_unmapped_failure() {
   assert_contains "$listed" "tests/fm-pr-merge.test.sh" "shared helper selects pr-forge dependents"
   assert_contains "$listed" "tests/fm-secondmate-safety.test.sh" "shared helper selects secondmate dependents"
   assert_contains "$listed" "tests/fm-bearings-snapshot.test.sh" "shared helper selects snapshot dependents"
+  assert_contains "$listed" "tests/fm-backend-orca.test.sh" \
+    "shared helper selects a suite that reaches it only through another helper"
   git -C "$repo" add tests/lib.sh
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm helper-change
+
+  # The env library shapes every suite that sources tests/lib.sh, so it must
+  # reach the indirect consumers through the same scan.
+  printf '\n' >>"$repo/bin/fm-test-env-lib.sh"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-pr-merge.test.sh" "env library selects direct lib.sh consumers"
+  assert_contains "$listed" "tests/fm-backend-orca.test.sh" \
+    "env library selects a suite that reaches lib.sh only through another helper"
+  git -C "$repo" add bin/fm-test-env-lib.sh
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm env-lib-change
 
   printf '\n' >>"$repo/tests/fm-backend-herdr-eventwait.test.py"
   listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)

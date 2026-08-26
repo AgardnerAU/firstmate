@@ -895,15 +895,66 @@ select_family() {
   [ "$found" -eq 1 ] || die "no tests mapped to family '$want'"
 }
 
+# Shared, non-suite scripts under tests/. A suite reaches tests/lib.sh either
+# directly or through one of these, so a reference scan that reads only the
+# suites misses every indirect consumer.
+tests_helper_scripts() {
+  local f
+  for f in tests/*.sh; do
+    case "$f" in
+      *.test.sh) continue ;;
+    esac
+    [ -f "$f" ] || continue
+    printf '%s\n' "$f"
+  done | LC_ALL=C sort
+}
+
+# Grow a reference needle into every name a suite could spell to reach it: the
+# needle itself, plus each shared helper that SOURCES one of the names already
+# in the set, to a fixed point. tests/fm-watch-arm.test.sh sources
+# tests/wake-helpers.sh and never spells "lib.sh", so a lib.sh edit reaches it
+# only through this expansion.
+#
+# The edge is a source line rather than any mention, because a mention carries
+# no direction: tests/lib.sh names wake-helpers.sh in a comment about its own
+# consumers, and treating that as an edge would walk backwards from any helper
+# to the library and select the complete suite for every helper edit.
+expand_test_reference_needles() {
+  local needles=$1 h base n n_re added=1
+  while [ "$added" -eq 1 ]; do
+    added=0
+    while IFS= read -r h; do
+      [ -n "$h" ] || continue
+      base=$(basename "$h")
+      case " $needles " in
+        *" $base "*) continue ;;
+      esac
+      for n in $needles; do
+        n_re=${n//./\\.}
+        if grep -Eq "^[[:space:]]*(\.|source)[[:space:]].*${n_re}" "$h"; then
+          needles="$needles $base"
+          added=1
+          break
+        fi
+      done
+    done < <(tests_helper_scripts)
+  done
+  printf '%s\n' "$needles"
+}
+
 families_for_test_reference() {
-  local needle=$1 s
+  local needle=$1 s n needles
   local found=0
+  needles=$(expand_test_reference_needles "$needle")
   while IFS= read -r s; do
     [ -n "$s" ] || continue
-    if grep -Fq "$needle" "$s"; then
-      family_for_basename "$(basename "$s")"
-      found=1
-    fi
+    for n in $needles; do
+      if grep -Fq "$n" "$s"; then
+        family_for_basename "$(basename "$s")"
+        found=1
+        break
+      fi
+    done
   done < <(all_repo_tests)
   [ "$found" -eq 1 ]
 }
