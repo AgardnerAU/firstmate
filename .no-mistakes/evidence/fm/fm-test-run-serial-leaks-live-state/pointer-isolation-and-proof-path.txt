@@ -1,0 +1,46 @@
+# Isolation-proof runner path (bin/fm-test-isolation-proof.sh)
+Invoked with a live-home environment exported; --list exercises the same
+process-level isolation call that precedes every proof worker.
+
+exit=0
+tests/fm-arm-pretool-check.test.sh
+tests/fm-backend-herdr.test.sh
+tests/fm-brief.test.sh
+
+# What a test script actually sees for every owned pointer
+Every pointer in FM_TEST_ENV_FLEET_POINTERS is exported at /live-sentinel first.
+
+--- inherited by the runner process (a live worker environment) ---
+FM_HOME                          /live-sentinel
+FM_ROOT                          /live-sentinel
+FM_ROOT_OVERRIDE                 /live-sentinel
+FM_STATE_OVERRIDE                /live-sentinel
+FM_DATA_OVERRIDE                 /live-sentinel
+FM_PROJECTS_OVERRIDE             /live-sentinel
+FM_CONFIG_OVERRIDE               /live-sentinel
+FM_PENDING_REPLY_DIR_OVERRIDE    /live-sentinel
+FM_PUBLIC_FOLLOWUP_PRIMARY_HOME  /live-sentinel
+FM_WAKE_QUEUE                    /live-sentinel
+FM_WAKE_QUEUE_LOCK               /live-sentinel
+FM_BACKEND                       /live-sentinel
+FM_SESSION_START_STAGE_FILE      /live-sentinel
+FM_SUPERVISION_MODEL             /live-sentinel
+FM_TRACE_CONTEXT                 /live-sentinel
+
+--- what a child test script sees after the runner isolates ---
+FM_HOME                          <cleared>
+FM_ROOT                          <cleared>
+FM_ROOT_OVERRIDE                 <cleared>
+FM_STATE_OVERRIDE                <cleared>
+FM_DATA_OVERRIDE                 <cleared>
+FM_PROJECTS_OVERRIDE             <cleared>
+FM_CONFIG_OVERRIDE               <cleared>
+FM_PENDING_REPLY_DIR_OVERRIDE    <cleared>
+FM_PUBLIC_FOLLOWUP_PRIMARY_HOME  <cleared>
+FM_WAKE_QUEUE                    <cleared>
+FM_WAKE_QUEUE_LOCK               <cleared>
+FM_BACKEND                       <cleared>
+FM_SESSION_START_STAGE_FILE      <cleared>
+FM_SUPERVISION_MODEL             <cleared>
+FM_TRACE_CONTEXT                 <cleared>
+helper exit=0

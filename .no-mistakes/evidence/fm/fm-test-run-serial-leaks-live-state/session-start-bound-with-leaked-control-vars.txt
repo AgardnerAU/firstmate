@@ -1,0 +1,25 @@
+# The second leak: FM_SESSION_START_STAGE_FILE and the runtime bound
+#
+# Recorded output of the real session-bootstrap suite run through the fixed
+# runner WITH a live worker's control variables exported ambiently:
+#
+#   FM_SESSION_START_STAGE_FILE=/tmp/fmrepro/leaked-stage FM_HOME=/tmp/fmrepro/live-home \
+#     bash bin/fm-test-run.sh tests/fm-session-start.test.sh
+#
+# bin/fm-session-start.sh reads the presence of that stage file as "I am already
+# the bounded child" and skips its own runtime bound; the fixture installs a git
+# that ignores SIGTERM and sleeps 600s, so an inherited value makes the suite sit
+# on the fixture. It completed normally instead:
+
+ok - instruction baselines require SHA-256 and successful startup completion
+ok - --reemit re-verifies lock ownership and keeps repair ownership with whoever holds it
+# fm-session-start.test.sh: all assertions passed
+FM_TEST_END 2026-08-27T05:12:09Z tests/fm-session-start.test.sh exit=0 duration_ms=256529 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=256593
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=1 duration_ms=256529 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-session-start.test.sh duration_ms=256529
+real 4m16.65s
+
+# The probe transcript in live-home-leak-before-after.txt shows the same variable
+# reaching a test script verbatim under the base runner (PROBE_STAGE_FILE=<path>)
+# and cleared under the fixed runner (PROBE_STAGE_FILE=none).

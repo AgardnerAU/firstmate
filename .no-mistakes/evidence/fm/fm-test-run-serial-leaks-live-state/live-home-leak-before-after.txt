@@ -1,0 +1,31 @@
+# Live fleet home leak: default (serial) run path, before vs after
+
+A worker's environment is simulated exactly as bin/fm-spawn.sh builds it:
+FM_HOME / FM_STATE_OVERRIDE / FM_DATA_OVERRIDE / FM_ROOT / FM_SESSION_START_STAGE_FILE
+all point at a sentinel 'live home' holding one durable record (state/.wake-queue).
+A probe test resolves its home through the real bin/fm-wake-lib.sh and appends to the wake queue.
+
+=== BEFORE the fix (base d63b0e2 runner, default serial path) ===
+--- worker environment handed to the default (serial) run ---
+FM_HOME=/tmp/fmrepro/run.G4ONDn/live-home  FM_STATE_OVERRIDE=/tmp/fmrepro/run.G4ONDn/live-home/state  FM_SESSION_START_STAGE_FILE=/tmp/fmrepro/run.G4ONDn/live-home/stage
+PROBE_HOME=/tmp/fmrepro/run.G4ONDn/live-home
+PROBE_STATE=/tmp/fmrepro/run.G4ONDn/live-home/state
+PROBE_STAGE_FILE=/tmp/fmrepro/run.G4ONDn/live-home/stage
+ok - probe
+--- live home after the run ---
+live home MUTATED, new entries:
+<live-home>/state/.wake-queue.seq
+<live-home>/state/.watcher-down
+wake queue contents: sentinel 1787807539	1	check	live-home-probe	probe 
+
+=== AFTER the fix (branch head runner, default serial path) ===
+--- worker environment handed to the default (serial) run ---
+FM_HOME=/tmp/fmrepro/run.pMpfbu/live-home  FM_STATE_OVERRIDE=/tmp/fmrepro/run.pMpfbu/live-home/state  FM_SESSION_START_STAGE_FILE=/tmp/fmrepro/run.pMpfbu/live-home/stage
+PROBE_HOME=/private/tmp/fmrepro/run.pMpfbu/repo
+PROBE_STATE=/private/tmp/fmrepro/run.pMpfbu/repo/state
+PROBE_STAGE_FILE=none
+ok - probe
+--- live home after the run ---
+live home UNCHANGED (no new entries)
+wake queue contents: sentinel 
+
