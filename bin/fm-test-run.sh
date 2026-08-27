@@ -895,15 +895,49 @@ select_family() {
   [ "$found" -eq 1 ] || die "no tests mapped to family '$want'"
 }
 
+# Every name a suite could spell to reach $1: the needle itself, plus each
+# shared tests/ helper that SOURCES a name already in the set, to a fixed
+# point. tests/fm-watch-arm.test.sh sources tests/wake-helpers.sh and never
+# spells "lib.sh", so a lib.sh edit reaches it only through this expansion.
+#
+# The edge is a source line, not any mention: a mention carries no direction,
+# and tests/lib.sh names its own consumers in comments, so treating those as
+# edges would walk backwards from any helper to the library.
+expand_test_reference_needles() {
+  local needles=$1 h base n n_re added=1
+  while [ "$added" -eq 1 ]; do
+    added=0
+    for h in tests/*.sh; do
+      case "$h" in *.test.sh) continue ;; esac
+      [ -f "$h" ] || continue
+      base=$(basename "$h")
+      case " $needles " in *" $base "*) continue ;; esac
+      for n in $needles; do
+        n_re=${n//./\\.}
+        if grep -Eq "^[[:space:]]*(\.|source)[[:space:]].*${n_re}" "$h"; then
+          needles="$needles $base"
+          added=1
+          break
+        fi
+      done
+    done
+  done
+  printf '%s\n' "$needles"
+}
+
 families_for_test_reference() {
-  local needle=$1 s
+  local needle=$1 s n needles
   local found=0
+  needles=$(expand_test_reference_needles "$needle")
   while IFS= read -r s; do
     [ -n "$s" ] || continue
-    if grep -Fq "$needle" "$s"; then
-      family_for_basename "$(basename "$s")"
-      found=1
-    fi
+    for n in $needles; do
+      if grep -Fq "$n" "$s"; then
+        family_for_basename "$(basename "$s")"
+        found=1
+        break
+      fi
+    done
   done < <(all_repo_tests)
   [ "$found" -eq 1 ]
 }
@@ -930,9 +964,9 @@ families_for_changed_path() {
       # environment of every suite that sources the shared library, not just
       # the runner's own contract tests. Select through the same reference scan
       # tests/lib.sh gets, so a pointer edit here selects the suites it can
-      # break rather than only pure-contract-unit. Selection expands each
-      # emitted family to all of its suites, so reasoning about which suites a
-      # needle matches, rather than which families, gives the wrong answer.
+      # break rather than only pure-contract-unit. That scan follows shared
+      # tests/ helpers, so suites that reach the library only through one are
+      # selected too rather than left to a sibling's family pulling them in.
       printf '%s\n' pure-contract-unit
       families_for_test_reference lib.sh \
         || printf '%s\n' "__unmapped__:$path"
