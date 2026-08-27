@@ -1,0 +1,63 @@
+Direct-invocation isolation: base d63b0e2 vs head efcbb99
+Simulated firstmate worker environment (a live home's pointers exported, as bin/fm-spawn.sh leaves them):
+  FM_HOME=<live> FM_ROOT=<live> FM_STATE_OVERRIDE=<live>/state FM_DATA_OVERRIDE=<live>/data FM_PROJECTS_OVERRIDE=<live>/projects FM_CONFIG_OVERRIDE=<live>/config
+
+$ bash tests/fm-pending-reply.test.sh        # BASE (UTF-8 locale) -> exit 1
+ok - wrong-home reports are detected but do not silently acknowledge
+not ok - unmarked crewmate send should succeed: expected exit 0, got 1
+
+$ LC_ALL=C bash tests/fm-pending-reply.test.sh   # BASE -> exit 1, same case, locale independent
+not ok - unmarked crewmate send should succeed: expected exit 0, got 1
+
+$ bash tests/fm-pending-reply.test.sh        # HEAD -> exit 0
+ok - a remote repost waits for the reply channel and still fires on a real miss
+ok - a mirrored correlated remote reply resolves without any repost
+ok - all pending-reply tests passed
+
+$ LC_ALL=C bash tests/fm-pending-reply.test.sh   # HEAD -> exit 0
+ok - all pending-reply tests passed
+
+Live-home writes by a directly invoked suite (fresh sentinel home each run,
+tests/fm-session-start.test.sh, 45s cap, with a leaked FM_SESSION_START_STAGE_FILE):
+  BASE created 10 entries in the simulated live fleet home, including a lock and
+  durable records:
+    <live-home>/config/startup-memory-budget
+    <live-home>/stage
+    <live-home>/state/.inactive-outcome-reconcile
+    <live-home>/state/.lock
+    <live-home>/state/.main-eligible-rows.tmp.pKOggT
+    <live-home>/state/.pr-check-migration-scan-v1
+    <live-home>/state/.pr-check-migration-v1
+    <live-home>/state/.session-start-complete
+    <live-home>/state/.trace-context-effective
+    <live-home>/state/terminal-outcomes
+  HEAD created none, and the sentinel record state/.wake-queue is unchanged.
+
+Sibling fm-send suites, same environment (exit codes):
+  tests/fm-send-inbox.test.sh      base=1  head=0
+  tests/fm-send-resolve-key.test.sh base=1  head=0
+  tests/fm-send-secondmate-marker.test.sh base=1  head=0
+  tests/fm-send-strict.test.sh     base=1  head=0
+
+tests/fm-session-start.test.sh with a leaked FM_SESSION_START_STAGE_FILE:
+  BASE: fails within 6s - not ok - digest did not print projects.md content (missing: '- demo [no-mistakes] - a demo project (added 2026-07-01)')
+  HEAD: # fm-session-start.test.sh: all assertions passed (3m41s, well inside the previous 420s kill)
+
+Disconfirming experiment (test is not weakened): with the kind=secondmate
+condition removed from bin/fm-send.sh:500 in a scratch copy of HEAD, the case
+goes red again ->
+not ok - crewmate steer should be recorded unmarked
+
+New runner regression cases (tests/fm-test-run.test.sh, HEAD):
+ok - no run path hands a test script the live fleet home
+ok - sourcing tests/lib.sh isolates a directly invoked suite
+ok - the shared isolation helper clears every fleet pointer it owns
+
+--changed routing acceptance check (scratch clone of HEAD, one line appended to
+bin/fm-test-env-lib.sh and committed):
+  $ bin/fm-test-run.sh --list --changed --base HEAD~1
+  165 of the 166 suites selected - every shell suite; the only unselected file is
+  tests/fm-backend-herdr-eventwait.test.py - and the two indirect watcher suites
+  are included:
+    tests/fm-watch-arm.test.sh
+    tests/fm-watch-recovery-loop.test.sh
