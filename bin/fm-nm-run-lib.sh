@@ -126,8 +126,12 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
 # The bounded inventory window used by the one branch-run verdict.
 # `no-mistakes runs` has no pagination or end-of-list marker, so a full window
 # can never prove a negative.
+# FM_CREW_STATE_RUNS_LIMIT is the superseded name this window was configured by
+# while the listing was read only for current-state reporting; it is still
+# honoured so an operator's existing setting keeps widening the window that is
+# now load-bearing for stand-down as well.
 fm_nm_runs_limit() {
-  local n=${FM_NM_RUNS_LIMIT:-200}
+  local n=${FM_NM_RUNS_LIMIT:-${FM_CREW_STATE_RUNS_LIMIT:-200}}
   case "$n" in ''|*[!0-9]*|0) n=200 ;; esac
   printf '%s' "$n"
 }
@@ -138,7 +142,16 @@ fm_nm_runs_limit() {
 # It writes `active`, `quiet`, or `unknown` to FM_NM_BRANCH_RUN_VERDICT, with
 # one diagnostic reason in FM_NM_BRANCH_RUN_REASON when the answer is unknown.
 # The optional display and TOON fields are reporting projections, never a
-# second safety decision.
+# second safety decision: they are carried on an `unknown` verdict too, so an
+# unproven safety answer does not also blank run reporting the function already
+# holds - but only while nothing live went unplaced, because a run that may be
+# in flight must never be rendered from an older terminal row.
+# The inventory call is issued on every path except a placeable live `axi
+# status` answer, including one where `axi status` itself did not respond.
+# That is a deliberate reversal of the earlier single-call reporting shortcut,
+# and costs a hung CLI two bounded waits per read instead of one: only a
+# complete inventory can prove a branch quiet, so a reporting-only shortcut
+# would leave the safety caller without its proof source.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-} status_out status_rc run_branch run_head
   local inventory inventory_rc row st rest br sha rows=0 render_locked=0
@@ -159,7 +172,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     return 0
   }
   command -v no-mistakes >/dev/null 2>&1 || {
-    FM_NM_BRANCH_RUN_VERDICT=quiet
+    FM_NM_BRANCH_RUN_REASON="'no-mistakes' is not on PATH here, so no run inventory could run to prove branch $branch quiet"
     return 0
   }
   if status_out=$(fm_nm_run_checked "$wt" "$timeout" axi status); then status_rc=0; else status_rc=$?; fi
@@ -184,6 +197,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
   if [ "$inventory_rc" != 0 ]; then
     FM_NM_BRANCH_RUN_REASON=${direct_live_unknown:-"'no-mistakes runs --limit' could not answer whether branch $branch has an active run"}
+    [ -n "$direct_live_unknown" ] || FM_NM_BRANCH_RUN_TOON=$terminal_toon
     return 0
   fi
   while IFS= read -r row; do
@@ -227,6 +241,10 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     FM_NM_BRANCH_RUN_DISPLAY=${inventory_live%% *}
     return 0
   fi
+  if [ -z "$direct_live_unknown" ] && [ -z "$inventory_live_unknown" ]; then
+    FM_NM_BRANCH_RUN_DISPLAY=$display
+    FM_NM_BRANCH_RUN_TOON=$terminal_toon
+  fi
   if [ -n "$inventory_unreadable" ]; then
     FM_NM_BRANCH_RUN_REASON="the 'no-mistakes runs' inventory has an unreadable row, so it cannot prove branch $branch quiet"
     return 0
@@ -244,6 +262,4 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     return 0
   fi
   FM_NM_BRANCH_RUN_VERDICT=quiet
-  FM_NM_BRANCH_RUN_DISPLAY=$display
-  FM_NM_BRANCH_RUN_TOON=$terminal_toon
 }

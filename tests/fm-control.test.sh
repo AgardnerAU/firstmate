@@ -617,6 +617,35 @@ test_stand_down_refuses_when_no_run_check_can_answer() {
   pass "fm-control stand-down: an unanswerable run check refuses and names itself"
 }
 
+# An absent run CLI is the most unreadable inventory there is. The proof a
+# stand-down needs comes only from a complete listing, so a `no-mistakes` that
+# is not on PATH - a reduced-PATH supervisor, a sanitised environment - must
+# refuse and name itself rather than silently license the hold.
+test_stand_down_refuses_when_the_run_cli_is_absent() {
+  local dir out rc
+  dir=$(new_case stand-down-absent-cli)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  rm -f "$dir/fakebin/no-mistakes"
+  out=$(env PATH="$dir/fakebin:/usr/bin:/bin" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
+    FM_CONTROL_POLL=0.01 FM_CONTROL_SETTLE_WAIT=0.05 FM_CONTROL_EXIT_WAIT=0.05 \
+    "$CONTROL" t1 stand-down 2>&1); rc=$?
+  expect_code 1 "$rc" "an absent run CLI must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "not on PATH" \
+    "the refusal should name the missing check rather than a run it never asked about"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unasked run check must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unasked run check must not stop the worker"
+  [ "$(cat "$dir/fake/command")" = claude ] || fail "the worker must still be alive"
+  # Counterfactual: the same task stands down once the listing can be read.
+  add_axi_stub "$dir"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "the same task should stand down once the CLI answers"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a readable inventory proving no live run permits the hold"
+  pass "fm-control stand-down: an absent run CLI refuses and names itself"
+}
+
 # A successful command is not an answering inventory when one of its rows
 # cannot name the branch and head that the verdict must inspect.
 test_stand_down_refuses_an_unreadable_run_inventory() {
@@ -1428,6 +1457,7 @@ test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
+test_stand_down_refuses_when_the_run_cli_is_absent
 test_stand_down_refuses_an_unreadable_run_inventory
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here

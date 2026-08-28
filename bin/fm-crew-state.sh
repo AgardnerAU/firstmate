@@ -420,7 +420,11 @@ if [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ]; then
         COARSE_STATUS=$FM_NM_BRANCH_RUN_DISPLAY
       fi
       ;;
-    quiet)
+    quiet|unknown)
+      # An `unknown` verdict refuses a stand-down, but reporting still renders
+      # whatever run the verdict placed against this worktree: the verdict
+      # carries a projection only while nothing live went unplaced, so a run
+      # that may be in flight still falls through to the pane and status log.
       if [ -n "$FM_NM_BRANCH_RUN_TOON" ]; then
         HAVE_RUN=1
         RUN_OUT=$FM_NM_BRANCH_RUN_TOON
@@ -430,7 +434,6 @@ if [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ]; then
         COARSE_STATUS=$FM_NM_BRANCH_RUN_DISPLAY
       fi
       ;;
-    unknown) ;;
     *) emit unknown run-step "invalid branch-run verdict: $FM_NM_BRANCH_RUN_VERDICT" ;;
   esac
 fi
