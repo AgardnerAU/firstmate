@@ -632,14 +632,14 @@ task_is_declared_held() {
 # to the same standard: an absent or unreadable worktree, an unreadable
 # repository, a CLI that did not answer, and a live run the head rule could not
 # place all refuse.
-# fm_nm_active_run_for_worktree carries the query half of the same rule and
-# names the check that could not answer.
+# fm_nm_branch_run_verdict carries the query half of the same rule and names
+# the one condition that could not prove the branch quiet.
 #
 # Every kind stand-down accepts is checked the same way, ship and scout alike:
 # a scout checked out on a branch can own a run exactly like a ship can, and an
 # unchecked hold there would take that run out of supervision.
 refuse_stand_down_during_active_run() {
-  local branch rc
+  local branch
   [ -n "$WT" ] \
     || die "task $ID records no worktree, so whether it owns an active no-mistakes run cannot be checked; refusing to declare a hold that would take a possibly-live run out of supervision"
   [ -d "$WT" ] \
@@ -652,19 +652,16 @@ refuse_stand_down_during_active_run() {
   # equally a ship between spawn and its worker's first `git checkout -b`,
   # which is exactly when an early hold is most likely to be needed.
   [ -n "$branch" ] || return 0
-  if fm_nm_active_run_for_worktree "$WT" "$branch" "$NM_CONTROL_TIMEOUT"; then
-    rc=0
-  else
-    rc=$?
-  fi
-  case "$rc" in
-    0)
-      die "task $ID owns an active no-mistakes run (${FM_NM_ACTIVE_RUN_ID:-unknown}) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run ${FM_NM_ACTIVE_RUN_ID:-<id>}', before standing the worker down"
+  fm_nm_branch_run_verdict "$WT" "$branch" "$NM_CONTROL_TIMEOUT"
+  case "$FM_NM_BRANCH_RUN_VERDICT" in
+    active)
+      die "task $ID owns an active no-mistakes run (${FM_NM_BRANCH_RUN_ID:-unknown}) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run ${FM_NM_BRANCH_RUN_ID:-<id>}', before standing the worker down"
       ;;
-    1) return 0 ;;
-    *)
-      die "task $ID cannot be stood down because ${FM_NM_RUN_UNKNOWN_REASON:-a no-mistakes run check could not answer}; refusing to hide a possibly-live run from supervision. Re-run that check yourself, or finish or abort the run, and try again"
+    quiet) return 0 ;;
+    unknown)
+      die "task $ID cannot be stood down because ${FM_NM_BRANCH_RUN_REASON:-the branch-run verdict could not prove it quiet}; refusing to hide a possibly-live run from supervision. Re-run that check yourself, or finish or abort the run, and try again"
       ;;
+    *) die "task $ID's branch-run verdict was invalid; refusing to hide a possibly-live run from supervision" ;;
   esac
 }
 

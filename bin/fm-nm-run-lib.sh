@@ -123,217 +123,127 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
   fm_nm_run_is_active "$1"
 }
 
-# Record why a run question could not be answered, for the caller's refusal
-# message. FM_NM_RUN_UNKNOWN_REASON is this file's second return value on rc 2.
-fm_nm_run_unknown() {  # <reason>
-  # shellcheck disable=SC2034 # read by callers through the documented contract.
-  FM_NM_RUN_UNKNOWN_REASON=$1
-}
-
-# The bounded window every runs-listing scan reads. `no-mistakes runs` takes
-# only --limit: no pagination, no "that was all" marker, so a full window is
-# indistinguishable from a truncated one and can never prove a negative. The
-# default is the historical 200; an operator whose fleet fills that window can
-# widen it here for BOTH readers, which is why the safety caller no longer
-# takes a private hardcoded cap.
+# The bounded inventory window used by the one branch-run verdict.
+# `no-mistakes runs` has no pagination or end-of-list marker, so a full window
+# can never prove a negative.
 fm_nm_runs_limit() {
   local n=${FM_NM_RUNS_LIMIT:-200}
   case "$n" in ''|*[!0-9]*|0) n=200 ;; esac
   printf '%s' "$n"
 }
 
-# Coarse run attribution from the top-level `no-mistakes runs` listing, the
-# one fallback for the routine case where bare `axi status` answers with
-# ANOTHER branch's run (several crews validating the same underlying repo share
-# one no-mistakes registration) or does not answer at all. The listing is plain
-# text, newest-first, "<status> <branch> <short-sha> <date> [<pr-url>]"
-# separated by runs of spaces (no quoting), so branch plus the same head
-# identity rule used above is an exact read of "is there a run for THIS branch".
-#
-# The scan reads the WHOLE listing for this branch, because the status column is
-# each run's CURRENT status: an older row that still says `running` is a live
-# run, not history, however many finished rows sit above it. Stopping at the
-# first row would answer "nothing is in flight" while that run holds the branch.
-#
-# It answers on several separate channels, because reporting and safety need
-# different things from the same rows:
-#   FM_NM_RUNS_STATUS            the status word to RENDER: the first row whose
-#                                head places against this worktree, and nothing
-#                                once an unresolvable head has been seen, so a
-#                                superseded older row is never rendered as the
-#                                current state.
-#   FM_NM_RUNS_ACTIVE_ATTRIBUTED "<status> <sha>" of a non-terminal row that
-#                                places here: a live run this task owns.
-#   FM_NM_RUNS_TRUNCATED         1 when the listing came back exactly full, so
-#                                the window may have cut off older rows. The
-#                                interface offers no pagination and no
-#                                end-of-list marker, so a full window is not an
-#                                exhausted one: it can still answer that a run
-#                                IS live, but it can never prove that none is.
-#                                FM_NM_RUNS_LIMIT_USED carries the window size
-#                                the answer was read through.
-#   FM_NM_RUNS_UNATTRIBUTED_ACTIVE  "<status> <sha>" of a non-terminal row that
-#                                does NOT place here (mismatched or
-#                                unresolvable head): a live run on this branch
-#                                that cannot be tied to this worktree's code
-#                                identity. The head rule exists to reject a
-#                                HISTORICAL run on a reused branch, and a
-#                                non-terminal row is not history, so this is
-#                                doubt - never proof of safety.
-# The return code carries only the reporting answer: 0 when FM_NM_RUNS_STATUS
-# was set, 2 when the CLI itself could not answer, 1 otherwise. A caller whose
-# safety depends on the result reads the two liveness channels, not the word.
-fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
-  local wt=$1 branch=$2 timeout=$3 limit=${4:-} out rc row st rest br sha
-  local render_locked=0 rows=0
+# shellcheck disable=SC2034 # FM_NM_BRANCH_RUN_* is this function's documented output tuple.
+# `fm_nm_branch_run_verdict` is the one authoritative answer to whether a
+# branch owns a live no-mistakes run.
+# It writes `active`, `quiet`, or `unknown` to FM_NM_BRANCH_RUN_VERDICT, with
+# one diagnostic reason in FM_NM_BRANCH_RUN_REASON when the answer is unknown.
+# The optional display and TOON fields are reporting projections, never a
+# second safety decision.
+fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
+  local wt=$1 branch=$2 timeout=$3 limit=${4:-} status_out status_rc run_branch run_head
+  local inventory inventory_rc row st rest br sha rows=0 render_locked=0
+  local direct_live_unknown='' inventory_live_unknown='' inventory_live='' inventory_unreadable=''
+  local display='' terminal_toon=''
+  FM_NM_BRANCH_RUN_VERDICT=unknown
+  FM_NM_BRANCH_RUN_REASON=
+  FM_NM_BRANCH_RUN_ID=
+  FM_NM_BRANCH_RUN_DISPLAY=
+  FM_NM_BRANCH_RUN_TOON=
   case "$limit" in ''|*[!0-9]*|0) limit=$(fm_nm_runs_limit) ;; esac
-  FM_NM_RUNS_STATUS=
-  FM_NM_RUNS_ACTIVE_ATTRIBUTED=
-  FM_NM_RUNS_UNATTRIBUTED_ACTIVE=
-  FM_NM_RUNS_TRUNCATED=
-  FM_NM_RUNS_LIMIT_USED=$limit
-  [ -n "$branch" ] || return 1
-  if out=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then rc=0; else rc=$?; fi
-  [ "$rc" = 0 ] || return 2
+  [ -d "$wt" ] || {
+    FM_NM_BRANCH_RUN_REASON="worktree '$wt' is not readable, so no run inventory could run"
+    return 0
+  }
+  [ -n "$branch" ] || {
+    FM_NM_BRANCH_RUN_VERDICT=quiet
+    return 0
+  }
+  command -v no-mistakes >/dev/null 2>&1 || {
+    FM_NM_BRANCH_RUN_VERDICT=quiet
+    return 0
+  }
+  if status_out=$(fm_nm_run_checked "$wt" "$timeout" axi status); then status_rc=0; else status_rc=$?; fi
+  if [ "$status_rc" = 0 ] && [ -n "$status_out" ]; then
+    run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" branch)")
+    if [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ]; then
+      run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" head)")
+      if fm_nm_run_is_active "$status_out"; then
+        if fm_nm_head_matches_worktree "$wt" "$run_head" \
+          || fm_nm_run_is_pipeline_owned_active "$status_out"; then
+          FM_NM_BRANCH_RUN_VERDICT=active
+          FM_NM_BRANCH_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" id)")
+          FM_NM_BRANCH_RUN_TOON=$status_out
+          return 0
+        fi
+        direct_live_unknown="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
+      elif fm_nm_head_matches_worktree "$wt" "$run_head"; then
+        terminal_toon=$status_out
+      fi
+    fi
+  fi
+  if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
+  if [ "$inventory_rc" != 0 ]; then
+    FM_NM_BRANCH_RUN_REASON=${direct_live_unknown:-"'no-mistakes runs --limit' could not answer whether branch $branch has an active run"}
+    return 0
+  fi
   while IFS= read -r row; do
     row=$(fm_nm_trim "$row")
     [ -n "$row" ] || continue
     rows=$((rows + 1))
     st=${row%% *}
+    case "$row" in
+      *" "*) ;;
+      *) inventory_unreadable=$row; continue ;;
+    esac
     rest=$(fm_nm_trim "${row#* }")
+    if [ -z "$rest" ]; then
+      inventory_unreadable=$row
+      continue
+    fi
     br=${rest%% *}
     rest=$(fm_nm_trim "${rest#* }")
     sha=${rest%% *}
+    if [ -z "$br" ] || [ -z "$sha" ]; then
+      inventory_unreadable=$row
+      continue
+    fi
     [ "$br" = "$branch" ] || continue
     if fm_nm_head_matches_worktree "$wt" "$sha"; then
-      if [ "$render_locked" = 0 ] && [ -z "$FM_NM_RUNS_STATUS" ]; then
-        FM_NM_RUNS_STATUS=$st
-      fi
+      if [ "$render_locked" = 0 ] && [ -z "$display" ]; then display=$st; fi
       case "$st" in
         completed|failed|cancelled) ;;
-        *)
-          [ -n "$FM_NM_RUNS_ACTIVE_ATTRIBUTED" ] \
-            || FM_NM_RUNS_ACTIVE_ATTRIBUTED="$st $sha"
-          ;;
+        *) [ -n "$inventory_live" ] || inventory_live="$st $sha" ;;
       esac
       continue
     fi
     case "$st" in
       completed|failed|cancelled) ;;
-      *)
-        [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] \
-          || FM_NM_RUNS_UNATTRIBUTED_ACTIVE="$st $sha"
-        ;;
+      *) [ -n "$inventory_live_unknown" ] || inventory_live_unknown="$st $sha" ;;
     esac
     fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
-  done <<< "$out"
-  [ "$rows" -lt "$limit" ] || FM_NM_RUNS_TRUNCATED=1
-  [ -z "$FM_NM_RUNS_STATUS" ] || return 0
-  return 1
-}
-
-# The printing form, for a reader that only wants the status word and treats
-# every unanswered question as silence. The scan above is the form a caller
-# whose safety depends on the answer must use: a command substitution runs in a
-# subshell, so its FM_NM_RUNS_* answers cannot reach the caller through this one.
-fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
-  local rc=0
-  fm_nm_runs_scan_for_branch "$@" || rc=$?
-  printf '%s' "$FM_NM_RUNS_STATUS"
-  return "$rc"
-}
-
-# Whether worktree $1, on branch $2, currently owns an IN-FLIGHT no-mistakes
-# run, under the same attribution both readers use (exact branch match plus head
-# identity, with the pipeline-owned exemption) and, when bare `axi status`
-# cannot settle it, the coarse runs-list fallback above. ONE attribution for
-# every caller: a stand-down that consulted fewer sources than current-state
-# reporting would remove a gated run from supervision that fm-crew-state can
-# still see.
-#
-# Three-valued, because "no run is active" and "nobody could tell me" are
-# different answers and only the first is safe to act on:
-#   0 - an active run is attributed to this task; FM_NM_ACTIVE_RUN_ID names it
-#       when the answering source carried an id (the coarse listing has none).
-#   1 - proved: no active run is attributed to this task.
-#   2 - could not answer; FM_NM_RUN_UNKNOWN_REASON names the check that failed.
-# A caller for whom a live run is a refusal condition must refuse on 2 as well
-# as 0. An absent CLI is a proven 1, not an unanswered question: with no
-# no-mistakes installed there is no run to own the branch. Answer 1 needs BOTH
-# sources to agree: one live run from either is enough to answer 0, but only a
-# successful whole-branch listing that found nothing live AND came back short of
-# its window - a full window may have cut the live row off - can prove the
-# negative.
-#
-# THE GOVERNING RULE AT EVERY DECISION BELOW: IF IT CANNOT BE PROVEN SAFE, IT
-# IS REFUSED, AND THE REFUSAL NAMES WHAT COULD NOT BE PROVEN. So a non-terminal
-# run row for this branch that the head rule could not place is answer 2 with
-# the attribution named, never answer 1 - an unplaceable live run is exactly
-# the doubt this contract exists to carry, and only rc 1 licenses acting.
-fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
-  local wt=$1 branch=$2 timeout=$3 out rc run_branch run_head coarse_rc
-  local unattributed=
-  # shellcheck disable=SC2034 # the attributed run id is this function's second
-  # return value, read by the caller that refuses on it.
-  FM_NM_ACTIVE_RUN_ID=
-  fm_nm_run_unknown ""
-  [ -d "$wt" ] || {
-    fm_nm_run_unknown "worktree '$wt' is not readable, so no run check could run"
-    return 2
-  }
-  # No branch (detached HEAD) means there is no branch a run could own here.
-  [ -n "$branch" ] || return 1
-  command -v no-mistakes >/dev/null 2>&1 || return 1
-  if out=$(fm_nm_run_checked "$wt" "$timeout" axi status); then rc=0; else rc=$?; fi
-  if [ "$rc" = 0 ] && [ -n "$out" ]; then
-    run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$out" branch)")
-    if [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ]; then
-      run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
-      if fm_nm_head_matches_worktree "$wt" "$run_head" \
-        || fm_nm_run_is_pipeline_owned_active "$out"; then
-        if fm_nm_run_is_active "$out"; then
-          # shellcheck disable=SC2034 # read by callers through the documented contract.
-          FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
-          return 0
-        fi
-      elif fm_nm_run_is_active "$out"; then
-        unattributed="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
-      fi
-    fi
-  fi
-  # Only a LIVE run is settled by bare `axi status`, and every other outcome
-  # falls through to here: it answered about another branch, its same-branch
-  # attribution failed, it named a finished run, or it did not answer at all.
-  # A finished answer is not proof either, for the same reason a finished
-  # listing row is not - `axi status` reports the most recent run, and an
-  # earlier run on this branch can still be in flight behind it - so no hold is
-  # licensed until the whole-branch listing has answered too. Its silence is
-  # not an answer.
-  if fm_nm_runs_scan_for_branch "$wt" "$branch" "$timeout" "$(fm_nm_runs_limit)"; then
-    coarse_rc=0
-  else
-    coarse_rc=$?
-  fi
-  if [ -n "$FM_NM_RUNS_ACTIVE_ATTRIBUTED" ]; then
+  done <<< "$inventory"
+  if [ -n "$inventory_live" ]; then
+    FM_NM_BRANCH_RUN_VERDICT=active
+    FM_NM_BRANCH_RUN_DISPLAY=${inventory_live%% *}
     return 0
   fi
-  if [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] && [ -z "$unattributed" ]; then
-    unattributed="the 'no-mistakes runs' listing shows a non-terminal run for branch $branch (${FM_NM_RUNS_UNATTRIBUTED_ACTIVE}) that cannot be placed against this worktree's HEAD"
+  if [ -n "$inventory_unreadable" ]; then
+    FM_NM_BRANCH_RUN_REASON="the 'no-mistakes runs' inventory has an unreadable row, so it cannot prove branch $branch quiet"
+    return 0
   fi
-  # A named live run outranks the generic "the CLI said nothing" reason: the
-  # refusal has to name what could not be proven, not send the operator back to
-  # a listing that already answered.
-  if [ -n "$unattributed" ]; then
-    fm_nm_run_unknown "$unattributed"
-    return 2
+  if [ -n "$direct_live_unknown" ]; then
+    FM_NM_BRANCH_RUN_REASON=$direct_live_unknown
+    return 0
   fi
-  if [ "$coarse_rc" = 2 ]; then
-    fm_nm_run_unknown "'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
-    return 2
+  if [ -n "$inventory_live_unknown" ]; then
+    FM_NM_BRANCH_RUN_REASON="the 'no-mistakes runs' listing shows a non-terminal run for branch $branch ($inventory_live_unknown) that cannot be placed against this worktree's HEAD"
+    return 0
   fi
-  if [ "${FM_NM_RUNS_TRUNCATED:-}" = 1 ]; then
-    fm_nm_run_unknown "'no-mistakes runs --limit ${FM_NM_RUNS_LIMIT_USED}' came back exactly full, so it cannot prove branch $branch has no run still in flight - an older live run may sit past that window (widen it with FM_NM_RUNS_LIMIT)"
-    return 2
+  if [ "$rows" -ge "$limit" ]; then
+    FM_NM_BRANCH_RUN_REASON="'no-mistakes runs --limit $limit' came back exactly full, so it cannot prove branch $branch has no run still in flight - an older live run may sit past that window (widen it with FM_NM_RUNS_LIMIT)"
+    return 0
   fi
-  return 1
+  FM_NM_BRANCH_RUN_VERDICT=quiet
+  FM_NM_BRANCH_RUN_DISPLAY=$display
+  FM_NM_BRANCH_RUN_TOON=$terminal_toon
 }

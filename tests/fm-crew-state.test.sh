@@ -1263,7 +1263,7 @@ SH
   assert_contains "$out" "source: pane" "timed-out no-mistakes -> pane source"
   [ "$elapsed" -lt 5 ] || fail "perl timeout did not bound no-mistakes calls (elapsed ${elapsed}s)"
   calls=$(awk 'END { print NR + 0 }' "$calls_file" 2>/dev/null || echo 0)
-  [ "$calls" -eq 1 ] || fail "empty no-mistakes status triggered extra lookups ($calls calls)"
+  [ "$calls" -eq 2 ] || fail "branch-run verdict did not bound both status and inventory lookups ($calls calls)"
   pass "no timeout command uses perl bound"
 }
 
@@ -1593,6 +1593,31 @@ EOF
   pass "pipeline-owned active run binds without head equality and beats the failed row"
 }
 
+# A terminal `axi status` answer can be stale while the bounded inventory still
+# has this branch's live row.
+# The inventory is the only negative-proof source, so the one branch-run
+# verdict must inspect it before it reports the terminal result.
+test_live_inventory_beats_terminal_axi_status() {
+  reset_fakes
+  local d short; d=$(new_case f10-stale-terminal-status)
+  make_repo_on_branch "$d/wt" fm/feat-f10-stale
+  short=$(git -C "$d/wt" rev-parse --short=8 HEAD)
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-f10-stale.meta" "window=fm:fm-feat-f10-stale" "worktree=$d/wt" "kind=ship"
+  printf 'failed: stale worker report from the superseded run\n' > "$d/state/feat-f10-stale.status"
+  FM_FAKE_AXI_STATUS="$(run_failed fm/feat-f10-stale)"
+  FM_FAKE_RUNS_LIST="$(cat <<EOF
+  failed     fm/feat-f10-stale ${short}  2026-08-28 12:09
+  running    fm/feat-f10-stale ${short}  2026-08-28 11:53
+EOF
+)"
+  local out; out=$(run_crew_state "$d" feat-f10-stale)
+  assert_contains "$out" "state: working" "live inventory row must outrank stale terminal axi status"
+  assert_contains "$out" "source: run-step" "live inventory row must remain a run-step source"
+  assert_not_contains "$out" "state: failed" "stale terminal axi status must not report a healthy worker failed"
+  pass "a live inventory row beats a stale terminal axi status answer"
+}
+
 # T1 direction 2: a genuinely-failed run with NO later run on the branch still
 # surfaces as failed - hiding real failures is equally wrong.
 test_failed_run_with_no_later_run_still_surfaces() {
@@ -1757,6 +1782,7 @@ test_historical_same_branch_rewritten_head_not_current
 test_active_run_descendant_fix_head_remains_current
 test_local_advanced_past_run_head_invalidates
 test_pipeline_owned_active_run_beats_superseded_failed_row
+test_live_inventory_beats_terminal_axi_status
 test_failed_run_with_no_later_run_still_surfaces
 test_coarse_unresolvable_active_row_never_falls_to_older_row
 test_non_pipeline_owned_unresolvable_head_not_attributed

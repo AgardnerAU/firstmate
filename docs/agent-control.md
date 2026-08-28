@@ -58,7 +58,7 @@ Its short `standing-down` transition never suppresses monitoring, and the comple
 
 Three things a stand-down deliberately cannot do.
 It cannot run while the task owns an in-flight no-mistakes run: that run owns the branch and needs a worker at its gates, so finish it or abort it yourself (`no-mistakes axi abort --run <id>`) first - stand-down never cancels a run for you.
-That question is asked of every source current-state reporting uses - `no-mistakes axi status` and, when that answers about another branch or not at all, the `no-mistakes runs` listing - and a stand-down that cannot get an answer from any of them refuses and names the check that could not answer, rather than publishing a record that would take a possibly-live run out of supervision.
+The shared branch-run verdict is the one owner of that question for both stand-down and current-state reporting: a positive live `no-mistakes axi status` answer can establish `active`, while `quiet` needs a complete `no-mistakes runs` inventory with no non-terminal branch row.
 The rule at every one of those decisions is the same: if it cannot be proven safe, it is refused, and the refusal names what could not be proven.
 An absent or unreadable worktree, and a live run for this branch that the head rule cannot place against the local HEAD, are refusals rather than permissions - the head rule exists to reject a historical run on a reused branch, and a run that is still going owns the branch however far local work has advanced past the commit it started on.
 A finished run is history either way: a terminal run whose head never reached this worktree still answers the only question the hold depends on, so it never blocks one.

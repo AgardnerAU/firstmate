@@ -617,6 +617,23 @@ test_stand_down_refuses_when_no_run_check_can_answer() {
   pass "fm-control stand-down: an unanswerable run check refuses and names itself"
 }
 
+# A successful command is not an answering inventory when one of its rows
+# cannot name the branch and head that the verdict must inspect.
+test_stand_down_refuses_an_unreadable_run_inventory() {
+  local dir out rc
+  dir=$(new_case stand-down-unreadable-inventory)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(FM_FAKE_RUNS_LIST="running" run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an unreadable run inventory must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "inventory has an unreadable row" \
+    "the refusal should name the unreadable inventory"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unreadable inventory must not publish a worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unreadable inventory must not stop the worker"
+  pass "fm-control stand-down: an unreadable run inventory refuses the hold"
+}
+
 # The head rule exists to reject a HISTORICAL run on a reused branch. A run
 # that is still going owns the branch however far local work has advanced past
 # the commit it started on, so an unplaceable live run is doubt, not proof of
@@ -1411,6 +1428,7 @@ test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
+test_stand_down_refuses_an_unreadable_run_inventory
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
 test_stand_down_refuses_a_live_run_listed_below_a_finished_one
