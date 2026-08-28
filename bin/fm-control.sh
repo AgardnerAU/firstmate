@@ -4,6 +4,7 @@
 #
 # Usage: fm-control.sh <task-id> interrupt
 #        fm-control.sh <task-id> exit
+#        fm-control.sh <task-id> stand-down
 #        fm-control.sh <task-id> relaunch [--harness <name>] [--model <name>]
 #                                         [--effort <level>]
 #                                         (--note <text> | --note-file <path>)
@@ -31,6 +32,13 @@
 #              busy, then submits the harness's exit command. Postcondition:
 #              the backend's recovery-grade classifier reports the agent gone.
 #              Already-stopped is success (idempotent).
+#   stand-down Stop the agent for a deliberately held ship or scout task, then
+#              atomically record that the task has no worker on purpose. The
+#              record is published only after `exit` proves the agent is gone,
+#              so a live worker never loses stale or wedge detection. It is
+#              cleared when `relaunch` starts a replacement in the preserved
+#              endpoint and worktree. An interrupted transition remains
+#              `standing-down`, which stays under ordinary supervision.
 #   relaunch   Transactionally replace the running agent with a new one, in the
 #              SAME endpoint and SAME worktree, on the same or a newly chosen
 #              harness/model/effort - so switching harness is one ordinary use
@@ -76,7 +84,7 @@
 #     is refused rather than guessed at.
 #   - A backend that cannot deliver the harness's interrupt key is refused
 #     (Orca's terminal API has no Escape).
-#   - `exit` and `relaunch` require a backend with a recovery-grade agent-state
+#   - `exit`, `stand-down`, and `relaunch` require a backend with a recovery-grade agent-state
 #     classifier (tmux, herdr), because without one the "the agent stopped"
 #     postcondition cannot be proven. zellij, orca, and cmux are refused rather
 #     than reported as successful blind.
@@ -128,6 +136,8 @@ DATA="${FM_DATA_OVERRIDE:-$FM_HOME/data}"
 . "$SCRIPT_DIR/fm-backend.sh"
 # shellcheck source=bin/fm-busy-lib.sh
 . "$SCRIPT_DIR/fm-busy-lib.sh"
+# shellcheck source=bin/fm-worker-state-lib.sh
+. "$SCRIPT_DIR/fm-worker-state-lib.sh"
 # shellcheck source=bin/fm-control-lib.sh
 . "$SCRIPT_DIR/fm-control-lib.sh"
 # shellcheck source=bin/fm-pr-lib.sh
@@ -492,6 +502,62 @@ do_exit() {
   # orphaned generation survives the agent that produced it.
   retire_busy_incarnation
   printf 'stopped'
+}
+
+# do_stand_down: turn a proven stopped agent into an explicit, intentional
+# no-worker state. The transitional record is deliberately not a watcher
+# exemption. That makes a crash or interruption between the requested stop and
+# its proof visible instead of silently declaring a live or ambiguous task
+# healthy.
+do_stand_down() {
+  local lifecycle state result
+  [ "$KIND" != secondmate ] \
+    || die "task $ID is a secondmate home; stand-down is only for held ship or scout work because a stopped secondmate would leave its own fleet unsupervised"
+  require_state_verified_backend stand-down
+  lifecycle=$(fm_worker_state_status "$STATE" "$ID" "$T")
+  case "$lifecycle" in
+    invalid)
+      die "task $ID has an invalid worker-state record; refusing to suppress supervision until its task and endpoint binding is repaired"
+      ;;
+    stood-down)
+      state=$(agent_state)
+      case "$state" in
+        dead) printf 'already-stood-down'; return 0 ;;
+        alive) die "task $ID is recorded as stood down but its agent is alive; refusing to hide a live worker from wedge detection" ;;
+        *) die "task $ID is recorded as stood down but its endpoint reads '$state'; inspect the endpoint before changing its worker state" ;;
+      esac
+      ;;
+    active)
+      state=$(agent_state)
+      case "$state" in
+        alive)
+          fm_worker_state_write "$STATE" "$ID" "$T" standing-down \
+            || die "could not record the stand-down transition for task $ID; its worker remains under ordinary supervision"
+          ;;
+        dead)
+          die "task $ID's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional"
+          ;;
+        missing|ambiguous|unreadable|unverified|*)
+          die "task $ID's endpoint reads '$state'; refusing to declare a worker-free hold without proof that the requested stop owns this state"
+          ;;
+      esac
+      ;;
+    standing-down)
+      state=$(agent_state)
+      case "$state" in
+        dead) ;;
+        alive) do_exit >/dev/null ;;
+        *) die "task $ID's interrupted stand-down reads '$state'; it remains under ordinary supervision until the endpoint can be reconciled" ;;
+      esac
+      ;;
+  esac
+  if [ "$lifecycle" = active ]; then
+    result=$(do_exit)
+    [ "$result" = stopped ] || die "task $ID's stand-down exit reported '$result'; refusing to publish an intentional no-worker state"
+  fi
+  fm_worker_state_write "$STATE" "$ID" "$T" stood-down \
+    || die "task $ID's agent is stopped but its intentional worker-state record could not be published; it remains under ordinary supervision"
+  printf 'stood-down'
 }
 
 # --- transactional relaunch -------------------------------------------------
@@ -870,6 +936,10 @@ case "$VERB" in
     ;;
   exit)
     result=$(do_exit)
+    echo "$result $ID harness=$HARNESS backend=$BACKEND endpoint=$T worktree=$WT"
+    ;;
+  stand-down)
+    result=$(do_stand_down)
     echo "$result $ID harness=$HARNESS backend=$BACKEND endpoint=$T worktree=$WT"
     ;;
   relaunch)

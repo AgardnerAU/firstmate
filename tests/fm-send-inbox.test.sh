@@ -229,6 +229,25 @@ test_key_path_never_touches_inbox() {
   pass "fm-send planes: the --key lifecycle path never touches the inbox"
 }
 
+test_stood_down_task_refuses_an_unreceivable_steer() {
+  local dir err rc
+  dir=$(setup_case stood-down); err="$dir/send.err"
+  cat > "$dir/home/state/t1.worker-state" <<'EOF'
+schema=1
+task_id=t1
+endpoint=sess:fm-t1
+state=stood-down
+EOF
+  run_send "$dir" "$err" -- t1 "do not leave this unread"; rc=$?
+  expect_code 1 "$rc" "a task with no worker should refuse a steer"
+  assert_contains "$(cat "$err")" "deliberately has no worker" \
+    "the refusal should direct the caller to relaunch rather than silently queue an unread instruction"
+  [ ! -e "$dir/home/state/t1.inbox/001.msg" ] \
+    || fail "a stood-down task must not receive an inbox record it cannot read"
+  [ ! -s "$dir/send.log" ] || fail "a stood-down task must not receive typed input"
+  pass "fm-send: a deliberately worker-free task refuses input until relaunch"
+}
+
 test_secondmate_marker_and_enqueue_delivery() {
   local dir err body corr pr_rec delivered
   dir=$(setup_case secondmate); err="$dir/send.err"
@@ -346,6 +365,7 @@ test_failed_ring_is_still_sent
 test_harness_invocations_stay_typed
 test_explicit_target_stays_typed
 test_key_path_never_touches_inbox
+test_stood_down_task_refuses_an_unreceivable_steer
 test_secondmate_marker_and_enqueue_delivery
 test_post_enqueue_bookkeeping_failure_is_not_retryable
 test_meta_lock_contention_fails_bounded

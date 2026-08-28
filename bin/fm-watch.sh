@@ -126,6 +126,8 @@ mkdir -p "$STATE"
 . "$SCRIPT_DIR/fm-pending-reply-lib.sh"
 # shellcheck source=bin/fm-busy-lib.sh
 . "$SCRIPT_DIR/fm-busy-lib.sh"
+# shellcheck source=bin/fm-worker-state-lib.sh
+. "$SCRIPT_DIR/fm-worker-state-lib.sh"
 # Steering-inbox loss detection: bin/fm-task-inbox-lib.sh owns the record,
 # doorbell, and re-ring ladder contracts; this watcher only supplies the busy
 # gate and the wake emission (inbox_steer_check below).
@@ -382,11 +384,22 @@ inbox_steer_check() {  # <window> <task>
 }
 
 recorded_windows() {
-  local meta w seen=
+  local meta w id lifecycle backend agent_state seen=
   for meta in "$STATE"/*.meta; do
     [ -e "$meta" ] || continue
     w=$(fm_backend_target_of_meta "$meta")
     [ -n "$w" ] || continue
+    id=${meta##*/}
+    id=${id%.meta}
+    lifecycle=$(fm_worker_state_status "$STATE" "$id" "$w")
+    if [ "$lifecycle" = stood-down ]; then
+      backend=$(fm_backend_of_meta "$meta")
+      agent_state=$(fm_backend_agent_state "$backend" "$w" 2>/dev/null || true)
+      # The record is an exemption only while the recovery-grade classifier
+      # still proves there is no worker. A live replacement at a stale record
+      # must enter the ordinary stale/wedge path immediately.
+      [ "$agent_state" = dead ] && continue
+    fi
     case "$seen" in
       *"|$w|"*) continue ;;
     esac

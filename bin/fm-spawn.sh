@@ -257,6 +257,8 @@ SUB_HOME_MARKER=".fm-secondmate-home"
 . "$SCRIPT_DIR/fm-backend.sh"
 # shellcheck source=bin/fm-control-lib.sh
 . "$SCRIPT_DIR/fm-control-lib.sh"
+# shellcheck source=bin/fm-worker-state-lib.sh
+. "$SCRIPT_DIR/fm-worker-state-lib.sh"
 # shellcheck source=bin/fm-gate-refuse-lib.sh
 . "$SCRIPT_DIR/fm-gate-refuse-lib.sh"
 # shellcheck source=bin/fm-busy-lib.sh
@@ -2364,6 +2366,14 @@ if [ "$RELAUNCH" -eq 1 ]; then
   # (bin/fm-control-lib.sh owns where those artifacts live).
   clear_relaunch_harness_wiring "$RELAUNCH_PRIOR_HARNESS" "$WT" "$STATE_REAL" "$ID" || {
     echo "error: could not retire $RELAUNCH_PRIOR_HARNESS wiring for task $ID; refusing to arm the replacement" >&2
+    exit 1
+  }
+  # A replacement worker makes a deliberate no-worker declaration stale before
+  # it can become live. The record is exact-bound to this endpoint and all
+  # relaunch preflight has passed, so a failure here refuses before any new
+  # harness wiring or launch input is written.
+  fm_worker_state_clear "$STATE_REAL" "$ID" "$T" || {
+    echo "error: task $ID has an invalid worker-state record; refusing to relaunch until its intentional stand-down state is reconciled" >&2
     exit 1
   }
   RELAUNCH_REPLACEMENT_PENDING=1

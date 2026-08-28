@@ -684,6 +684,34 @@ test_terminal_failed() {
   pass "terminal failed run is authoritative"
 }
 
+test_stood_down_worker_outranks_a_historical_failed_run() {
+  reset_fakes
+  local d out
+  d=$(new_case stood-down-failed-run)
+  make_repo_on_branch "$d/wt" fm/feat-stood-down
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-stood-down.meta" "window=fm:fm-feat-stood-down" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-stood-down.worker-state" <<'EOF'
+schema=1
+task_id=feat-stood-down
+endpoint=fm:fm-feat-stood-down
+state=stood-down
+EOF
+  printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-stood-down.status"
+  FM_FAKE_AXI_STATUS="$(run_failed fm/feat-stood-down)"
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-stood-down)
+  assert_contains "$out" "state: parked" \
+    "a deliberately worker-free task must not render as its prior failed run"
+  assert_contains "$out" "source: worker-state" \
+    "the current intentional worker state must name its own authoritative source"
+  assert_contains "$out" "worker deliberately stood down" \
+    "the output must distinguish a healthy hold from a failed worker"
+  assert_not_contains "$out" "state: failed" \
+    "a historical failed run must not mask the current deliberate stand-down"
+  pass "a stood-down worker state outranks historical failed validation state"
+}
+
 # (e) cross-branch attribution: `axi status` returns ANOTHER branch's run (the
 # routine case once more than one crew validates the same underlying repo
 # concurrently - they share ONE no-mistakes repo registration), so the helper
@@ -1568,6 +1596,7 @@ test_top_level_fixing_ci_running_after_green_stays_working
 test_top_level_fixing_done_log_stays_working
 test_terminal_passed
 test_terminal_failed
+test_stood_down_worker_outranks_a_historical_failed_run
 test_cross_branch_attribution_via_runs_list
 test_cross_branch_attribution_picks_most_recent_row
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status

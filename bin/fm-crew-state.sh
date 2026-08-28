@@ -64,6 +64,8 @@ STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
 . "$SCRIPT_DIR/fm-classify-lib.sh"
 # shellcheck source=bin/fm-busy-lib.sh
 . "$SCRIPT_DIR/fm-busy-lib.sh"
+# shellcheck source=bin/fm-worker-state-lib.sh
+. "$SCRIPT_DIR/fm-worker-state-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
 
@@ -189,6 +191,28 @@ fi
 TASK_BACKEND=$(fm_backend_of_meta "$META")
 BACKEND_TARGET=$(fm_backend_target_of_meta "$META")
 EXPECTED_LABEL="fm-$ID"
+
+# A proven intentional stand-down outranks a historical terminal validation
+# result: that run describes the last worker incarnation, while this record
+# describes the task's current deliberate absence of a worker. Recheck the
+# endpoint before reporting parked so a stale record can never hide a live
+# worker that must remain eligible for wedge detection. A missing endpoint
+# still proves no worker is present, although a later relaunch will correctly
+# refuse until that endpoint is recovered.
+WORKER_LIFECYCLE=$(fm_worker_state_status "$STATE" "$ID" "$BACKEND_TARGET")
+case "$WORKER_LIFECYCLE" in
+  stood-down)
+    case "$(fm_backend_agent_state "$TASK_BACKEND" "$BACKEND_TARGET" 2>/dev/null || true)" in
+      dead|missing) emit parked worker-state "worker deliberately stood down" ;;
+      alive) emit unknown worker-state "record says stood down but endpoint has a live worker" ;;
+      *) emit unknown worker-state "stood-down record cannot prove the endpoint remains worker-free" ;;
+    esac
+    ;;
+  invalid)
+    emit unknown worker-state "invalid worker-state record"
+    ;;
+esac
+
 pane_readable() {  # <target>
   case "$TASK_BACKEND" in
     tmux) tmux display-message -p -t "$1" '#{pane_id}' >/dev/null 2>&1 ;;

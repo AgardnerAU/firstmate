@@ -424,12 +424,16 @@ test_unverified_state_backends_refuse_stop_verbs() {
     assert_contains "$out" "no recovery-grade agent-state classifier" \
       "the $backend refusal should name the missing stop proof"
     [ -z "$(literals "$dir")" ] || fail "$backend must receive no exit command"
+    out=$(run_control "$dir" t1 stand-down); rc=$?
+    expect_code 1 "$rc" "stand-down on $backend should refuse"$'\n'"$out"
+    assert_contains "$out" "no recovery-grade agent-state classifier" \
+      "the $backend stand-down refusal should name the missing stop proof"
     out=$(run_control "$dir" t1 relaunch --note x); rc=$?
     expect_code 1 "$rc" "relaunch on $backend should refuse"$'\n'"$out"
     assert_contains "$out" "no recovery-grade agent-state classifier" \
       "the $backend relaunch refusal should name the missing stop proof"
   done
-  pass "fm-control: a backend that cannot prove an agent stopped refuses exit and relaunch"
+  pass "fm-control: a backend that cannot prove an agent stopped refuses exit, stand-down, and relaunch"
 }
 
 test_state_verified_backends_are_exactly_tmux_and_herdr() {
@@ -441,6 +445,47 @@ test_state_verified_backends_are_exactly_tmux_and_herdr() {
       && fail "$backend has no recovery-grade classifier and must not claim one"
   done
   pass "fm-control-lib: stop-proving verbs are gated on the backends that really classify agent state"
+}
+
+test_stand_down_proves_stop_then_records_intent() {
+  local dir out rc record
+  dir=$(new_case stand-down)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "stand-down should stop a live agent and record the hold"$'\n'"$out"
+  assert_contains "$out" "stood-down t1 harness=claude" \
+    "stand-down should report the deliberate worker-free state"
+  [ "$(literals "$dir")" = /exit ] \
+    || fail "stand-down must use the proven exit path before declaring the worker absent"
+  [ "$(cat "$dir/fake/command")" = zsh ] \
+    || fail "stand-down must prove the agent stopped before publishing its record"
+  record="$dir/home/state/t1.worker-state"
+  [ -f "$record" ] || fail "stand-down did not write its durable worker-state record"
+  assert_grep 'schema=1' "$record" "worker-state record must carry its schema"
+  assert_grep 'task_id=t1' "$record" "worker-state record must bind the task id"
+  assert_grep 'endpoint=fmses:fm-t1' "$record" "worker-state record must bind the exact endpoint"
+  assert_grep 'state=stood-down' "$record" "worker-state record must be published only after the stop"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a proven stood-down task should be idempotent"$'\n'"$out"
+  assert_contains "$out" "already-stood-down t1" "repeat stand-down should not issue another exit"
+  [ "$(wc -l < "$dir/fake/literal" | tr -d ' ')" = 1 ] \
+    || fail "an already stood-down task must not receive another exit command"
+  pass "fm-control stand-down: a proven exit becomes an exact durable no-worker declaration"
+}
+
+test_stand_down_refuses_to_relabel_an_unexpected_dead_agent() {
+  local dir out rc
+  dir=$(new_case stand-down-dead)
+  add_task "$dir" t1 claude
+  alive_as "$dir" zsh
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "stand-down must not relabel an already-dead agent"
+  assert_contains "$out" "already dead without a stand-down record" \
+    "the refusal should preserve the distinction between a deliberate stop and a possible worker failure"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unexpected dead agent must not gain an intentional stand-down record"
+  pass "fm-control stand-down: an unexplained dead agent remains eligible for recovery"
 }
 
 # --- 3. exact-id scoping ----------------------------------------------------
@@ -502,7 +547,7 @@ test_record_bound_to_another_task_is_refused() {
 # refuses, and none of them reaches a local endpoint.
 test_remote_secondmate_is_refused_by_placement() {
   local dir out rc verb
-  for verb in interrupt exit relaunch; do
+  for verb in interrupt exit stand-down relaunch; do
     dir=$(new_case "remote-$verb")
     add_task "$dir" t1 claude secondmate
     alive_as "$dir" claude
@@ -541,7 +586,7 @@ hold_lifecycle_lock() {  # <lock-path>
 
 test_interrupt_and_exit_lock_before_task_state_resolution() {
   local case_dir out rc verb lifecycle_lock_path holder i
-  for verb in interrupt exit; do
+  for verb in interrupt exit stand-down; do
     case_dir=$(new_case "locked-$verb")
     add_task "$case_dir" t1 claude
     alive_as "$case_dir" claude
@@ -566,7 +611,7 @@ test_interrupt_and_exit_lock_before_task_state_resolution() {
     [ -z "$(literals "$case_dir")" ] || fail "contended $verb must type no command"
     [ -z "$(keys_sent "$case_dir")" ] || fail "contended $verb must send no control key"
   done
-  pass "fm-control: interrupt and exit lock before task-state resolution"
+  pass "fm-control: interrupt, exit, and stand-down lock before task-state resolution"
 }
 
 # --- 4. verb allowlist ------------------------------------------------------
@@ -884,6 +929,8 @@ test_harness_kind_capability
 test_orca_refuses_an_escape_harness_interrupt
 test_unverified_state_backends_refuse_stop_verbs
 test_state_verified_backends_are_exactly_tmux_and_herdr
+test_stand_down_proves_stop_then_records_intent
+test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
 test_window_label_is_refused_with_the_exact_id
 test_explicit_endpoint_is_refused
 test_unknown_task_is_refused

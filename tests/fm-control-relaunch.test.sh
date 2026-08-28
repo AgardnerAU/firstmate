@@ -273,6 +273,31 @@ test_same_harness_relaunch_keeps_identity_and_reuses_the_endpoint() {
   pass "fm-control relaunch: a same-harness relaunch replaces the agent in the same endpoint and worktree"
 }
 
+test_relaunch_from_a_stood_down_worker_reuses_its_preserved_worktree() {
+  local dir out rc
+  dir=$(new_case stood-down-relaunch rl-parked)
+  add_ship_task "$dir" rl-parked claude
+  out=$(run_control "$dir" rl-parked stand-down); rc=$?
+  expect_code 0 "$rc" "stand-down should stop the worker before a later relaunch"$'\n'"$out"
+  [ -f "$dir/home/state/rl-parked.worker-state" ] \
+    || fail "stand-down did not retain the durable worker-free declaration"
+  [ "$(cat "$dir/fake/command")" = zsh ] \
+    || fail "stand-down did not leave the recorded endpoint agent-free"
+  out=$(run_control "$dir" rl-parked relaunch --note "resuming the held task"); rc=$?
+  expect_code 0 "$rc" "relaunch from a stood-down worker should succeed"$'\n'"$out"
+  [ ! -e "$dir/home/state/rl-parked.worker-state" ] \
+    || fail "a replacement worker must clear the old no-worker declaration"
+  [ "$(meta_field "$dir" rl-parked worktree)" = "$dir/wt" ] \
+    || fail "relaunch from stand-down must reuse the preserved worktree"
+  [ "$(meta_field "$dir" rl-parked window)" = fmses:fm-rl-parked ] \
+    || fail "relaunch from stand-down must reuse the preserved endpoint"
+  [ "$(cat "$dir/fake/command")" = claude ] \
+    || fail "relaunch from stand-down did not start the replacement worker"
+  assert_grep 'encode launch-brief' "$dir/fake/literal" \
+    "the replacement must receive the persisted brief in the preserved worktree"
+  pass "fm-control relaunch: a stood-down task restarts in its preserved worktree and clears only the no-worker declaration"
+}
+
 test_relaunch_preserves_durable_task_metadata() {
   local dir out rc
   dir=$(new_case durable-meta rl19)
@@ -1313,6 +1338,7 @@ test_spawn_relaunch_refuses_a_pane_outside_the_worktree() {
 }
 
 test_same_harness_relaunch_keeps_identity_and_reuses_the_endpoint
+test_relaunch_from_a_stood_down_worker_reuses_its_preserved_worktree
 test_relaunch_preserves_durable_task_metadata
 test_relaunch_serializes_concurrent_durable_metadata_publication
 test_disabled_relaunch_clears_prior_trace_context
