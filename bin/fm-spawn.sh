@@ -2385,6 +2385,25 @@ if [ "$RELAUNCH" -eq 1 ]; then
     echo "error: task $ID has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control $ID repair-worker-state'" >&2
     exit 1
   }
+  # Remember what the declaration was before anything is retired: an abort
+  # before the replacement is published must hand the task back exactly as
+  # declared, not leave it worker-free AND undeclared.
+  RELAUNCH_REPLACEMENT_HARNESS=$HARNESS
+  RELAUNCH_REPLACEMENT_STATE=$STATE_REAL
+  RELAUNCH_REPLACEMENT_WT=$WT
+  RELAUNCH_REPLACEMENT_ENDPOINT=$T
+  case "$RELAUNCH_PRIOR_WORKER_STATE" in
+    standing-down|stood-down) RELAUNCH_REPLACEMENT_WORKER_STATE=$RELAUNCH_PRIOR_WORKER_STATE ;;
+    *) RELAUNCH_REPLACEMENT_WORKER_STATE= ;;
+  esac
+  # Resolving the record comes FIRST, for the same reason the invalid-record
+  # refusal does: a removal that fails here has retired nothing, so the task
+  # keeps both its declaration and its prior incarnation's wiring.
+  fm_worker_state_clear "$STATE_REAL" "$ID" "$T" || {
+    echo "error: task $ID's worker-state record could not be cleared for the replacement; reconcile it with 'fm-control $ID repair-worker-state' and relaunch again" >&2
+    exit 1
+  }
+  RELAUNCH_REPLACEMENT_PENDING=1
   # Retire the previous incarnation's per-task harness wiring before arming the
   # new one. Without this, a harness switch would leave the old adapter's hook
   # files and turn-end token registry entries behind, and even a same-harness
@@ -2394,22 +2413,6 @@ if [ "$RELAUNCH" -eq 1 ]; then
     echo "error: could not retire $RELAUNCH_PRIOR_HARNESS wiring for task $ID; refusing to arm the replacement" >&2
     exit 1
   }
-  # Remember what was cleared: an abort before the replacement is published
-  # must hand the task back exactly as declared, not leave it worker-free AND
-  # undeclared.
-  fm_worker_state_clear "$STATE_REAL" "$ID" "$T" || {
-    echo "error: task $ID's worker-state record could not be cleared for the replacement; reconcile it with 'fm-control $ID repair-worker-state' and relaunch again" >&2
-    exit 1
-  }
-  RELAUNCH_REPLACEMENT_PENDING=1
-  RELAUNCH_REPLACEMENT_HARNESS=$HARNESS
-  RELAUNCH_REPLACEMENT_STATE=$STATE_REAL
-  RELAUNCH_REPLACEMENT_WT=$WT
-  RELAUNCH_REPLACEMENT_ENDPOINT=$T
-  case "$RELAUNCH_PRIOR_WORKER_STATE" in
-    standing-down|stood-down) RELAUNCH_REPLACEMENT_WORKER_STATE=$RELAUNCH_PRIOR_WORKER_STATE ;;
-    *) RELAUNCH_REPLACEMENT_WORKER_STATE= ;;
-  esac
 fi
 if [ "$KIND" != secondmate ]; then
   # Arm the semantic busy-state contract (bin/fm-busy-lib.sh) for every

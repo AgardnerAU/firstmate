@@ -64,8 +64,12 @@ fm_nm_field() {  # <toon-output> <key>
 #     the same history advanced the run tip past local HEAD)
 #   - run head is a strict ancestor of worktree HEAD, or diverged: no match
 #     (local work advanced outside the run, or the branch tip was rewritten)
-# fm_nm_run_is_pipeline_owned_active below carries the one exemption: a live
-# run whose pipeline currently owns the branch binds without head equality.
+# This rule governs the BRANCH READ (`axi status`), where a run is bound to
+# this worktree by code identity; fm_nm_run_is_pipeline_owned_active below
+# carries its one exemption, a live run whose pipeline currently owns the
+# branch. The corroboration listing is a different question and does not use
+# this rule at all: a row that says a run on this branch is still in flight is
+# a run in flight whatever head it carries, so it binds by branch alone.
 fm_nm_head_matches_worktree() {  # <worktree> <run_head>
   local wt=$1 run_head=$2 local_full run_full
   [ -n "$run_head" ] || return 1
@@ -79,8 +83,9 @@ fm_nm_head_matches_worktree() {  # <worktree> <run_head>
 # distinguishes a PROVEN mismatch (resolvable but not current: a historical or
 # diverged head fm_nm_head_matches_worktree correctly rejects) from UNKNOWN
 # attribution (unresolvable: e.g. a pipeline-owned lane head that never
-# reached this worktree). A caller scanning run rows newest-first must stop on
-# unknown attribution rather than surface an older, superseded run.
+# reached this worktree). The corroboration scan uses it on TERMINAL rows only,
+# to stop reporting from rendering an older row as this task's state once a
+# newer one could not be placed; a live row is bound by branch regardless.
 fm_nm_head_resolvable() {  # <worktree> <head>
   [ -n "$2" ] || return 1
   git -C "$1" rev-parse --verify --quiet "$2^{commit}" >/dev/null 2>&1
@@ -188,7 +193,10 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 # placed against this worktree - leaves the question open, and an open question
 # refuses the caller that needs it proven.
 #
-# The repo-wide `runs` listing is CORROBORATION ONLY. A non-terminal row for
+# The repo-wide `runs` listing is CORROBORATION ONLY, and is read only when the
+# branch read did not already establish `active` - it exists to promote a
+# non-active branch read, so a branch read that answered `active` costs one
+# bounded call, not two. A non-terminal row for
 # this branch is a second way to establish `active` (the listing's status column
 # is each run's current status, so it catches a run a stale `axi status` answer
 # missed), but its absence proves nothing: a full window, an unreadable row, a
@@ -204,7 +212,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-}
   local status_out='' status_rc status_stderr='' run_branch run_head
   local branch_state=unknown branch_reason='' active_id='' active_toon='' terminal_toon=''
-  local inventory inventory_rc row st rest br sha render_locked=0
+  local inventory row st rest br sha render_locked=0
   local listing_live='' listing_display=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
   FM_NM_BRANCH_RUN_REASON=
@@ -249,8 +257,8 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   else
     branch_reason="'no-mistakes axi status' could not answer whether branch $branch has a run in flight"
   fi
-  if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
-  if [ "$inventory_rc" = 0 ]; then
+  if [ "$branch_state" != active ] \
+    && inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then
     while IFS= read -r row; do
       row=$(fm_nm_trim "$row")
       [ -n "$row" ] || continue
