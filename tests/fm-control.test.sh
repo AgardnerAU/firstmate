@@ -151,13 +151,20 @@ SH
 # A fake `no-mistakes` answering both run-attribution surfaces
 # bin/fm-nm-run-lib.sh queries: the TOON `axi status` for the current branch,
 # and the plain-text top-level `runs` listing used when that answers about
-# another branch. FM_FAKE_NM_FAIL makes both calls fail the way a timed-out or
-# unregistered CLI does, so a test can pose the unanswerable question.
+# another branch. FM_FAKE_NM_FAIL makes both calls fail silently the way a
+# timed-out CLI does, so a test can pose the unanswerable question;
+# FM_FAKE_NM_UNREGISTERED reproduces the installed CLI's answer in a repository
+# it holds no registration for - exit 1, no rows, and the not-initialized
+# message on stderr.
 add_axi_stub() {  # <case-dir>
   cat > "$1/fakebin/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -u
 [ -z "${FM_FAKE_NM_FAIL:-}" ] || exit 1
+if [ -n "${FM_FAKE_NM_UNREGISTERED:-}" ]; then
+  echo "repo not initialized (run 'no-mistakes init' first)" >&2
+  exit 1
+fi
 case "${1:-} ${2:-}" in
   "axi status") printf '%s\n' "${FM_FAKE_AXI_STATUS:-}" ;;
   "runs "*|"runs")
@@ -644,6 +651,27 @@ test_stand_down_refuses_when_the_run_cli_is_absent() {
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
     "a readable inventory proving no live run permits the hold"
   pass "fm-control stand-down: an absent run CLI refuses and names itself"
+}
+
+# firstmate supports project modes that never register with no-mistakes
+# (direct-PR, local-only), and a home may hold a repo that was simply never
+# initialised. The CLI answers those with a not-initialized error and no rows,
+# and a repository that owns no registration owns no run - so that answer is a
+# proof of quiet, not an unanswered question the operator can never clear.
+test_stand_down_allows_a_project_with_no_run_registration() {
+  local dir out rc
+  dir=$(new_case stand-down-unregistered)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(FM_FAKE_NM_FAIL=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a silent CLI failure must still refuse the hold"$'\n'"$out"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unanswered run check must publish no worker-state record"
+  out=$(FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a repository with no run registration owns no run to protect"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "an unregistered project must still be able to declare a hold"
+  pass "fm-control stand-down: a project with no run registration is held, while a silent failure still refuses"
 }
 
 # A successful command is not an answering inventory when one of its rows
@@ -1458,6 +1486,7 @@ test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
 test_stand_down_refuses_when_the_run_cli_is_absent
+test_stand_down_allows_a_project_with_no_run_registration
 test_stand_down_refuses_an_unreadable_run_inventory
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here

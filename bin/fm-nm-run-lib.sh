@@ -136,6 +136,21 @@ fm_nm_runs_limit() {
   printf '%s' "$n"
 }
 
+# `no-mistakes` answers a repository it holds no registration for with a
+# not-initialized error and no rows at all. That is a different answer from a
+# CLI that failed to respond: a repository with no registration can own no run,
+# which is the same reasoning the branchless worktree already rests on, and
+# firstmate supports whole project modes (direct-PR, local-only) that never run
+# `no-mistakes init`.
+fm_nm_inventory_says_unregistered() {  # <stderr-text>
+  local text
+  text=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$text" in
+    *"not initialized"*|*"not initialised"*) return 0 ;;
+  esac
+  return 1
+}
+
 # shellcheck disable=SC2034 # FM_NM_BRANCH_RUN_* is this function's documented output tuple.
 # `fm_nm_branch_run_verdict` is the one authoritative answer to whether a
 # branch owns a live no-mistakes run.
@@ -144,8 +159,10 @@ fm_nm_runs_limit() {
 # The optional display and TOON fields are reporting projections, never a
 # second safety decision: they are carried on an `unknown` verdict too, so an
 # unproven safety answer does not also blank run reporting the function already
-# holds - but only while nothing live went unplaced, because a run that may be
-# in flight must never be rendered from an older terminal row.
+# holds - but only while nothing live went unplaced AND the inventory that ran
+# was whole, because a run that may be in flight must never be rendered from an
+# older terminal row. A truncated window and an unparsable row are both content
+# this branch's live row could be sitting in unexamined, so they carry nothing.
 # The inventory call is issued on every path except a placeable live `axi
 # status` answer, including one where `axi status` itself did not respond.
 # That is a deliberate reversal of the earlier single-call reporting shortcut,
@@ -154,7 +171,7 @@ fm_nm_runs_limit() {
 # would leave the safety caller without its proof source.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-} status_out status_rc run_branch run_head
-  local inventory inventory_rc row st rest br sha rows=0 render_locked=0
+  local inventory inventory_rc inventory_err='' inventory_stderr='' row st rest br sha rows=0 render_locked=0
   local direct_live_unknown='' inventory_live_unknown='' inventory_live='' inventory_unreadable=''
   local display='' terminal_toon=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
@@ -194,8 +211,20 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       fi
     fi
   fi
-  if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
+  inventory_err=$(mktemp "${TMPDIR:-/tmp}/fm-nm-runs-err.XXXXXX" 2>/dev/null) || inventory_err=
+  if [ -n "$inventory_err" ]; then
+    if inventory=$(fm_nm_run_bounded "$wt" "$timeout" runs --limit "$limit" 2>"$inventory_err"); then inventory_rc=0; else inventory_rc=$?; fi
+    inventory_stderr=$(cat "$inventory_err" 2>/dev/null || true)
+    rm -f "$inventory_err"
+  else
+    if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
+  fi
   if [ "$inventory_rc" != 0 ]; then
+    if [ -z "$direct_live_unknown" ] && fm_nm_inventory_says_unregistered "$inventory_stderr"; then
+      FM_NM_BRANCH_RUN_VERDICT=quiet
+      FM_NM_BRANCH_RUN_TOON=$terminal_toon
+      return 0
+    fi
     FM_NM_BRANCH_RUN_REASON=${direct_live_unknown:-"'no-mistakes runs --limit' could not answer whether branch $branch has an active run"}
     [ -n "$direct_live_unknown" ] || FM_NM_BRANCH_RUN_TOON=$terminal_toon
     return 0
@@ -241,7 +270,8 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     FM_NM_BRANCH_RUN_DISPLAY=${inventory_live%% *}
     return 0
   fi
-  if [ -z "$direct_live_unknown" ] && [ -z "$inventory_live_unknown" ]; then
+  if [ -z "$direct_live_unknown" ] && [ -z "$inventory_live_unknown" ] \
+    && [ -z "$inventory_unreadable" ] && [ "$rows" -lt "$limit" ]; then
     FM_NM_BRANCH_RUN_DISPLAY=$display
     FM_NM_BRANCH_RUN_TOON=$terminal_toon
   fi
