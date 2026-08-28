@@ -203,9 +203,7 @@ WORKER_LIFECYCLE=$(fm_worker_state_status "$STATE" "$ID" "$BACKEND_TARGET")
 
 # Report the worker-state verdict, or return 1 to let the caller carry on.
 # Recheck the endpoint first so a stale record can never hide a live worker
-# that must remain eligible for wedge detection. A missing endpoint still
-# proves no worker is present, although a later relaunch will correctly refuse
-# until that endpoint is recovered.
+# that must remain eligible for wedge detection.
 #
 # Mode `proven-only` reports just the one verdict this record can prove - the
 # task really is worker-free - and stays silent otherwise, so a record that
@@ -217,7 +215,19 @@ emit_worker_state_if_current() {  # <proven-only|full>
   case "$WORKER_LIFECYCLE" in
     stood-down)
       case "$(fm_backend_agent_state "$TASK_BACKEND" "$BACKEND_TARGET" 2>/dev/null || true)" in
-        dead|missing) emit parked worker-state "worker deliberately stood down" ;;
+        dead) emit parked worker-state "worker deliberately stood down" ;;
+        # A VANISHED endpoint is not the hold the operator declared. `dead` is
+        # the declared state: the endpoint is still there, still holds the
+        # worktree and the uncommitted work, and a relaunch restores the worker
+        # in place. `missing` means that endpoint is gone, so the hold can no
+        # longer be resumed where it was declared and something must be done
+        # about it - reporting it as a healthy park would hide exactly that.
+        # Only a human declaration ever makes an absent worker healthy here;
+        # this branch is why no absence is ever inferred to be one.
+        missing)
+          [ "$mode" = full ] || return 1
+          emit unknown worker-state "stood down but its endpoint is gone: $BACKEND_TARGET (relaunch cannot restore it in place)"
+          ;;
         alive)
           [ "$mode" = full ] || return 1
           emit unknown worker-state "record says stood down but endpoint has a live worker"
@@ -424,34 +434,12 @@ nm_ci_checks_state() {
 # matching row's status word (running/completed/cancelled/failed), or empty
 # when the branch has no run within FM_CREW_STATE_RUNS_LIMIT rows.
 nm_runs_status_for_branch() {  # <branch>
-  local branch=$1 out row st rest br sha
-  out=$(nm_run runs --limit "$FM_CREW_STATE_RUNS_LIMIT")
-  [ -n "$out" ] || return 0
-  while IFS= read -r row; do
-    row=$(trim "$row")
-    [ -n "$row" ] || continue
-    st=${row%% *}
-    rest=${row#* }
-    rest=$(trim "$rest")
-    br=${rest%% *}
-    rest=${rest#* }
-    rest=$(trim "$rest")
-    sha=${rest%% *}
-    if [ "$br" = "$branch" ]; then
-      # Same code-identity rule as axi status: skip a same-branch row whose
-      # short-sha does not match this worktree (rewritten or advanced tip).
-      if ! nm_coarse_head_matches_worktree "$sha"; then
-        # An UNRESOLVABLE head is unknown attribution, not a proven
-        # mismatch. Stop instead of surfacing an older, superseded row;
-        # the caller's pane/log fallback can answer without misattribution.
-        fm_nm_head_resolvable "$WT" "$sha" || return 0
-        continue
-      fi
-      printf '%s' "$st"
-      return 0
-    fi
-  done <<< "$out"
-  return 0
+  # Owned by fm_nm_runs_status_for_branch (bin/fm-nm-run-lib.sh), so the
+  # stand-down refusal in bin/fm-control.sh attributes runs from exactly the
+  # same sources this reporting path does. Reporting stays fail-open: an
+  # unanswerable listing (rc 2) and a branch with no run (rc 1) both leave the
+  # status empty, and the pane/log fallback below answers instead.
+  fm_nm_runs_status_for_branch "$WT" "$1" "$NM_TIMEOUT" "$FM_CREW_STATE_RUNS_LIMIT" || true
 }
 
 # CREW_BRANCH is empty at detached HEAD (a just-spawned crew, or a scout's
@@ -465,13 +453,6 @@ nm_run_head_matches_worktree() {
   local run_head
   run_head=$(strip_quotes "$(nm_field head)")
   fm_nm_head_matches_worktree "$WT" "$run_head"
-}
-
-# Coarse runs-list rows are "<status> <branch> <short-sha> ...". 0 if the short
-# sha for this branch row matches the worktree head under the same rules as
-# nm_run_head_matches_worktree (equal, or local is ancestor of run tip).
-nm_coarse_head_matches_worktree() {  # <short-sha>
-  fm_nm_head_matches_worktree "$WT" "$1"
 }
 
 HAVE_RUN=0

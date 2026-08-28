@@ -123,31 +123,117 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
   fm_nm_run_is_active "$1"
 }
 
-# 0 if worktree $1, on branch $2, currently owns an IN-FLIGHT no-mistakes run,
-# under the same attribution the two readers above use (exact branch match plus
-# head identity, with the pipeline-owned exemption). Sets FM_NM_ACTIVE_RUN_ID to
-# the attributed run id on success. Query failures are fail-open (no active run
-# proved), because a bounded read of an optional CLI must never become a
-# prerequisite for a lifecycle action; the callers that must not act while a run
-# is live pair this with their own proof of the postcondition they need.
+# Coarse run attribution from the top-level `no-mistakes runs` listing, the
+# one fallback for the routine case where bare `axi status` answers with
+# ANOTHER branch's run (several crews validating the same underlying repo share
+# one no-mistakes registration) or does not answer at all. The listing is plain
+# text, newest-first, "<status> <branch> <short-sha> <date> [<pr-url>]"
+# separated by runs of spaces (no quoting), so branch plus the same head
+# identity rule used above is an exact read of "is there a run for THIS branch".
+#
+# Prints the first matching row's status word and returns 0; returns 1 when the
+# listing answered and proved this branch has no run in it; returns 2 when the
+# question could not be answered at all - the CLI call failed or timed out, or
+# a matching row's head cannot be resolved here, which is UNKNOWN attribution
+# rather than a proven mismatch. A caller that must not act while a run is live
+# has to treat 2 as "not proved safe", not as "no run".
+fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
+  local wt=$1 branch=$2 timeout=$3 limit=${4:-200} out rc row st rest br sha
+  case "$limit" in ''|*[!0-9]*) limit=200 ;; esac
+  [ -n "$branch" ] || return 1
+  if out=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then rc=0; else rc=$?; fi
+  [ "$rc" = 0 ] || return 2
+  while IFS= read -r row; do
+    row=$(fm_nm_trim "$row")
+    [ -n "$row" ] || continue
+    st=${row%% *}
+    rest=$(fm_nm_trim "${row#* }")
+    br=${rest%% *}
+    rest=$(fm_nm_trim "${rest#* }")
+    sha=${rest%% *}
+    if [ "$br" = "$branch" ]; then
+      if ! fm_nm_head_matches_worktree "$wt" "$sha"; then
+        # An UNRESOLVABLE head is unknown attribution, not a proven mismatch.
+        fm_nm_head_resolvable "$wt" "$sha" || return 2
+        continue
+      fi
+      printf '%s' "$st"
+      return 0
+    fi
+  done <<< "$out"
+  return 1
+}
+
+# Whether worktree $1, on branch $2, currently owns an IN-FLIGHT no-mistakes
+# run, under the same attribution both readers use (exact branch match plus head
+# identity, with the pipeline-owned exemption) and, when bare `axi status`
+# cannot settle it, the coarse runs-list fallback above. ONE attribution for
+# every caller: a stand-down that consulted fewer sources than current-state
+# reporting would remove a gated run from supervision that fm-crew-state can
+# still see.
+#
+# Three-valued, because "no run is active" and "nobody could tell me" are
+# different answers and only the first is safe to act on:
+#   0 - an active run is attributed to this task; FM_NM_ACTIVE_RUN_ID names it
+#       when the answering source carried an id (the coarse listing has none).
+#   1 - proved: no active run is attributed to this task.
+#   2 - could not answer; FM_NM_RUN_UNKNOWN_REASON names the check that failed.
+# A caller for whom a live run is a refusal condition must refuse on 2 as well
+# as 0. An absent CLI is a proven 1, not an unanswered question: with no
+# no-mistakes installed there is no run to own the branch.
 fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
-  local wt=$1 branch=$2 timeout=$3 out run_branch run_head
+  local wt=$1 branch=$2 timeout=$3 out rc run_branch run_head coarse coarse_rc
   # shellcheck disable=SC2034 # the attributed run id is this function's second
   # return value, read by the caller that refuses on it.
   FM_NM_ACTIVE_RUN_ID=
+  # shellcheck disable=SC2034 # named check for the caller's refusal message.
+  FM_NM_RUN_UNKNOWN_REASON=
+  [ -d "$wt" ] || {
+    # shellcheck disable=SC2034 # named check for the caller's refusal message.
+    FM_NM_RUN_UNKNOWN_REASON="worktree '$wt' is not readable, so no run check could run"
+    return 2
+  }
+  # No branch (detached HEAD) means there is no branch a run could own here.
   [ -n "$branch" ] || return 1
-  [ -d "$wt" ] || return 1
   command -v no-mistakes >/dev/null 2>&1 || return 1
-  out=$(fm_nm_run "$wt" "$timeout" axi status)
-  [ -n "$out" ] || return 1
-  run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$out" branch)")
-  [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ] || return 1
-  run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
-  fm_nm_head_matches_worktree "$wt" "$run_head" \
-    || fm_nm_run_is_pipeline_owned_active "$out" \
-    || return 1
-  fm_nm_run_is_active "$out" || return 1
-  # shellcheck disable=SC2034 # read by callers through the documented contract.
-  FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
-  return 0
+  if out=$(fm_nm_run_checked "$wt" "$timeout" axi status); then rc=0; else rc=$?; fi
+  if [ "$rc" = 0 ] && [ -n "$out" ]; then
+    run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$out" branch)")
+    if [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ]; then
+      run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
+      if fm_nm_head_matches_worktree "$wt" "$run_head"         || fm_nm_run_is_pipeline_owned_active "$out"; then
+        fm_nm_run_is_active "$out" || return 1
+        # shellcheck disable=SC2034 # read by callers through the documented contract.
+        FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
+        return 0
+      fi
+    fi
+  fi
+  # `axi status` did not settle this branch: it answered about another branch,
+  # its same-branch attribution failed, or it did not answer at all. The coarse
+  # listing is the only remaining source, so its silence is not an answer.
+  if coarse=$(fm_nm_runs_status_for_branch "$wt" "$branch" "$timeout"); then
+    coarse_rc=0
+  else
+    coarse_rc=$?
+  fi
+  case "$coarse_rc" in
+    0)
+      case "$coarse" in
+        running) return 0 ;;
+        completed|failed|cancelled) return 1 ;;
+        *)
+          # shellcheck disable=SC2034 # named check for the caller's refusal message.
+          FM_NM_RUN_UNKNOWN_REASON="'no-mistakes runs' reported an unrecognised status '$coarse' for branch $branch"
+          return 2
+          ;;
+      esac
+      ;;
+    1) return 1 ;;
+    *)
+      # shellcheck disable=SC2034 # named check for the caller's refusal message.
+      FM_NM_RUN_UNKNOWN_REASON="'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
+      return 2
+      ;;
+  esac
 }

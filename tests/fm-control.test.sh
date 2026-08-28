@@ -148,14 +148,19 @@ SH
   printf '%s\n' "$fb"
 }
 
-# A fake `no-mistakes` that answers `axi status` from the environment, matching
-# the surface bin/fm-nm-run-lib.sh queries.
+# A fake `no-mistakes` answering both run-attribution surfaces
+# bin/fm-nm-run-lib.sh queries: the TOON `axi status` for the current branch,
+# and the plain-text top-level `runs` listing used when that answers about
+# another branch. FM_FAKE_NM_FAIL makes both calls fail the way a timed-out or
+# unregistered CLI does, so a test can pose the unanswerable question.
 add_axi_stub() {  # <case-dir>
   cat > "$1/fakebin/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -u
+[ -z "${FM_FAKE_NM_FAIL:-}" ] || exit 1
 case "${1:-} ${2:-}" in
   "axi status") printf '%s\n' "${FM_FAKE_AXI_STATUS:-}" ;;
+  "runs "*|"runs") printf '%s\n' "${FM_FAKE_RUNS_LIST:-}" ;;
 esac
 exit 0
 SH
@@ -554,6 +559,60 @@ test_stand_down_allows_a_terminal_run_for_the_same_task() {
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
     "a terminal run leaves the task free to be stood down"
   pass "fm-control stand-down: only an in-flight run blocks the hold"
+}
+
+# Cross-branch attribution is routine: several crews validating one underlying
+# repo share a single no-mistakes registration, so bare `axi status` in this
+# worktree can answer about whichever branch was touched most recently. The
+# refusal must consult the same coarse runs listing current-state reporting
+# falls back to, or a gated run silently loses its worker AND its watcher
+# supervision at the same moment.
+test_stand_down_refuses_a_run_only_the_runs_list_can_attribute() {
+  local dir out rc head short
+  dir=$(new_case stand-down-coarse-run)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  short=$(git -C "$dir/wt-t1" rev-parse --short HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="running  task-t1  $short  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a run only the runs listing attributes must still refuse the hold"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run" \
+    "the refusal should name the run that still needs a worker"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a refused stand-down must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "stand-down must not stop the worker an active run needs"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-t1  $short  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "the same listing proving a terminal run must allow the hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a proven-terminal run leaves the task free to be stood down"
+  pass "fm-control stand-down: run attribution uses every source, not just axi status"
+}
+
+# Standing down carries the burden of proof: the record it publishes removes the
+# task from stale and wedge detection, so an unanswerable run check must refuse
+# and name itself rather than fail open into a silent suppression.
+test_stand_down_refuses_when_no_run_check_can_answer() {
+  local dir out rc
+  dir=$(new_case stand-down-unanswerable)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(FM_FAKE_NM_FAIL=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an unanswerable run check must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "no-mistakes runs" \
+    "the refusal should name the check that could not answer"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unproven run check must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unproven run check must not stop the worker"
+  [ "$(cat "$dir/fake/command")" = claude ] || fail "the worker must still be alive"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "the same task should stand down once the check can answer"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "an answering run check that proves no active run permits the hold"
+  pass "fm-control stand-down: an unanswerable run check refuses and names itself"
 }
 
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold() {
@@ -1071,6 +1130,8 @@ test_stand_down_proves_stop_then_records_intent
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
 test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
+test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
+test_stand_down_refuses_when_no_run_check_can_answer
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold
 test_repair_clears_a_declaration_a_live_agent_contradicts
 test_repair_clears_an_unprovable_record_without_inferring_intent

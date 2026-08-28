@@ -15,7 +15,7 @@ The failure repeated across harnesses and homes, and the workaround (remember to
 
 `bin/fm-control-lib.sh` is the single executable owner of three capability tables, with no side effects, so it can be read as a contract:
 
-- The **verb allowlist**: `interrupt`, `exit`, `stand-down`, `relaunch`.
+- The **verb allowlist**: `interrupt`, `exit`, `stand-down`, `repair-worker-state`, `relaunch`.
   There is no arbitrary-text and no generic raw-key entry point.
   A caller either names an allowlisted verb or is refused.
 - **Per-harness mechanics**: the key that cancels a running turn, how many times it must be delivered, whether the composer needs clearing afterwards, the command that exits the agent, and which task kinds the adapter is verified to run.
@@ -57,6 +57,7 @@ Its short `standing-down` transition never suppresses monitoring, and the comple
 
 Two things a stand-down deliberately cannot do.
 It cannot run while the task owns an in-flight no-mistakes run: that run owns the branch and needs a worker at its gates, so finish it or abort it yourself (`no-mistakes axi abort --run <id>`) first - stand-down never cancels a run for you.
+That question is asked of every source current-state reporting uses - `no-mistakes axi status` and, when that answers about another branch or not at all, the `no-mistakes runs` listing - and a stand-down that cannot get an answer from any of them refuses and names the check that could not answer, rather than publishing a record that would take a possibly-live run out of supervision.
 And it cannot turn an agent that is merely already gone into a deliberate hold, because deadness is exactly the ambiguity the record exists to resolve.
 To declare an ordinary prior `exit` intentional, first declare the hold the way both supervisors already read it - append a `paused: <reason>` (or `captain-held: <reason>`) line to `state/<id>.status` - then run `stand-down`.
 That declaration is reversible by the next ordinary status append.
@@ -66,6 +67,8 @@ Reality wins, and only ever toward supervision: a record that no longer describe
 A dead endpoint alone never lets repair create or preserve a declaration, so repair can only return a task to ordinary monitoring, never remove it from monitoring.
 
 `fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an active run keeps its own run-step authority, so a gate awaiting a decision is never dropped in favour of the hold.
+It is also only ever a park while the recorded endpoint is still there and merely has no agent.
+An endpoint that has vanished reports `unknown` and names the lost endpoint, because the declared hold - worktree, work, and an in-place relaunch - can no longer be resumed where it was declared.
 
 **`resume` is not a verb.**
 It is not deterministic across the verified adapters: codex and grok resume only from a session id printed at exit, opencode continues the most recent session for the cwd, and claude, pi, pi-signed, and kimi have no verified pane-resume contract.

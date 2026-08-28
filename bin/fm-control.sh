@@ -43,7 +43,10 @@
 #              remains `standing-down`, which stays under ordinary supervision.
 #              Refused while this task owns an in-flight no-mistakes run: that
 #              run owns the branch and needs a worker at its gates, and
-#              stand-down never cancels one for you. An agent that already
+#              stand-down never cancels one for you. Refused too when that
+#              question cannot be answered at all, naming the check that could
+#              not answer, because the record it would publish suppresses
+#              supervision. An agent that already
 #              exited can be declared intentional only when the task's status
 #              log already declares the hold (`paused:`/`captain-held:`), since
 #              deadness alone is the ambiguity this record exists to resolve.
@@ -612,13 +615,34 @@ task_is_declared_held() {
 # Refuse a stand-down while this task owns an in-flight no-mistakes run. The
 # run owns the branch and expects a worker at its gates, and stand-down must
 # never cancel one on the operator's behalf.
+#
+# Standing down carries the burden of proof, because the record it publishes
+# removes the task from the watcher's stale and wedge detection: only a PROVEN
+# "no run is active here" may proceed. fm_nm_active_run_for_worktree consults
+# every source current-state reporting consults (bare `axi status` plus the
+# coarse runs listing, one shared attribution), and reports separately when it
+# could not answer at all - a timed-out or failing CLI, or a run row whose head
+# cannot be attributed here. That third answer refuses too, and names the check
+# that could not answer, rather than failing open into a silent suppression.
 refuse_stand_down_during_active_run() {
-  local branch
+  local branch rc
   [ "$KIND" = ship ] || return 0
   [ -n "$WT" ] && [ -d "$WT" ] || return 0
   branch=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-  fm_nm_active_run_for_worktree "$WT" "$branch" "$NM_CONTROL_TIMEOUT" || return 0
-  die "task $ID owns an active no-mistakes run (${FM_NM_ACTIVE_RUN_ID:-unknown}) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run ${FM_NM_ACTIVE_RUN_ID:-<id>}', before standing the worker down"
+  if fm_nm_active_run_for_worktree "$WT" "$branch" "$NM_CONTROL_TIMEOUT"; then
+    rc=0
+  else
+    rc=$?
+  fi
+  case "$rc" in
+    0)
+      die "task $ID owns an active no-mistakes run (${FM_NM_ACTIVE_RUN_ID:-unknown}) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run ${FM_NM_ACTIVE_RUN_ID:-<id>}', before standing the worker down"
+      ;;
+    1) return 0 ;;
+    *)
+      die "task $ID cannot be stood down because ${FM_NM_RUN_UNKNOWN_REASON:-a no-mistakes run check could not answer}; refusing to hide a possibly-live run from supervision. Re-run that check yourself, or finish or abort the run, and try again"
+      ;;
+  esac
 }
 
 # do_repair_worker_state: the one supported reconciliation of a worker-state

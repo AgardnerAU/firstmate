@@ -83,9 +83,23 @@ SH
 #!/usr/bin/env bash
 set -u
 case "${1:-}" in
+  list-windows)
+    # The recovery-grade agent-state classifier reads the session inventory
+    # first: an inventory that omits the recorded window is `missing`, which is
+    # what FM_FAKE_TMUX_MISSING models. A test that needs the OTHER absent-agent
+    # verdict - the endpoint is still there and merely has no agent, `dead` -
+    # names its window in FM_FAKE_TMUX_WINDOWS.
+    [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && exit 0
+    printf '%s\n' "${FM_FAKE_TMUX_WINDOWS:-}" ;;
   display-message)
     [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && exit 1
-    printf '%%1\n' ;;
+    fmt=""
+    for a in "$@"; do case "$a" in '#{'*) fmt=$a ;; esac; done
+    case "$fmt" in
+      '#{pane_current_command}') printf '%s\n' "${FM_FAKE_TMUX_CURRENT_COMMAND:-zsh}" ;;
+      '#{pane_tty}') printf '%s\n' "${FM_FAKE_TMUX_TTY:-}" ;;
+      *) printf '%%1\n' ;;
+    esac ;;
   capture-pane)
     [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && exit 1
     if [ "${FM_FAKE_BUSY:-0}" = 1 ]; then printf 'work in progress\n%s\n' "${FM_FAKE_BUSY_TEXT:-esc to interrupt}"
@@ -166,11 +180,15 @@ reset_fakes() {
   FM_FAKE_BUSY=0
   FM_FAKE_BUSY_TEXT=
   FM_FAKE_TMUX_MISSING=0
+  FM_FAKE_TMUX_WINDOWS=""
+  FM_FAKE_TMUX_CURRENT_COMMAND=""
+  FM_FAKE_TMUX_TTY=""
   FM_FAKE_HERDR_BUSY=0
   FM_FAKE_HERDR_MISSING=0
   FM_FAKE_HERDR_AGENT_STATUS=""
   FM_FAKE_CI_LOGS=""
   export FM_FAKE_AXI_STATUS FM_FAKE_AXI_STATUS_RUN FM_FAKE_RUNS_LIST FM_FAKE_BUSY FM_FAKE_BUSY_TEXT FM_FAKE_TMUX_MISSING
+  export FM_FAKE_TMUX_WINDOWS FM_FAKE_TMUX_CURRENT_COMMAND FM_FAKE_TMUX_TTY
   export FM_FAKE_HERDR_BUSY FM_FAKE_HERDR_MISSING FM_FAKE_HERDR_AGENT_STATUS FM_FAKE_CI_LOGS
 }
 
@@ -699,7 +717,9 @@ state=stood-down
 EOF
   printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-stood-down.status"
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-stood-down)"
-  FM_FAKE_TMUX_MISSING=1
+  # The declared hold: the endpoint is still there and merely has no agent, so
+  # the preserved worktree and work can be relaunched in place.
+  FM_FAKE_TMUX_WINDOWS="fm-feat-stood-down"
   out=$(run_crew_state "$d" feat-stood-down)
   assert_contains "$out" "state: parked" \
     "a deliberately worker-free task must not render as its prior failed run"
@@ -710,6 +730,57 @@ EOF
   assert_not_contains "$out" "state: failed" \
     "a historical failed run must not mask the current deliberate stand-down"
   pass "a stood-down worker state outranks historical failed validation state"
+}
+
+# The endpoint half of the same rule. A stood-down record is a healthy park
+# only while the endpoint it names is still there: a VANISHED endpoint cannot
+# be relaunched in place, so it must be reported as an unknown that names the
+# lost endpoint. This is the counterfactual for treating absence as healthy -
+# if `missing` ever reads as a park again, this test sees "parked" instead.
+test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold() {
+  reset_fakes
+  local d out
+  d=$(new_case stood-down-endpoint-gone)
+  make_repo_on_branch "$d/wt" fm/feat-gone
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-gone.meta" "window=fm:fm-feat-gone" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-gone.worker-state" <<'EOF'
+schema=1
+task_id=feat-gone
+endpoint=fm:fm-feat-gone
+state=stood-down
+EOF
+  printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-gone.status"
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-gone)
+  assert_contains "$out" "state: unknown" \
+    "a hold whose endpoint has vanished cannot be reported as healthy"
+  assert_contains "$out" "fm:fm-feat-gone" \
+    "the report must name the endpoint that can no longer be relaunched"
+  assert_not_contains "$out" "state: parked" \
+    "a vanished endpoint must not be reported as a deliberate park"
+  pass "a stood-down record whose endpoint vanished is reported as unknown, not as a healthy hold"
+}
+
+# The base case the rule above protects: with no deliberate declaration at all,
+# an absent worker is still a problem the reader must see.
+test_an_absent_worker_without_a_declaration_is_still_reported() {
+  reset_fakes
+  local d out
+  d=$(new_case absent-undeclared)
+  make_repo_on_branch "$d/wt" fm/feat-absent
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-absent.meta" "window=fm:fm-feat-absent" "worktree=$d/wt" "kind=ship"
+  printf 'working: mid-task\n' > "$d/state/feat-absent.status"
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-absent)
+  assert_contains "$out" "state: unknown" \
+    "an undeclared absent worker must be reported as unknown"
+  assert_contains "$out" "backend target gone: fm:fm-feat-absent" \
+    "the report must name the endpoint that is gone"
+  assert_not_contains "$out" "worker deliberately stood down" \
+    "an absent worker must never be described as a deliberate hold"
+  pass "an absent worker with no declaration is still reported as a problem"
 }
 
 # The counterfactual for the rule above: the record outranks HISTORY, never an
@@ -1649,6 +1720,8 @@ test_top_level_fixing_done_log_stays_working
 test_terminal_passed
 test_terminal_failed
 test_stood_down_worker_outranks_a_historical_failed_run
+test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
+test_an_absent_worker_without_a_declaration_is_still_reported
 test_active_run_outranks_a_stood_down_record
 test_invalid_worker_state_record_does_not_mask_a_failed_run
 test_cross_branch_attribution_via_runs_list
