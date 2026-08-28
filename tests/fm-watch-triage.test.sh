@@ -1196,8 +1196,8 @@ EOF
   pane_hash=$(hash_text 'static live worker')
   printf '%s' "$pane_hash" > "$state/.hash-$key"
   printf '1\n' > "$state/.count-$key"
-  export FM_FAKE_CREW_STATE='state: unknown · source: none · no current-state source available'
   PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+    FM_FAKE_CREW_STATE='state: unknown · source: none · no current-state source available' \
     FM_FAKE_TMUX_CURRENT_COMMAND=claude FM_STATE_OVERRIDE="$state" \
     FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=999 FM_POLL=1 FM_SIGNAL_GRACE=1 \
     FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
@@ -1207,7 +1207,6 @@ EOF
     || fail "the live worker behind a stale stood-down record did not emit a stale wake: $(cat "$out")"
   grep "$(printf '\tstale\t')" "$state/.wake-queue" | grep -F "$window" >/dev/null \
     || fail "the live worker wedge was not recorded in the durable queue"
-  unset FM_FAKE_CREW_STATE
   pass "a stale stood-down record cannot hide a live worker wedge"
 }
 

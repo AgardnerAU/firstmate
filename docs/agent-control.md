@@ -33,6 +33,7 @@ A recorded `harness=` is not always an exact adapter name: a task launched from 
 | `interrupt` | Deliver the harness's verified interrupt sequence while leaving the agent running. | Delivery succeeds while the endpoint still exists and the agent is still alive where the backend can classify that; cancellation is confirmed only from an adapter-owned acknowledgement and otherwise reports `cancel=unconfirmed`. |
 | `exit` | Stop the agent, preserving the endpoint, the worktree, and every uncommitted change. | The backend's recovery-grade classifier reports the agent gone. Already-stopped is idempotent success. |
 | `stand-down` | Stop a held ship or scout task and record that it deliberately has no worker. | The control plane first proves the agent is gone, then writes an exact worker-state record bound to the task and endpoint. A live worker at a stale record stays in ordinary stale and wedge detection. |
+| `repair-worker-state` | Reconcile a worker-state record against what the endpoint really shows. | An unprovable record, and a declaration a live agent contradicts, are cleared and reported; anything else is left exactly as it is. Repeat runs are no-ops. |
 | `relaunch` | Replace the running agent with a new one in the same endpoint and worktree, on the exact recorded adapter or an explicitly chosen harness, model, and effort. | The new agent is alive on the recorded endpoint, and the durable record names the harness that is actually running. |
 
 An exit that delivers lifecycle input but cannot prove the agent stopped fails with `exit=unconfirmed`, reports the observed agent state and any interrupt cancellation claim, and never claims that nothing changed.
@@ -51,8 +52,20 @@ Removing a worktree, closing an endpoint, or discarding work stays with [`bin/fm
 `stand-down` is the explicit companion for a held ship or scout task that does not need a worker for a while.
 It preserves the worktree, branch, commits, endpoint, and uncommitted work exactly as `exit` does, then writes `state/<id>.worker-state` only after proving the worker is gone.
 Its short `standing-down` transition never suppresses monitoring, and the completed `stood-down` record is ignored when the endpoint has a live worker.
-`fm-spawn --relaunch` clears a valid record immediately before preparing the replacement, so the same preserved worktree resumes normally.
+`fm-spawn --relaunch` clears a valid record immediately before preparing the replacement, so the same preserved worktree resumes normally; if that relaunch aborts before the replacement's metadata is published, the record is restored and the task returns to the hold it was in.
 `fm-send` refuses new input while the record and endpoint both prove that no worker is present, so a held task cannot accumulate an instruction that nobody can read.
+
+Two things a stand-down deliberately cannot do.
+It cannot run while the task owns an in-flight no-mistakes run: that run owns the branch and needs a worker at its gates, so finish it or abort it yourself (`no-mistakes axi abort --run <id>`) first - stand-down never cancels a run for you.
+And it cannot turn an agent that is merely already gone into a deliberate hold, because deadness is exactly the ambiguity the record exists to resolve.
+To declare an ordinary prior `exit` intentional, first declare the hold the way both supervisors already read it - append a `paused: <reason>` (or `captain-held: <reason>`) line to `state/<id>.status` - then run `stand-down`.
+That declaration is reversible by the next ordinary status append.
+
+`repair-worker-state` is the only supported way to reconcile a record; nothing under `state/` is meant to be hand-edited.
+Reality wins, and only ever toward supervision: a record that no longer describes this task and endpoint, or one a live agent contradicts, is cleared and the discrepancy is reported on stderr.
+A dead endpoint alone never lets repair create or preserve a declaration, so repair can only return a task to ordinary monitoring, never remove it from monitoring.
+
+`fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an active run keeps its own run-step authority, so a gate awaiting a decision is never dropped in favour of the hold.
 
 **`resume` is not a verb.**
 It is not deterministic across the verified adapters: codex and grok resume only from a session id printed at exit, opencode continues the most recent session for the cwd, and claude, pi, pi-signed, and kimi have no verified pane-resume contract.

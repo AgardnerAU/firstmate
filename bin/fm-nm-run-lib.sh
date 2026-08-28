@@ -122,3 +122,32 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
   [ "$(fm_nm_branch_sync_state "$1")" = pipeline_owned ] || return 1
   fm_nm_run_is_active "$1"
 }
+
+# 0 if worktree $1, on branch $2, currently owns an IN-FLIGHT no-mistakes run,
+# under the same attribution the two readers above use (exact branch match plus
+# head identity, with the pipeline-owned exemption). Sets FM_NM_ACTIVE_RUN_ID to
+# the attributed run id on success. Query failures are fail-open (no active run
+# proved), because a bounded read of an optional CLI must never become a
+# prerequisite for a lifecycle action; the callers that must not act while a run
+# is live pair this with their own proof of the postcondition they need.
+fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
+  local wt=$1 branch=$2 timeout=$3 out run_branch run_head
+  # shellcheck disable=SC2034 # the attributed run id is this function's second
+  # return value, read by the caller that refuses on it.
+  FM_NM_ACTIVE_RUN_ID=
+  [ -n "$branch" ] || return 1
+  [ -d "$wt" ] || return 1
+  command -v no-mistakes >/dev/null 2>&1 || return 1
+  out=$(fm_nm_run "$wt" "$timeout" axi status)
+  [ -n "$out" ] || return 1
+  run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$out" branch)")
+  [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ] || return 1
+  run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
+  fm_nm_head_matches_worktree "$wt" "$run_head" \
+    || fm_nm_run_is_pipeline_owned_active "$out" \
+    || return 1
+  fm_nm_run_is_active "$out" || return 1
+  # shellcheck disable=SC2034 # read by callers through the documented contract.
+  FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
+  return 0
+}

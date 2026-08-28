@@ -148,6 +148,20 @@ SH
   printf '%s\n' "$fb"
 }
 
+# A fake `no-mistakes` that answers `axi status` from the environment, matching
+# the surface bin/fm-nm-run-lib.sh queries.
+add_axi_stub() {  # <case-dir>
+  cat > "$1/fakebin/no-mistakes" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "${1:-} ${2:-}" in
+  "axi status") printf '%s\n' "${FM_FAKE_AXI_STATUS:-}" ;;
+esac
+exit 0
+SH
+  chmod +x "$1/fakebin/no-mistakes"
+}
+
 # new_case <name> -> echoes a case dir holding home/, fake/, and fakebin.
 new_case() {
   local dir="$TMP_ROOT/$1-$RANDOM"
@@ -157,6 +171,9 @@ new_case() {
   printf 'zsh' > "$dir/fake/command"
   printf 'claude' > "$dir/fake/becomes"
   make_tmux_stub "$dir" >/dev/null
+  # Every case gets the env-driven run stub, so no test can reach a real
+  # no-mistakes installation on the developer's PATH.
+  add_axi_stub "$dir"
   printf '%s\n' "$dir"
 }
 
@@ -486,6 +503,127 @@ test_stand_down_refuses_to_relabel_an_unexpected_dead_agent() {
   [ ! -e "$dir/home/state/t1.worker-state" ] \
     || fail "an unexpected dead agent must not gain an intentional stand-down record"
   pass "fm-control stand-down: an unexplained dead agent remains eligible for recovery"
+}
+
+
+# A stand-down declaration is only honest while nothing more current contradicts
+# it, so these pin the two ways the control plane refuses to invent one: an
+# in-flight validation run still needs a worker at its gates, and an agent that
+# is merely gone is not an agent that was deliberately dismissed.
+
+axi_run_toon() {  # <branch> <head> <status>
+  cat <<EOF
+run:
+  id: "01ACTIVE"
+  branch: $1
+  head: "$2"
+  status: $3
+  pr: ""
+EOF
+}
+
+test_stand_down_refuses_while_the_task_owns_an_active_run() {
+  local dir out rc head
+  dir=$(new_case stand-down-active-run)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" awaiting_approval)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "stand-down must refuse while the task owns an in-flight run"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run (01ACTIVE)" \
+    "the refusal should name the run that still needs a worker"
+  assert_contains "$out" "abort it explicitly" \
+    "the refusal should require the operator's own cancellation rather than doing it for them"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a refused stand-down must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "stand-down must not stop the worker an active run needs"
+  [ "$(cat "$dir/fake/command")" = claude ] || fail "the run's worker must still be alive"
+  pass "fm-control stand-down: an in-flight validation run keeps its worker, and is never cancelled for the operator"
+}
+
+test_stand_down_allows_a_terminal_run_for_the_same_task() {
+  local dir out rc head
+  dir=$(new_case stand-down-terminal-run)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" completed)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a finished run must not block a deliberate hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a terminal run leaves the task free to be stood down"
+  pass "fm-control stand-down: only an in-flight run blocks the hold"
+}
+
+test_a_prior_exit_becomes_intentional_only_after_a_declared_hold() {
+  local dir out rc
+  dir=$(new_case stand-down-after-exit)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 exit); rc=$?
+  expect_code 0 "$rc" "the ordinary exit verb should stop the agent"$'\n'"$out"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "deadness alone must not become a declaration of intent"
+  assert_contains "$out" "Declare the hold first" \
+    "the refusal should name the explicit operator action that makes the stop intentional"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an undeclared dead agent must not gain an intentional record"
+  printf 'paused: holding this task until the upstream API lands\n' > "$dir/home/state/t1.status"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a declared hold should make the prior exit declarable"$'\n'"$out"
+  assert_contains "$out" "stood-down t1" "the declared hold should publish the no-worker state"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the published record must be the proven stood-down state"
+  [ "$(literals "$dir")" = /exit ] \
+    || fail "declaring an already-stopped agent must not send a second exit command"
+  printf 'working: back on it\n' >> "$dir/home/state/t1.status"
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "the hold declaration must stay reversible"$'\n'"$out"
+  pass "fm-control stand-down: an ordinary prior exit becomes intentional only through an explicit reversible hold"
+}
+
+test_repair_clears_a_declaration_a_live_agent_contradicts() {
+  local dir out rc
+  dir=$(new_case repair-live)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "stand-down should publish the record first"$'\n'"$out"
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair should reconcile a record reality contradicts"$'\n'"$out"
+  assert_contains "$out" "cleared-live-worker" "repair should report what it reconciled"
+  assert_contains "$out" "live agent" "repair should report the discrepancy to the operator"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a declaration a live agent contradicts must not survive repair"
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair must be idempotent"$'\n'"$out"
+  assert_contains "$out" "no-record" "a second repair should be a no-op"
+  pass "fm-control repair-worker-state: reality wins over a stale declaration, idempotently"
+}
+
+test_repair_clears_an_unprovable_record_without_inferring_intent() {
+  local dir out rc
+  dir=$(new_case repair-invalid)
+  add_task "$dir" t1 claude
+  alive_as "$dir" zsh
+  cat > "$dir/home/state/t1.worker-state" <<'EOF'
+schema=1
+task_id=t1
+endpoint=fmses:fm-some-other-task
+state=stood-down
+EOF
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair should resolve a record bound to another endpoint"$'\n'"$out"
+  assert_contains "$out" "cleared-invalid" "repair should report the unprovable record it removed"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unprovable record must not survive repair"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "repair must not leave a dead endpoint declared intentional"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "repair must never create a suppression from a dead endpoint alone"
+  pass "fm-control repair-worker-state: an unprovable record is cleared toward supervision, never toward intent"
 }
 
 # --- 3. exact-id scoping ----------------------------------------------------
@@ -931,6 +1069,11 @@ test_unverified_state_backends_refuse_stop_verbs
 test_state_verified_backends_are_exactly_tmux_and_herdr
 test_stand_down_proves_stop_then_records_intent
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
+test_stand_down_refuses_while_the_task_owns_an_active_run
+test_stand_down_allows_a_terminal_run_for_the_same_task
+test_a_prior_exit_becomes_intentional_only_after_a_declared_hold
+test_repair_clears_a_declaration_a_live_agent_contradicts
+test_repair_clears_an_unprovable_record_without_inferring_intent
 test_window_label_is_refused_with_the_exact_id
 test_explicit_endpoint_is_refused
 test_unknown_task_is_refused

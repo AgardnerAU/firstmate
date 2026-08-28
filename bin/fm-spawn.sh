@@ -682,6 +682,15 @@ RELAUNCH_REPLACEMENT_BUSY_GEN=
 RELAUNCH_REPLACEMENT_HARNESS=
 RELAUNCH_REPLACEMENT_STATE=
 RELAUNCH_REPLACEMENT_WT=
+# The intentional no-worker declaration this relaunch cleared, if any, so an
+# abort BEFORE the replacement's metadata is published can put the task back
+# in the state the operator left it in rather than in an undeclared no-worker
+# limbo the watcher would false-alarm on. Restored under exactly the same
+# pre-publication gate as the rest of the replacement rollback: once the
+# replacement is published an agent is about to start, and a stand-down
+# declaration must not survive that.
+RELAUNCH_REPLACEMENT_WORKER_STATE=
+RELAUNCH_REPLACEMENT_ENDPOINT=
 CONFIG_INHERIT_LOCK=
 CONFIG_INHERIT_LOCK_HELD=0
 
@@ -713,6 +722,13 @@ spawn_abort_cleanup() {
   fi
   if [ "$RELAUNCH_REPLACEMENT_PENDING" = 1 ]; then
     RELAUNCH_REPLACEMENT_PENDING=0
+    if [ -n "$RELAUNCH_REPLACEMENT_WORKER_STATE" ]; then
+      if ! fm_worker_state_write "$RELAUNCH_REPLACEMENT_STATE" "$ID" \
+          "$RELAUNCH_REPLACEMENT_ENDPOINT" "$RELAUNCH_REPLACEMENT_WORKER_STATE"; then
+        echo "warning: could not restore the intentional no-worker record for $ID after an aborted relaunch; it is under ordinary supervision until 'fm-control $ID stand-down' re-declares the hold" >&2
+      fi
+      RELAUNCH_REPLACEMENT_WORKER_STATE=
+    fi
     if ! clear_relaunch_harness_wiring \
         "$RELAUNCH_REPLACEMENT_HARNESS" \
         "$RELAUNCH_REPLACEMENT_WT" \
@@ -2371,15 +2387,23 @@ if [ "$RELAUNCH" -eq 1 ]; then
   # A replacement worker makes a deliberate no-worker declaration stale before
   # it can become live. The record is exact-bound to this endpoint and all
   # relaunch preflight has passed, so a failure here refuses before any new
-  # harness wiring or launch input is written.
+  # harness wiring or launch input is written. Remember what was cleared: an
+  # abort before the replacement is published must hand the task back exactly
+  # as declared, not leave it worker-free AND undeclared.
+  RELAUNCH_PRIOR_WORKER_STATE=$(fm_worker_state_status "$STATE_REAL" "$ID" "$T")
   fm_worker_state_clear "$STATE_REAL" "$ID" "$T" || {
-    echo "error: task $ID has an invalid worker-state record; refusing to relaunch until its intentional stand-down state is reconciled" >&2
+    echo "error: task $ID has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control $ID repair-worker-state'" >&2
     exit 1
   }
   RELAUNCH_REPLACEMENT_PENDING=1
   RELAUNCH_REPLACEMENT_HARNESS=$HARNESS
   RELAUNCH_REPLACEMENT_STATE=$STATE_REAL
   RELAUNCH_REPLACEMENT_WT=$WT
+  RELAUNCH_REPLACEMENT_ENDPOINT=$T
+  case "$RELAUNCH_PRIOR_WORKER_STATE" in
+    standing-down|stood-down) RELAUNCH_REPLACEMENT_WORKER_STATE=$RELAUNCH_PRIOR_WORKER_STATE ;;
+    *) RELAUNCH_REPLACEMENT_WORKER_STATE= ;;
+  esac
 fi
 if [ "$KIND" != secondmate ]; then
   # Arm the semantic busy-state contract (bin/fm-busy-lib.sh) for every

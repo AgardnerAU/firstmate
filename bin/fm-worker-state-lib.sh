@@ -20,8 +20,14 @@
 # `standing-down` records the short transition before the exit is proved. It
 # is never a suppression state, so an interrupted control action fails toward
 # ordinary supervision. `stood-down` is cleared by fm-spawn --relaunch before
-# it prepares the replacement. Teardown removes the record with the task's
+# it prepares the replacement, and restored if that relaunch aborts before the
+# replacement's metadata is published, so a failed relaunch returns the task to
+# the declaration it started from. Teardown removes the record with the task's
 # other endpoint-local runtime state.
+#
+# `fm-control <id> repair-worker-state` is the only supported way to reconcile
+# a record that no longer describes reality (fm_worker_state_repair below);
+# nothing here is meant to be hand-edited or hand-removed.
 #
 # This is a sidecar rather than a state/<id>.meta field. Endpoint metadata is
 # the relaunch identity and has independent transactional writers, so mixing a
@@ -90,11 +96,48 @@ fm_worker_state_write() {
     rm -f -- "$tmp"
     return 1
   fi
-  mv -f -- "$tmp" "$record"
+  if ! mv -f -- "$tmp" "$record"; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+}
+
+# fm_worker_state_repair <state-dir> <task-id> <endpoint> <agent-state>
+# The one supported reconciliation of a record against observed reality, so no
+# operator ever has to hand-edit or hand-remove one. Reality wins in exactly
+# two directions, and only ever toward ordinary supervision: a record whose
+# meaning cannot be proved is removed, and a declaration contradicted by a live
+# agent is removed. Deadness alone never writes, upgrades, or preserves intent,
+# because an absent agent is precisely the ambiguity this record exists to
+# resolve. Idempotent: a second call on an already-reconciled task is a no-op.
+# Prints the outcome word; returns nonzero only when a removal failed.
+fm_worker_state_repair() {  # <state-dir> <task-id> <endpoint> <agent-state>
+  local state_dir=$1 id=$2 endpoint=$3 observed=$4 record status
+  record=$(fm_worker_state_path "$state_dir" "$id")
+  { [ -e "$record" ] || [ -L "$record" ]; } || { printf 'no-record'; return 0; }
+  status=$(fm_worker_state_status "$state_dir" "$id" "$endpoint")
+  case "$status" in
+    invalid)
+      rm -f -- "$record" || return 1
+      printf 'cleared-invalid'
+      ;;
+    standing-down|stood-down)
+      if [ "$observed" = alive ]; then
+        rm -f -- "$record" || return 1
+        printf 'cleared-live-worker'
+      else
+        printf 'intact'
+      fi
+      ;;
+    *) printf 'intact' ;;
+  esac
 }
 
 # fm_worker_state_clear <state-dir> <task-id> <endpoint>
 # A relaunch can clear only a valid state record for its own exact endpoint.
+# An unprovable record is refused here rather than silently discarded, because
+# only the repair path above may resolve one, and only against observed
+# reality.
 fm_worker_state_clear() {
   local state_dir=$1 id=$2 endpoint=$3 record status
   record=$(fm_worker_state_path "$state_dir" "$id")

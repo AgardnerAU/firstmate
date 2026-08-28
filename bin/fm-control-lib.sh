@@ -48,13 +48,14 @@ fm_control_verbs() {
 interrupt
 exit
 stand-down
+repair-worker-state
 relaunch
 EOF
 }
 
 fm_control_verb_allowed() {  # <verb>
   case "${1-}" in
-    interrupt|exit|stand-down|relaunch) return 0 ;;
+    interrupt|exit|stand-down|repair-worker-state|relaunch) return 0 ;;
   esac
   return 1
 }

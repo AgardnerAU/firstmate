@@ -192,26 +192,49 @@ TASK_BACKEND=$(fm_backend_of_meta "$META")
 BACKEND_TARGET=$(fm_backend_target_of_meta "$META")
 EXPECTED_LABEL="fm-$ID"
 
-# A proven intentional stand-down outranks a historical terminal validation
+# A proven intentional stand-down outranks a HISTORICAL terminal validation
 # result: that run describes the last worker incarnation, while this record
-# describes the task's current deliberate absence of a worker. Recheck the
-# endpoint before reporting parked so a stale record can never hide a live
-# worker that must remain eligible for wedge detection. A missing endpoint
-# still proves no worker is present, although a later relaunch will correctly
-# refuse until that endpoint is recovered.
+# describes the task's current deliberate absence of a worker. It never
+# outranks an ACTIVE run, which still owns the branch and still has a gate or a
+# step to report - that reporting is the authoritative current state, and
+# dropping it would hide actionable work. So the record is resolved here but
+# reported only at the two points below where nothing more current exists.
 WORKER_LIFECYCLE=$(fm_worker_state_status "$STATE" "$ID" "$BACKEND_TARGET")
-case "$WORKER_LIFECYCLE" in
-  stood-down)
-    case "$(fm_backend_agent_state "$TASK_BACKEND" "$BACKEND_TARGET" 2>/dev/null || true)" in
-      dead|missing) emit parked worker-state "worker deliberately stood down" ;;
-      alive) emit unknown worker-state "record says stood down but endpoint has a live worker" ;;
-      *) emit unknown worker-state "stood-down record cannot prove the endpoint remains worker-free" ;;
-    esac
-    ;;
-  invalid)
-    emit unknown worker-state "invalid worker-state record"
-    ;;
-esac
+
+# Report the worker-state verdict, or return 1 to let the caller carry on.
+# Recheck the endpoint first so a stale record can never hide a live worker
+# that must remain eligible for wedge detection. A missing endpoint still
+# proves no worker is present, although a later relaunch will correctly refuse
+# until that endpoint is recovered.
+#
+# Mode `proven-only` reports just the one verdict this record can prove - the
+# task really is worker-free - and stays silent otherwise, so a record that
+# does NOT describe reality never masks a source that does. Mode `full` also
+# surfaces the discrepancies, and is used only where the alternative is a
+# guess from a pane read or a stale status log.
+emit_worker_state_if_current() {  # <proven-only|full>
+  local mode=$1
+  case "$WORKER_LIFECYCLE" in
+    stood-down)
+      case "$(fm_backend_agent_state "$TASK_BACKEND" "$BACKEND_TARGET" 2>/dev/null || true)" in
+        dead|missing) emit parked worker-state "worker deliberately stood down" ;;
+        alive)
+          [ "$mode" = full ] || return 1
+          emit unknown worker-state "record says stood down but endpoint has a live worker"
+          ;;
+        *)
+          [ "$mode" = full ] || return 1
+          emit unknown worker-state "stood-down record cannot prove the endpoint remains worker-free"
+          ;;
+      esac
+      ;;
+    invalid)
+      [ "$mode" = full ] || return 1
+      emit unknown worker-state "invalid worker-state record; reconcile it with 'fm-control $ID repair-worker-state'"
+      ;;
+  esac
+  return 1
+}
 
 pane_readable() {  # <target>
   case "$TASK_BACKEND" in
@@ -604,6 +627,14 @@ if [ "$HAVE_RUN" = 1 ]; then
       ;;
   esac
 
+  # A terminal run is history; an intentional stand-down published after it is
+  # the newer statement about this task, so it outranks the terminal outcome
+  # only. Anything the run still reports as live (working, parked at a gate)
+  # stays authoritative.
+  case "$RUN_STATE" in
+    done|failed) emit_worker_state_if_current proven-only || true ;;
+  esac
+
   emit "$RUN_STATE" run-step "$RUN_DETAIL"
 fi
 
@@ -612,6 +643,12 @@ fi
 # liveness, so a finished-but-pane-closed crew never reaches here. Down here there
 # is no run to consult, so a dead/unreadable target means the crew is gone: report
 # unknown rather than trusting a possibly-stale status log as the current state.
+
+# With no run to consult, a worker-state record is the most current statement
+# there is about this task - including the discrepancies, whose only remaining
+# alternative is a guess from the pane or a stale status log.
+emit_worker_state_if_current full || true
+
 [ -n "$BACKEND_TARGET" ] || emit unknown none "no backend target recorded"
 pane_readable "$BACKEND_TARGET" || emit unknown none "backend target gone: $BACKEND_TARGET"
 

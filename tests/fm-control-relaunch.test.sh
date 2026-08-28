@@ -132,6 +132,13 @@ new_case() {
   printf 'claude' > "$dir/fake/becomes"
   printf '%s\n' "fm-$id" > "$dir/fake/windows"
   make_tmux_stub "$dir"
+  # A no-op `no-mistakes`, so a stand-down here can never reach a real
+  # installation on the developer's PATH to ask about an in-flight run.
+  cat > "$dir/fakebin/no-mistakes" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+  chmod +x "$dir/fakebin/no-mistakes"
   printf '%s\n' "$dir"
 }
 
@@ -1047,6 +1054,38 @@ test_complete_journal_failure_rolls_back_from_durable_phase() {
   pass "fm-control relaunch: failed journal replacement preserves durable phase"
 }
 
+# A relaunch that never publishes its replacement must hand the task back
+# exactly as the operator left it. Without the restore, an aborted relaunch
+# leaves the task both worker-free AND undeclared - the precise state that puts
+# a held task back into false stale/wedge alarms.
+test_prepublication_abort_restores_the_intentional_no_worker_record() {
+  local dir out rc real_mv meta record
+  dir=$(new_case standdownrollback rl31)
+  add_ship_task "$dir" rl31 claude
+  record="$dir/home/state/rl31.worker-state"
+  meta="$dir/home/state/rl31.meta"
+  out=$(run_control "$dir" rl31 stand-down); rc=$?
+  expect_code 0 "$rc" "the task should start from a published stand-down"$'\n'"$out"
+  [ -f "$record" ] || fail "stand-down did not publish its record"
+  real_mv=$(command -v mv)
+  make_mv_failure_stub "$dir"
+  out=$(FM_REAL_MV="$real_mv" FM_FAKE_META_PUBLISH_MV_FAIL="$meta" \
+    run_control "$dir" rl31 relaunch --note "try to bring the held task back"); rc=$?
+  expect_code 1 "$rc" "a failed metadata publication should fail closed"$'\n'"$out"
+  [ -f "$record" ] \
+    || fail "an aborted relaunch left the held task worker-free and undeclared"
+  assert_grep 'state=stood-down' "$record" \
+    "the restored record must be the exact declaration the relaunch cleared"
+  assert_grep 'endpoint=fmses:fm-rl31' "$record" \
+    "the restored record must stay bound to the preserved endpoint"
+  out=$(FM_REAL_MV="$real_mv" \
+    run_control "$dir" rl31 relaunch --note "retry now that publication works"); rc=$?
+  expect_code 0 "$rc" "a retried relaunch should still work from the restored record"$'\n'"$out"
+  [ ! -e "$record" ] \
+    || fail "a relaunch that really started a replacement must clear the declaration"
+  pass "fm-control relaunch: a pre-publication abort returns the task to its declared stand-down"
+}
+
 test_prepublication_abort_retires_replacement_wiring_and_busy_state() {
   local dir out rc real_mv meta
   dir=$(new_case prepublishcleanup rl28)
@@ -1373,6 +1412,7 @@ test_post_publication_launch_failure_keeps_the_new_record
 test_stop_transport_failure_reconciles_a_dead_agent
 test_complete_journal_failure_rolls_back_from_durable_phase
 test_prepublication_abort_retires_replacement_wiring_and_busy_state
+test_prepublication_abort_restores_the_intentional_no_worker_record
 test_journal_records_the_checkpoint_it_proved
 test_secondmate_relaunch_checkpoints_child_work_and_spares_the_charter
 test_secondmate_relaunch_refuses_an_unmarked_home

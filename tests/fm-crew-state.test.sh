@@ -712,6 +712,58 @@ EOF
   pass "a stood-down worker state outranks historical failed validation state"
 }
 
+# The counterfactual for the rule above: the record outranks HISTORY, never an
+# ACTIVE run. A run parked at a gate still owns the branch and still has work
+# only a supervisor can action, so it must survive the record untouched.
+test_active_run_outranks_a_stood_down_record() {
+  reset_fakes
+  local d out
+  d=$(new_case stood-down-active-run)
+  make_repo_on_branch "$d/wt" fm/feat-still-parked
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-still-parked.meta" "window=fm:fm-feat-still-parked" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-still-parked.worker-state" <<'EOF'
+schema=1
+task_id=feat-still-parked
+endpoint=fm:fm-feat-still-parked
+state=stood-down
+EOF
+  FM_FAKE_AXI_STATUS="$(run_parked fm/feat-still-parked)"
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-still-parked)
+  assert_contains "$out" "source: run-step" \
+    "an active run must keep reporting authority over a worker-state record"
+  assert_contains "$out" "parked at review" \
+    "the actionable gate must not be dropped by the no-worker declaration"
+  assert_not_contains "$out" "worker deliberately stood down" \
+    "a stand-down record must not replace an active run's own current state"
+  pass "an active run-step outranks a stood-down worker-state record"
+}
+
+# An unprovable record is a repair prompt, not a mask: it must never hide a
+# real run outcome the reader can still act on.
+test_invalid_worker_state_record_does_not_mask_a_failed_run() {
+  reset_fakes
+  local d out
+  d=$(new_case invalid-worker-state)
+  make_repo_on_branch "$d/wt" fm/feat-invalid-record
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-invalid-record.meta" "window=fm:fm-feat-invalid-record" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-invalid-record.worker-state" <<'EOF'
+schema=1
+task_id=feat-invalid-record
+endpoint=fm:fm-some-other-endpoint
+state=stood-down
+EOF
+  FM_FAKE_AXI_STATUS="$(run_failed fm/feat-invalid-record)"
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-invalid-record)
+  assert_contains "$out" "state: failed" \
+    "a record that proves nothing must not mask a genuine failed run"
+  assert_contains "$out" "source: run-step" "the run remains the authoritative source"
+  pass "an unprovable worker-state record never masks a real run outcome"
+}
+
 # (e) cross-branch attribution: `axi status` returns ANOTHER branch's run (the
 # routine case once more than one crew validates the same underlying repo
 # concurrently - they share ONE no-mistakes repo registration), so the helper
@@ -1597,6 +1649,8 @@ test_top_level_fixing_done_log_stays_working
 test_terminal_passed
 test_terminal_failed
 test_stood_down_worker_outranks_a_historical_failed_run
+test_active_run_outranks_a_stood_down_record
+test_invalid_worker_state_record_does_not_mask_a_failed_run
 test_cross_branch_attribution_via_runs_list
 test_cross_branch_attribution_picks_most_recent_row
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status
