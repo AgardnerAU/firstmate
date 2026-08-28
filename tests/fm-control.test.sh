@@ -736,6 +736,40 @@ test_stand_down_refuses_a_live_run_behind_a_terminal_axi_answer() {
   pass "fm-control stand-down: a finished axi answer is corroborated by the branch listing, never trusted alone"
 }
 
+# `no-mistakes runs` offers only --limit: no pagination, no end-of-list marker.
+# A window that comes back exactly full may have cut an older live row off, so
+# it cannot prove the branch is quiet; one row short of the window can.
+test_stand_down_refuses_a_full_run_window_and_accepts_a_short_one() {
+  local dir out rc head
+  dir=$(new_case stand-down-full-window)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_NM_RUNS_LIMIT=3 \
+    FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-other  aaaaaaa1  2026-08-28
+completed  task-other  aaaaaaa2  2026-08-28
+completed  task-other  aaaaaaa3  2026-08-28" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a full run window cannot prove the branch is quiet"$'\n'"$out"
+  assert_contains "$out" "exactly full" \
+    "the refusal should name the window that could not prove the negative"
+  assert_contains "$out" "FM_NM_RUNS_LIMIT" \
+    "the refusal should name the supported way to widen the window"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unproven run window must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unproven run window must not stop the worker"
+  out=$(FM_NM_RUNS_LIMIT=3 \
+    FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-other  aaaaaaa1  2026-08-28
+completed  task-other  aaaaaaa2  2026-08-28" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a window that came back short proves the branch has no live run"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "an exhausted listing with no live row licenses the hold"
+  pass "fm-control stand-down: only a run listing short of its window proves no run is live"
+}
+
 # When the listing DOES answer and names a live run it cannot place, the
 # refusal must say so - not send the operator back to re-run a listing that
 # already answered.
@@ -1381,6 +1415,7 @@ test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
 test_stand_down_refuses_a_live_run_listed_below_a_finished_one
 test_stand_down_refuses_a_live_run_behind_a_terminal_axi_answer
+test_stand_down_refuses_a_full_run_window_and_accepts_a_short_one
 test_stand_down_refusal_names_the_unplaceable_live_run_not_the_listing
 test_stand_down_refuses_when_the_worktree_cannot_be_read
 test_stand_down_refuses_while_an_instruction_is_unacknowledged

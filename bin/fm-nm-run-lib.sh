@@ -130,6 +130,18 @@ fm_nm_run_unknown() {  # <reason>
   FM_NM_RUN_UNKNOWN_REASON=$1
 }
 
+# The bounded window every runs-listing scan reads. `no-mistakes runs` takes
+# only --limit: no pagination, no "that was all" marker, so a full window is
+# indistinguishable from a truncated one and can never prove a negative. The
+# default is the historical 200; an operator whose fleet fills that window can
+# widen it here for BOTH readers, which is why the safety caller no longer
+# takes a private hardcoded cap.
+fm_nm_runs_limit() {
+  local n=${FM_NM_RUNS_LIMIT:-200}
+  case "$n" in ''|*[!0-9]*|0) n=200 ;; esac
+  printf '%s' "$n"
+}
+
 # Coarse run attribution from the top-level `no-mistakes runs` listing, the
 # one fallback for the routine case where bare `axi status` answers with
 # ANOTHER branch's run (several crews validating the same underlying repo share
@@ -143,7 +155,7 @@ fm_nm_run_unknown() {  # <reason>
 # run, not history, however many finished rows sit above it. Stopping at the
 # first row would answer "nothing is in flight" while that run holds the branch.
 #
-# It answers on three separate channels, because reporting and safety need
+# It answers on several separate channels, because reporting and safety need
 # different things from the same rows:
 #   FM_NM_RUNS_STATUS            the status word to RENDER: the first row whose
 #                                head places against this worktree, and nothing
@@ -152,6 +164,14 @@ fm_nm_run_unknown() {  # <reason>
 #                                current state.
 #   FM_NM_RUNS_ACTIVE_ATTRIBUTED "<status> <sha>" of a non-terminal row that
 #                                places here: a live run this task owns.
+#   FM_NM_RUNS_TRUNCATED         1 when the listing came back exactly full, so
+#                                the window may have cut off older rows. The
+#                                interface offers no pagination and no
+#                                end-of-list marker, so a full window is not an
+#                                exhausted one: it can still answer that a run
+#                                IS live, but it can never prove that none is.
+#                                FM_NM_RUNS_LIMIT_USED carries the window size
+#                                the answer was read through.
 #   FM_NM_RUNS_UNATTRIBUTED_ACTIVE  "<status> <sha>" of a non-terminal row that
 #                                does NOT place here (mismatched or
 #                                unresolvable head): a live run on this branch
@@ -164,18 +184,21 @@ fm_nm_run_unknown() {  # <reason>
 # was set, 2 when the CLI itself could not answer, 1 otherwise. A caller whose
 # safety depends on the result reads the two liveness channels, not the word.
 fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
-  local wt=$1 branch=$2 timeout=$3 limit=${4:-200} out rc row st rest br sha
-  local render_locked=0
-  case "$limit" in ''|*[!0-9]*) limit=200 ;; esac
+  local wt=$1 branch=$2 timeout=$3 limit=${4:-} out rc row st rest br sha
+  local render_locked=0 rows=0
+  case "$limit" in ''|*[!0-9]*|0) limit=$(fm_nm_runs_limit) ;; esac
   FM_NM_RUNS_STATUS=
   FM_NM_RUNS_ACTIVE_ATTRIBUTED=
   FM_NM_RUNS_UNATTRIBUTED_ACTIVE=
+  FM_NM_RUNS_TRUNCATED=
+  FM_NM_RUNS_LIMIT_USED=$limit
   [ -n "$branch" ] || return 1
   if out=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then rc=0; else rc=$?; fi
   [ "$rc" = 0 ] || return 2
   while IFS= read -r row; do
     row=$(fm_nm_trim "$row")
     [ -n "$row" ] || continue
+    rows=$((rows + 1))
     st=${row%% *}
     rest=$(fm_nm_trim "${row#* }")
     br=${rest%% *}
@@ -204,6 +227,7 @@ fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
     esac
     fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
   done <<< "$out"
+  [ "$rows" -lt "$limit" ] || FM_NM_RUNS_TRUNCATED=1
   [ -z "$FM_NM_RUNS_STATUS" ] || return 0
   return 1
 }
@@ -237,7 +261,8 @@ fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
 # as 0. An absent CLI is a proven 1, not an unanswered question: with no
 # no-mistakes installed there is no run to own the branch. Answer 1 needs BOTH
 # sources to agree: one live run from either is enough to answer 0, but only a
-# successful whole-branch listing that found nothing live can prove the
+# successful whole-branch listing that found nothing live AND came back short of
+# its window - a full window may have cut the live row off - can prove the
 # negative.
 #
 # THE GOVERNING RULE AT EVERY DECISION BELOW: IF IT CANNOT BE PROVEN SAFE, IT
@@ -284,7 +309,7 @@ fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
   # earlier run on this branch can still be in flight behind it - so no hold is
   # licensed until the whole-branch listing has answered too. Its silence is
   # not an answer.
-  if fm_nm_runs_scan_for_branch "$wt" "$branch" "$timeout"; then
+  if fm_nm_runs_scan_for_branch "$wt" "$branch" "$timeout" "$(fm_nm_runs_limit)"; then
     coarse_rc=0
   else
     coarse_rc=$?
@@ -304,6 +329,10 @@ fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
   fi
   if [ "$coarse_rc" = 2 ]; then
     fm_nm_run_unknown "'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
+    return 2
+  fi
+  if [ "${FM_NM_RUNS_TRUNCATED:-}" = 1 ]; then
+    fm_nm_run_unknown "'no-mistakes runs --limit ${FM_NM_RUNS_LIMIT_USED}' came back exactly full, so it cannot prove branch $branch has no run still in flight - an older live run may sit past that window (widen it with FM_NM_RUNS_LIMIT)"
     return 2
   fi
   return 1
