@@ -235,7 +235,10 @@ fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
 #   2 - could not answer; FM_NM_RUN_UNKNOWN_REASON names the check that failed.
 # A caller for whom a live run is a refusal condition must refuse on 2 as well
 # as 0. An absent CLI is a proven 1, not an unanswered question: with no
-# no-mistakes installed there is no run to own the branch.
+# no-mistakes installed there is no run to own the branch. Answer 1 needs BOTH
+# sources to agree: one live run from either is enough to answer 0, but only a
+# successful whole-branch listing that found nothing live can prove the
+# negative.
 #
 # THE GOVERNING RULE AT EVERY DECISION BELOW: IF IT CANNOT BE PROVEN SAFE, IT
 # IS REFUSED, AND THE REFUSAL NAMES WHAT COULD NOT BE PROVEN. So a non-terminal
@@ -263,18 +266,24 @@ fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
       run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
       if fm_nm_head_matches_worktree "$wt" "$run_head" \
         || fm_nm_run_is_pipeline_owned_active "$out"; then
-        fm_nm_run_is_active "$out" || return 1
-        # shellcheck disable=SC2034 # read by callers through the documented contract.
-        FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
-        return 0
+        if fm_nm_run_is_active "$out"; then
+          # shellcheck disable=SC2034 # read by callers through the documented contract.
+          FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
+          return 0
+        fi
       elif fm_nm_run_is_active "$out"; then
         unattributed="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
       fi
     fi
   fi
-  # `axi status` did not settle this branch: it answered about another branch,
-  # its same-branch attribution failed, or it did not answer at all. The coarse
-  # listing is the only remaining source, so its silence is not an answer.
+  # Only a LIVE run is settled by bare `axi status`, and every other outcome
+  # falls through to here: it answered about another branch, its same-branch
+  # attribution failed, it named a finished run, or it did not answer at all.
+  # A finished answer is not proof either, for the same reason a finished
+  # listing row is not - `axi status` reports the most recent run, and an
+  # earlier run on this branch can still be in flight behind it - so no hold is
+  # licensed until the whole-branch listing has answered too. Its silence is
+  # not an answer.
   if fm_nm_runs_scan_for_branch "$wt" "$branch" "$timeout"; then
     coarse_rc=0
   else

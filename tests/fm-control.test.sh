@@ -706,6 +706,36 @@ running  task-t1  $short  2026-08-27  " \
   pass "fm-control stand-down: a finished row never ends the branch scan while a run is still live"
 }
 
+# `axi status` reports the most recent run, so a finished answer for this
+# branch is no more proof than a finished listing row: an earlier run can still
+# be in flight behind it. Only the whole-branch listing can prove the negative,
+# so both sources have to agree before a hold is licensed.
+test_stand_down_refuses_a_live_run_behind_a_terminal_axi_answer() {
+  local dir out rc head short
+  dir=$(new_case stand-down-live-behind-terminal-axi)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  short=$(git -C "$dir/wt-t1" rev-parse --short HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" completed)" \
+    FM_FAKE_RUNS_LIST="running  task-t1  $short  2026-08-27  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a finished axi answer must not settle the branch while a run is live"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run" \
+    "the refusal should name the run that still needs a worker"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a live run behind a finished answer must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "a live run must not lose its worker to a hold"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" completed)" \
+    FM_FAKE_NM_FAIL_RUNS=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a finished axi answer alone must not license the hold"$'\n'"$out"
+  assert_contains "$out" "no-mistakes runs" \
+    "the refusal should name the listing that could not confirm the branch is quiet"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unconfirmed finished answer must publish no worker-state record"
+  pass "fm-control stand-down: a finished axi answer is corroborated by the branch listing, never trusted alone"
+}
+
 # When the listing DOES answer and names a live run it cannot place, the
 # refusal must say so - not send the operator back to re-run a listing that
 # already answered.
@@ -1350,6 +1380,7 @@ test_stand_down_refuses_when_no_run_check_can_answer
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
 test_stand_down_refuses_a_live_run_listed_below_a_finished_one
+test_stand_down_refuses_a_live_run_behind_a_terminal_axi_answer
 test_stand_down_refusal_names_the_unplaceable_live_run_not_the_listing
 test_stand_down_refuses_when_the_worktree_cannot_be_read
 test_stand_down_refuses_while_an_instruction_is_unacknowledged
