@@ -141,9 +141,12 @@ fm_nm_run_unknown() {  # <reason>
 # Prints the first matching row's status word and returns 0; returns 1 when the
 # listing answered and proved this branch has no run in it; returns 2 when the
 # question could not be answered at all - the CLI call failed or timed out, or
-# a matching row's head cannot be resolved here, which is UNKNOWN attribution
-# rather than a proven mismatch. A caller that must not act while a run is live
-# has to treat 2 as "not proved safe", not as "no run".
+# a NON-TERMINAL row's head cannot be resolved here, which is UNKNOWN
+# attribution rather than a proven mismatch. A caller that must not act while a
+# run is live has to treat 2 as "not proved safe", not as "no run". An
+# unresolvable TERMINAL row stops the scan too (it must not bind an older,
+# superseded row), but it answers 1: the newest run on this branch has
+# finished, wherever its head lives.
 #
 # The scan answers through FM_NM_RUNS_STATUS (the status word) so a caller can
 # read its second answer too: a row skipped by the head rule whose status is
@@ -172,14 +175,23 @@ fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
     if [ "$br" = "$branch" ]; then
       if ! fm_nm_head_matches_worktree "$wt" "$sha"; then
         case "$st" in
-          completed|failed|cancelled) ;;
+          completed|failed|cancelled)
+            # An UNRESOLVABLE head is unknown attribution, so stop rather than
+            # bind an older, superseded row - but a TERMINAL newest row still
+            # proves the one thing a safety caller needs: nothing is in flight
+            # on this branch. A pipeline lane head that never reached this
+            # worktree is routine (see fm_nm_head_resolvable), and treating it
+            # as unanswerable would refuse a hold with no run to finish.
+            fm_nm_head_resolvable "$wt" "$sha" || return 1
+            ;;
           *)
             [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] \
               || FM_NM_RUNS_UNATTRIBUTED_ACTIVE="$st $sha"
+            # A non-terminal row that cannot be placed is exactly the doubt the
+            # governing rule carries: unknown, never proof of safety.
+            fm_nm_head_resolvable "$wt" "$sha" || return 2
             ;;
         esac
-        # An UNRESOLVABLE head is unknown attribution, not a proven mismatch.
-        fm_nm_head_resolvable "$wt" "$sha" || return 2
         continue
       fi
       FM_NM_RUNS_STATUS=$st

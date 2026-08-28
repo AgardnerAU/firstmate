@@ -630,18 +630,14 @@ task_is_declared_held() {
 # removes the task from the watcher's stale and wedge detection, so only a
 # proven "no run is active here" may proceed. Every input to that proof is held
 # to the same standard: an absent or unreadable worktree, an unreadable
-# repository, a worktree with no branch to attribute a run to, a CLI that did
-# not answer, and a live run the head rule could not place all refuse.
+# repository, a CLI that did not answer, and a live run the head rule could not
+# place all refuse.
 # fm_nm_active_run_for_worktree carries the query half of the same rule and
 # names the check that could not answer.
 #
-# Every kind stand-down accepts is checked, ship and scout alike: a scout's
-# scratch worktree is normally at a detached HEAD, but a scout checked out on a
-# branch can own a run exactly like a ship can, and an unchecked hold there
-# would take that run out of supervision. The one kind-sensitive step is the
-# detached HEAD itself: for a ship it is an anomaly that removes the branch
-# attribution a run is keyed by, while for a scout it is the ordinary scratch
-# configuration in which no branch exists for any run to own.
+# Every kind stand-down accepts is checked the same way, ship and scout alike:
+# a scout checked out on a branch can own a run exactly like a ship can, and an
+# unchecked hold there would take that run out of supervision.
 refuse_stand_down_during_active_run() {
   local branch rc
   [ -n "$WT" ] \
@@ -651,12 +647,11 @@ refuse_stand_down_during_active_run() {
   git -C "$WT" rev-parse --git-dir >/dev/null 2>&1 \
     || die "task $ID's worktree $WT is not a readable git worktree, so whether it owns an active no-mistakes run cannot be checked; repair it before declaring a hold"
   branch=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-  if [ -z "$branch" ]; then
-    if [ "$KIND" = ship ]; then
-      die "task $ID's worktree $WT is at a detached HEAD, so no branch is available to attribute a no-mistakes run to; check the worktree out on its task branch before declaring a hold"
-    fi
-    return 0
-  fi
+  # A worktree with no branch owns no run: a run is keyed by branch, so there
+  # is nothing for one to hold. That is the scout's ordinary scratch copy, and
+  # equally a ship between spawn and its worker's first `git checkout -b`,
+  # which is exactly when an early hold is most likely to be needed.
+  [ -n "$branch" ] || return 0
   if fm_nm_active_run_for_worktree "$WT" "$branch" "$NM_CONTROL_TIMEOUT"; then
     rc=0
   else

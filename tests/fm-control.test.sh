@@ -652,6 +652,25 @@ test_stand_down_refuses_a_live_run_it_cannot_place() {
   pass "fm-control stand-down: a live run that cannot be placed is doubt, not proof of safety"
 }
 
+# The mirror of the rule above. An unplaceable TERMINAL row is history that
+# happens to live elsewhere - a pipeline lane head that never reached this
+# worktree is routine - and history answers the only question a hold depends
+# on, so it must not refuse a hold that has no run to finish or abort.
+test_stand_down_allows_a_terminal_run_whose_head_never_reached_here() {
+  local dir out rc head
+  dir=$(new_case stand-down-terminal-lane-head)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-t1  deadbeef1  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a finished run whose head is not a local object must not block the hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the hold publishes once the newest run for the branch is proven finished"
+  pass "fm-control stand-down: a terminal run whose head never reached this worktree is history, not doubt"
+}
+
 # The preserved local copy IS the hold. If it cannot be read, neither can the
 # run state that decides whether the hold is safe to declare.
 test_stand_down_refuses_when_the_worktree_cannot_be_read() {
@@ -668,14 +687,14 @@ test_stand_down_refuses_when_the_worktree_cannot_be_read() {
     || fail "an unreadable worktree must publish no worker-state record"
   [ -z "$(literals "$dir")" ] || fail "an unreadable worktree must not lose its worker"
   mv "$dir/wt-t1-moved" "$dir/wt-t1"
+  # A ship sits at a detached HEAD from spawn until its worker's first
+  # `git checkout -b`, which is exactly when an early hold is most likely.
   git -C "$dir/wt-t1" checkout -q --detach
   out=$(run_control "$dir" t1 stand-down); rc=$?
-  expect_code 1 "$rc" "a detached HEAD leaves no branch to attribute a run to"$'\n'"$out"
-  assert_contains "$out" "detached HEAD" \
-    "the refusal should name the missing branch attribution"
-  [ ! -e "$dir/home/state/t1.worker-state" ] \
-    || fail "a worktree with no branch must publish no worker-state record"
-  pass "fm-control stand-down: an unreadable worktree or a missing branch refuses instead of guessing"
+  expect_code 0 "$rc" "a worktree with no branch owns no run, so the hold proceeds"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a just-spawned ship must still be declarable as deliberately worker-free"
+  pass "fm-control stand-down: an unreadable worktree refuses, while a branchless one owns no run"
 }
 
 # A steer nobody has acknowledged is work the hold would silence: the watcher's
@@ -750,7 +769,26 @@ test_a_prior_exit_becomes_intentional_only_after_a_declared_hold() {
     || fail "declaring an already-stopped agent must not send a second exit command"
   printf 'working: back on it\n' >> "$dir/home/state/t1.status"
   out=$(run_control "$dir" t1 repair-worker-state); rc=$?
-  expect_code 0 "$rc" "the hold declaration must stay reversible"$'\n'"$out"
+  expect_code 0 "$rc" "repair reads the endpoint, not the status log"$'\n'"$out"
+  assert_contains "$out" "intact" \
+    "an ordinary status append must not retroactively revoke a published declaration"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the published record survives until reality contradicts it"
+  # Reversibility is observable at the next declaration, not in the record: with
+  # the worker back and the hold withdrawn from the status log, the same dead
+  # agent is no longer declarable.
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "a live worker should reconcile the record"$'\n'"$out"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a live worker must clear the declaration it contradicts"
+  alive_as "$dir" zsh
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a withdrawn hold must stop licensing an intentional declaration"$'\n'"$out"
+  assert_contains "$out" "Declare the hold first" \
+    "the withdrawn hold should send the operator back to the explicit declaration"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a withdrawn hold must not publish a new intentional record"
   pass "fm-control stand-down: an ordinary prior exit becomes intentional only through an explicit reversible hold"
 }
 
@@ -1245,6 +1283,7 @@ test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
 test_stand_down_refuses_a_live_run_it_cannot_place
+test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
 test_stand_down_refuses_when_the_worktree_cannot_be_read
 test_stand_down_refuses_while_an_instruction_is_unacknowledged
 test_stand_down_checks_a_scout_on_a_branch_and_spares_a_detached_scratch
