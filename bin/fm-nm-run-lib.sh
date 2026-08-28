@@ -123,13 +123,10 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
   fm_nm_run_is_active "$1"
 }
 
-# The bounded inventory window used by the one branch-run verdict.
-# `no-mistakes runs` has no pagination or end-of-list marker, so a full window
-# can never prove a negative.
-# FM_CREW_STATE_RUNS_LIMIT is the superseded name this window was configured by
-# while the listing was read only for current-state reporting; it is still
-# honoured so an operator's existing setting keeps widening the window that is
-# now load-bearing for stand-down as well.
+# The bounded corroboration window read from `no-mistakes runs`. The listing is
+# repo-wide and has neither pagination nor an end-of-list marker, so it can add
+# a run this branch owns but can never be asked to prove the absence of one.
+# FM_CREW_STATE_RUNS_LIMIT is the superseded name for the same window.
 fm_nm_runs_limit() {
   local n=${FM_NM_RUNS_LIMIT:-${FM_CREW_STATE_RUNS_LIMIT:-200}}
   case "$n" in ''|*[!0-9]*|0) n=200 ;; esac
@@ -137,12 +134,11 @@ fm_nm_runs_limit() {
 }
 
 # `no-mistakes` answers a repository it holds no registration for with a
-# not-initialized error and no rows at all. That is a different answer from a
-# CLI that failed to respond: a repository with no registration can own no run,
-# which is the same reasoning the branchless worktree already rests on, and
-# firstmate supports whole project modes (direct-PR, local-only) that never run
-# `no-mistakes init`.
-fm_nm_inventory_says_unregistered() {  # <stderr-text>
+# not-initialized error and no rows at all. A repository with no registration
+# owns no run, so that is an answer, not a failure to answer - the same
+# reasoning the branchless worktree rests on. firstmate supports whole project
+# modes (direct-PR, local-only) that never run `no-mistakes init`.
+fm_nm_says_unregistered() {  # <stderr-text>
   local text
   text=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
   case "$text" in
@@ -151,31 +147,65 @@ fm_nm_inventory_says_unregistered() {  # <stderr-text>
   return 1
 }
 
+# Bounded `no-mistakes` call in $1 whose stdout and stderr are written into the
+# variables named by $2 and $3 rather than stderr being discarded, so a caller
+# can tell an error the CLI explained from one it did not. Both variables are
+# assigned in the caller's scope - the call must NOT be wrapped in a command
+# substitution - and the CLI's exit status is returned, or 1 when no scratch
+# file could be opened for the error stream.
+fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs> <args...>
+  local dir=$1 outvar=$2 errvar=$3 timeout=$4 err='' rc=0 out=''
+  shift 4
+  printf -v "$outvar" '%s' ''
+  printf -v "$errvar" '%s' ''
+  if command -v mktemp >/dev/null 2>&1; then
+    err=$(mktemp "${TMPDIR:-/tmp}/fm-nm-err.XXXXXX" 2>/dev/null) || err=
+  fi
+  if [ -z "$err" ]; then
+    err="${TMPDIR:-/tmp}/fm-nm-err.$$.${RANDOM}${RANDOM}"
+    ( set -o noclobber; : > "$err" ) 2>/dev/null || return 1
+  fi
+  if out=$(fm_nm_run_bounded "$dir" "$timeout" "$@" 2>"$err"); then rc=0; else rc=$?; fi
+  printf -v "$outvar" '%s' "$out"
+  printf -v "$errvar" '%s' "$(<"$err")"
+  rm -f "$err" 2>/dev/null || :
+  return "$rc"
+}
+
 # shellcheck disable=SC2034 # FM_NM_BRANCH_RUN_* is this function's documented output tuple.
 # `fm_nm_branch_run_verdict` is the one authoritative answer to whether a
-# branch owns a live no-mistakes run.
-# It writes `active`, `quiet`, or `unknown` to FM_NM_BRANCH_RUN_VERDICT, with
-# one diagnostic reason in FM_NM_BRANCH_RUN_REASON when the answer is unknown.
+# branch owns a live no-mistakes run. It writes `active`, `quiet`, or `unknown`
+# to FM_NM_BRANCH_RUN_VERDICT, with one diagnostic reason in
+# FM_NM_BRANCH_RUN_REASON when the answer is unknown.
+#
+# THE QUESTION IS ALWAYS "DOES THIS BRANCH HAVE AN ACTIVE RUN?", AND THE BRANCH
+# READ ANSWERS IT. `no-mistakes axi status` reports the repository's ACTIVE run
+# and only falls back to the most recent one when nothing is in flight, so a
+# successful call that places no non-terminal run on this branch is an answer:
+# this branch is quiet, whether the CLI named another branch's run or had
+# nothing to report at all. Only a branch read that could not be made - the CLI
+# failed or timed out, or named a live run on this branch whose head cannot be
+# placed against this worktree - leaves the question open, and an open question
+# refuses the caller that needs it proven.
+#
+# The repo-wide `runs` listing is CORROBORATION ONLY. A non-terminal row for
+# this branch is a second way to establish `active` (the listing's status column
+# is each run's current status, so it catches a run a stale `axi status` answer
+# missed), but its absence proves nothing: a full window, an unreadable row, a
+# failed call, an unregistered repo or an absent CLI must never turn a readable
+# quiet branch read into a refusal. That is why widening FM_NM_RUNS_LIMIT is a
+# reporting nicety rather than a safety setting.
+#
 # The optional display and TOON fields are reporting projections, never a
-# second safety decision: they are carried on an `unknown` verdict too, so an
-# unproven safety answer does not also blank run reporting the function already
-# holds - but only while nothing live went unplaced AND the inventory answered
-# whole, because a run that may be in flight must never be rendered from an
-# older terminal row. An inventory that did not answer, a truncated window and
-# an unparsable row are all content this branch's live row could be sitting in
-# unexamined, so none of them carries anything: one rule, no matter which part
-# of the inventory went missing.
-# The inventory call is issued on every path except a placeable live `axi
-# status` answer, including one where `axi status` itself did not respond.
-# That is a deliberate reversal of the earlier single-call reporting shortcut,
-# and costs a hung CLI two bounded waits per read instead of one: only a
-# complete inventory can prove a branch quiet, so a reporting-only shortcut
-# would leave the safety caller without its proof source.
+# second safety decision, and they are assigned in exactly one place below:
+# whatever established the verdict is what reporting renders, so an
+# uncorroborated listing row is never presented as this task's state.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
-  local wt=$1 branch=$2 timeout=$3 limit=${4:-} status_out status_rc run_branch run_head
-  local inventory inventory_rc inventory_err='' inventory_stderr='' row st rest br sha rows=0 render_locked=0
-  local direct_live_unknown='' inventory_live_unknown='' inventory_live='' inventory_unreadable=''
-  local display='' terminal_toon=''
+  local wt=$1 branch=$2 timeout=$3 limit=${4:-}
+  local status_out='' status_rc status_stderr='' run_branch run_head
+  local branch_state=unknown branch_reason='' active_id='' active_toon='' terminal_toon=''
+  local inventory inventory_rc row st rest br sha render_locked=0
+  local listing_live='' listing_display=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
   FM_NM_BRANCH_RUN_REASON=
   FM_NM_BRANCH_RUN_ID=
@@ -183,7 +213,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   FM_NM_BRANCH_RUN_TOON=
   case "$limit" in ''|*[!0-9]*|0) limit=$(fm_nm_runs_limit) ;; esac
   [ -d "$wt" ] || {
-    FM_NM_BRANCH_RUN_REASON="worktree '$wt' is not readable, so no run inventory could run"
+    FM_NM_BRANCH_RUN_REASON="worktree '$wt' is not readable, so whether branch '$branch' has a run in flight could not be read"
     return 0
   }
   [ -n "$branch" ] || {
@@ -191,111 +221,79 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     return 0
   }
   command -v no-mistakes >/dev/null 2>&1 || {
-    FM_NM_BRANCH_RUN_REASON="'no-mistakes' is not on PATH here, so no run inventory could run to prove branch $branch quiet"
+    FM_NM_BRANCH_RUN_VERDICT=quiet
     return 0
   }
-  if status_out=$(fm_nm_run_checked "$wt" "$timeout" axi status); then status_rc=0; else status_rc=$?; fi
-  if [ "$status_rc" = 0 ] && [ -n "$status_out" ]; then
+  if fm_nm_run_capturing_stderr "$wt" status_out status_stderr "$timeout" axi status; then status_rc=0; else status_rc=$?; fi
+  if [ "$status_rc" = 0 ]; then
+    branch_state=quiet
     run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" branch)")
     if [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ]; then
       run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" head)")
       if fm_nm_run_is_active "$status_out"; then
         if fm_nm_head_matches_worktree "$wt" "$run_head" \
           || fm_nm_run_is_pipeline_owned_active "$status_out"; then
-          FM_NM_BRANCH_RUN_VERDICT=active
-          FM_NM_BRANCH_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" id)")
-          FM_NM_BRANCH_RUN_TOON=$status_out
-          return 0
+          branch_state=active
+          active_id=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" id)")
+          active_toon=$status_out
+        else
+          branch_state=unknown
+          branch_reason="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
         fi
-        direct_live_unknown="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
       elif fm_nm_head_matches_worktree "$wt" "$run_head"; then
         terminal_toon=$status_out
       fi
     fi
+  elif [ "$status_rc" != 0 ] && fm_nm_says_unregistered "$status_stderr"; then
+    branch_state=quiet
+  else
+    branch_reason="'no-mistakes axi status' could not answer whether branch $branch has a run in flight"
   fi
-  if command -v mktemp >/dev/null 2>&1; then
-    inventory_err=$(mktemp "${TMPDIR:-/tmp}/fm-nm-runs-err.XXXXXX" 2>/dev/null) || inventory_err=
-  fi
-  if [ -z "$inventory_err" ]; then
-    inventory_err="${TMPDIR:-/tmp}/fm-nm-runs-err.$$.${RANDOM}${RANDOM}"
-    ( set -o noclobber; : > "$inventory_err" ) 2>/dev/null || {
-      FM_NM_BRANCH_RUN_REASON="no scratch file could be opened to capture the run inventory's own error output, so branch $branch cannot be proven quiet (check that ${TMPDIR:-/tmp} is writable)"
-      return 0
-    }
-  fi
-  if inventory=$(fm_nm_run_bounded "$wt" "$timeout" runs --limit "$limit" 2>"$inventory_err"); then inventory_rc=0; else inventory_rc=$?; fi
-  inventory_stderr=$(<"$inventory_err") || inventory_stderr=
-  rm -f "$inventory_err" 2>/dev/null || :
-  if [ "$inventory_rc" != 0 ]; then
-    if [ -z "$direct_live_unknown" ] && fm_nm_inventory_says_unregistered "$inventory_stderr"; then
-      FM_NM_BRANCH_RUN_VERDICT=quiet
-      FM_NM_BRANCH_RUN_TOON=$terminal_toon
-      return 0
-    fi
-    FM_NM_BRANCH_RUN_REASON=${direct_live_unknown:-"'no-mistakes runs --limit' could not answer whether branch $branch has an active run"}
-    return 0
-  fi
-  while IFS= read -r row; do
-    row=$(fm_nm_trim "$row")
-    [ -n "$row" ] || continue
-    rows=$((rows + 1))
-    st=${row%% *}
-    case "$row" in
-      *" "*) ;;
-      *) inventory_unreadable=$row; continue ;;
-    esac
-    rest=$(fm_nm_trim "${row#* }")
-    if [ -z "$rest" ]; then
-      inventory_unreadable=$row
-      continue
-    fi
-    br=${rest%% *}
-    rest=$(fm_nm_trim "${rest#* }")
-    sha=${rest%% *}
-    if [ -z "$br" ] || [ -z "$sha" ]; then
-      inventory_unreadable=$row
-      continue
-    fi
-    [ "$br" = "$branch" ] || continue
-    if fm_nm_head_matches_worktree "$wt" "$sha"; then
-      if [ "$render_locked" = 0 ] && [ -z "$display" ]; then display=$st; fi
+  if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
+  if [ "$inventory_rc" = 0 ]; then
+    while IFS= read -r row; do
+      row=$(fm_nm_trim "$row")
+      [ -n "$row" ] || continue
+      case "$row" in *" "*) ;; *) continue ;; esac
+      st=${row%% *}
+      rest=$(fm_nm_trim "${row#* }")
+      [ -n "$rest" ] || continue
+      br=${rest%% *}
+      rest=$(fm_nm_trim "${rest#* }")
+      sha=${rest%% *}
+      { [ -n "$br" ] && [ -n "$sha" ]; } || continue
+      [ "$br" = "$branch" ] || continue
       case "$st" in
-        completed|failed|cancelled) ;;
-        *) [ -n "$inventory_live" ] || inventory_live="$st $sha" ;;
+        completed|failed|cancelled)
+          if fm_nm_head_matches_worktree "$wt" "$sha"; then
+            if [ "$render_locked" = 0 ] && [ -z "$listing_display" ]; then listing_display=$st; fi
+          else
+            fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
+          fi
+          ;;
+        *) [ -n "$listing_live" ] || listing_live="$st $sha" ;;
       esac
-      continue
-    fi
-    case "$st" in
-      completed|failed|cancelled) ;;
-      *) [ -n "$inventory_live_unknown" ] || inventory_live_unknown="$st $sha" ;;
-    esac
-    fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
-  done <<< "$inventory"
-  if [ -n "$inventory_live" ]; then
+    done <<< "$inventory"
+  fi
+  if [ "$branch_state" = active ]; then
     FM_NM_BRANCH_RUN_VERDICT=active
-    FM_NM_BRANCH_RUN_DISPLAY=${inventory_live%% *}
+    FM_NM_BRANCH_RUN_ID=$active_id
+    FM_NM_BRANCH_RUN_TOON=$active_toon
     return 0
   fi
-  if [ -z "$direct_live_unknown" ] && [ -z "$inventory_live_unknown" ] \
-    && [ -z "$inventory_unreadable" ] && [ "$rows" -lt "$limit" ]; then
-    FM_NM_BRANCH_RUN_DISPLAY=$display
-    FM_NM_BRANCH_RUN_TOON=$terminal_toon
-  fi
-  if [ -n "$inventory_unreadable" ]; then
-    FM_NM_BRANCH_RUN_REASON="the 'no-mistakes runs' inventory has an unreadable row, so it cannot prove branch $branch quiet"
+  if [ -n "$listing_live" ]; then
+    FM_NM_BRANCH_RUN_VERDICT=active
+    FM_NM_BRANCH_RUN_DISPLAY=${listing_live%% *}
     return 0
   fi
-  if [ -n "$direct_live_unknown" ]; then
-    FM_NM_BRANCH_RUN_REASON=$direct_live_unknown
+  if [ "$branch_state" = quiet ]; then
+    FM_NM_BRANCH_RUN_VERDICT=quiet
+    if [ -n "$terminal_toon" ]; then
+      FM_NM_BRANCH_RUN_TOON=$terminal_toon
+    else
+      FM_NM_BRANCH_RUN_DISPLAY=$listing_display
+    fi
     return 0
   fi
-  if [ -n "$inventory_live_unknown" ]; then
-    FM_NM_BRANCH_RUN_REASON="the 'no-mistakes runs' listing shows a non-terminal run for branch $branch ($inventory_live_unknown) that cannot be placed against this worktree's HEAD"
-    return 0
-  fi
-  if [ "$rows" -ge "$limit" ]; then
-    FM_NM_BRANCH_RUN_REASON="'no-mistakes runs --limit $limit' came back exactly full, so it cannot prove branch $branch has no run still in flight - an older live run may sit past that window (widen it with FM_NM_RUNS_LIMIT)"
-    return 0
-  fi
-  FM_NM_BRANCH_RUN_VERDICT=quiet
+  FM_NM_BRANCH_RUN_REASON=$branch_reason
 }

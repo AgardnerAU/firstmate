@@ -1620,16 +1620,15 @@ EOF
   pass "a live inventory row beats a stale terminal axi status answer"
 }
 
-# One rule governs the reporting projection an `unknown` verdict carries: a
-# terminal `axi status` answer is rendered as the task's current state only when
-# a whole inventory examined this branch and left it uncontested. Every way the
-# inventory can go missing - it did not answer, it came back exactly full, or it
-# named a live run this worktree cannot place - is unexamined content this
-# branch's still-live row could be sitting in, and reporting falls through to
-# the pane and status log instead of labelling the branch from the older row.
-test_unknown_verdict_renders_only_a_corroborated_terminal_run() {
+# Reporting renders whatever established the verdict, and nothing else. A
+# readable branch read that placed a terminal run on this branch establishes
+# `quiet`, so that run is the task's current state however the repo-wide
+# corroboration listing fared - it cannot answer the branch question either
+# way. A live row the listing does find outranks it, and a branch read that
+# could not be made at all renders nothing.
+test_reporting_renders_what_established_the_verdict() {
   reset_fakes
-  local d out; d=$(new_case f10-unknown-projection)
+  local d out; d=$(new_case f10-projection-source)
   make_repo_on_branch "$d/wt" fm/feat-f10e
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-f10e.meta" "window=fm:fm-feat-f10e" "worktree=$d/wt" "kind=ship" \
@@ -1638,10 +1637,12 @@ test_unknown_verdict_renders_only_a_corroborated_terminal_run() {
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-f10e)"
   FM_FAKE_NM_FAIL_RUNS=1
   out=$(run_crew_state "$d" feat-f10e)
-  assert_not_contains "$out" "state: failed" \
-    "an inventory that never answered must not report the branch failed from an older terminal row"
-  assert_not_contains "$out" "source: run-step" \
-    "an inventory that never answered must bind no run"
+  assert_contains "$out" "state: failed" \
+    "a corroboration listing that never answered must not blank the run the branch read placed"
+  assert_contains "$out" "source: run-step" \
+    "the placed run stays the reporting source when only corroboration was lost"
+  # An exactly-full window is corroboration that adds nothing, not a reason to
+  # lose the branch read's own answer.
   FM_FAKE_NM_FAIL_RUNS=""
   FM_FAKE_RUNS_LIST="$(cat <<'EOF'
   completed  fm/other-crew aaaaaaa1  2026-08-28 12:09
@@ -1649,29 +1650,28 @@ test_unknown_verdict_renders_only_a_corroborated_terminal_run() {
 EOF
 )"
   out=$(FM_NM_RUNS_LIMIT=2 run_crew_state "$d" feat-f10e)
-  assert_not_contains "$out" "state: failed" \
-    "a truncated window must not report the branch failed from an uncorroborated terminal answer"
-  assert_not_contains "$out" "source: run-step" \
-    "a window that could not prove the branch quiet must bind no run"
-  FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
-  out=$(FM_NM_RUNS_LIMIT=3 run_crew_state "$d" feat-f10e)
-  assert_not_contains "$out" "state: failed" \
-    "an unplaceable live row must not report the branch failed from an older terminal answer"
-  assert_not_contains "$out" "source: run-step" \
-    "an unplaceable live row must bind no run at all"
-  # Counterfactual: the same terminal answer IS rendered once a whole window
-  # examines the branch and shows nothing live on it.
-  FM_FAKE_RUNS_LIST="$(cat <<'EOF'
-  completed  fm/other-crew aaaaaaa1  2026-08-28 12:09
-  completed  fm/other-crew aaaaaaa2  2026-08-28 11:53
-EOF
-)"
-  out=$(FM_NM_RUNS_LIMIT=3 run_crew_state "$d" feat-f10e)
   assert_contains "$out" "state: failed" \
-    "a window that came back short leaves the placed terminal run authoritative"
+    "a full corroboration window must not blank the run the branch read placed"
   assert_contains "$out" "source: run-step" \
-    "a corroborated terminal answer stays a run-step source"
-  pass "an unknown verdict renders only a terminal run a whole inventory left uncontested"
+    "a full window is corroboration, not a lost reporting source"
+  # A live row for this branch outranks the terminal branch read.
+  FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
+  out=$(run_crew_state "$d" feat-f10e)
+  assert_contains "$out" "state: working" \
+    "a live row for this branch outranks a terminal branch read"
+  assert_not_contains "$out" "state: failed" \
+    "a live row must not be reported as the older terminal outcome"
+  # When the branch read names no run of its own, the corroboration listing's
+  # placeable row for this branch is what established the quiet answer, so that
+  # is what reporting renders.
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST="  failed     fm/feat-f10e $(git -C "$d/wt" rev-parse --short=8 HEAD)  2026-08-28 12:20"
+  out=$(run_crew_state "$d" feat-f10e)
+  assert_contains "$out" "state: failed" \
+    "the listing row that placed against this worktree is the reporting source"
+  assert_contains "$out" "source: run-step" \
+    "a placed listing row is established state, not a guess"
+  pass "reporting renders what established the verdict, and nothing else"
 }
 
 # T1 direction 2: a genuinely-failed run with NO later run on the branch still
@@ -1691,10 +1691,10 @@ test_failed_run_with_no_later_run_still_surfaces() {
   pass "a genuinely failed run with no later run is not hidden"
 }
 
-# The coarse runs-list scan: an ACTIVE row for this branch at an unresolvable
-# head is unknown attribution and must STOP the scan, never fall through onto
-# the older failed row (axi status answers another branch here, so attribution
-# can only go through the coarse list).
+# The corroboration listing: a non-terminal row for this branch is a run in
+# flight whichever head it carries, so it outranks the older failed row below it
+# and is never reported as that older outcome (axi status answers about another
+# branch here, so the listing is the only source that sees this branch).
 test_coarse_unresolvable_active_row_never_falls_to_older_row() {
   reset_fakes
   local d short; d=$(new_case f10-coarse-guard)
@@ -1714,11 +1714,10 @@ EOF
   "$ROOT/bin/fm-busy-event.sh" apply "$d/state" feat-f10c busy --gen "$gen" \
     --source claude-hook --event user-prompt-submit
   local out; out=$(run_crew_state "$d" feat-f10c)
-  assert_not_contains "$out" "state: failed" "an unresolvable active row must not fall to the older failed row"
-  assert_not_contains "$out" "source: run-step" "unknown attribution must not bind a run"
-  assert_contains "$out" "state: working" "the busy crew still reads working through the pane fallback"
-  assert_contains "$out" "source: pane" "unknown attribution falls to the pane, not an older row"
-  pass "coarse scan stops on an unresolvable active row instead of binding an older one"
+  assert_not_contains "$out" "state: failed" "a live row must not fall through to the older failed row"
+  assert_contains "$out" "state: working" "a live row for this branch reads as a run in flight"
+  assert_contains "$out" "source: run-step" "the live row the listing found is the reporting source"
+  pass "the listing binds this branch's live row instead of the older row below it"
 }
 
 # Negative control: the exemption is gated on pipeline_owned specifically - any
@@ -1840,7 +1839,7 @@ test_local_advanced_past_run_head_invalidates
 test_pipeline_owned_active_run_beats_superseded_failed_row
 test_live_inventory_beats_terminal_axi_status
 test_failed_run_with_no_later_run_still_surfaces
-test_unknown_verdict_renders_only_a_corroborated_terminal_run
+test_reporting_renders_what_established_the_verdict
 test_coarse_unresolvable_active_row_never_falls_to_older_row
 test_non_pipeline_owned_unresolvable_head_not_attributed
 test_pipeline_owned_terminal_run_not_exempt
