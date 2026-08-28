@@ -384,34 +384,38 @@ inbox_steer_check() {  # <window> <task>
 }
 
 recorded_windows() {
-  local meta w id lifecycle backend agent_state seen=
+  local meta w seen=
   for meta in "$STATE"/*.meta; do
     [ -e "$meta" ] || continue
     w=$(fm_backend_target_of_meta "$meta")
     [ -n "$w" ] || continue
-    id=${meta##*/}
-    id=${id%.meta}
-    lifecycle=$(fm_worker_state_status "$STATE" "$id" "$w")
-    if [ "$lifecycle" = stood-down ]; then
-      backend=$(fm_backend_of_meta "$meta")
-      agent_state=$(fm_backend_agent_state "$backend" "$w" 2>/dev/null || true)
-      # The record is an exemption only while the recovery-grade classifier
-      # still proves there is no worker. A live replacement at a stale record
-      # must enter the ordinary stale/wedge path immediately.
-      #
-      # Its scope is every per-window check fed from here, the steering-inbox
-      # re-ring ladder included, not the pane-stale path alone. That is sound
-      # only because nothing can be left waiting behind it: fm-control
-      # stand-down refuses while an unacknowledged instruction is pending, and
-      # fm-send refuses to enqueue one for a proven worker-free task.
-      [ "$agent_state" = dead ] && continue
-    fi
     case "$seen" in
       *"|$w|"*) continue ;;
     esac
     seen="$seen|$w|"
     printf '%s\n' "$w"
   done
+}
+
+# 0 when <window> is a task deliberately left with no worker: an exact
+# worker-state record AND a recovery-grade classifier that still proves the
+# endpoint has no agent. A live replacement behind a stale record is never
+# exempt - it re-enters stale and wedge detection on the same poll.
+#
+# The exemption is deliberately scoped to the pane-stale and wedge work at the
+# two call sites, NOT to every per-window check. The steering-inbox re-ring
+# ladder keeps running for a held task, because the two guards that keep an
+# inbox empty at stand-down time (fm-control's pending-instruction refusal and
+# fm-send's refusal to enqueue for a proven worker-free task) take different
+# locks and so cannot exclude a steer that lands on the record's other side.
+# Supervising that message costs one ladder check and is the only thing that
+# surfaces it before a relaunch.
+window_is_stood_down() {  # <window>
+  local w=$1 task
+  task=$(window_to_task "$w" "$STATE")
+  [ -n "$task" ] || return 1
+  [ "$(fm_worker_state_status "$STATE" "$task" "$w")" = stood-down ] || return 1
+  [ "$(fm_backend_agent_state "$(window_backend "$w")" "$w" 2>/dev/null || true)" = dead ]
 }
 
 # Print the oldest structurally valid row in a local secondmate's foreign queue.
@@ -1082,6 +1086,8 @@ event_wait_or_sleep() {
     # they are excluded from the fast escalation exactly as the stale loop skips
     # them.
     [ "$(window_kind "$w")" = secondmate ] && continue
+    # A deliberately worker-free endpoint has no turn to escalate.
+    window_is_stood_down "$w" && continue
     session=${w%%:*}
     if [ -z "$first_backend" ]; then first_backend=$b; first_session=$session; fi
     # One socket connection covers one backend+session; a home normally has a
@@ -1535,6 +1541,7 @@ EOF
     # Steering-inbox loss detection runs before the secondmate stale
     # exemption below, because a mate's steers land in an inbox too.
     [ -z "$task" ] || inbox_steer_check "$w" "$task"
+    window_is_stood_down "$w" && continue
     key=$(window_key "$w")
     last=$(last_status_line "$STATE/$task.status")
     if ! status_is_paused_or_captain_held "$last" && [ -e "$STATE/.paused-$key" ]; then

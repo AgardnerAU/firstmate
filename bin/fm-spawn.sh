@@ -2375,6 +2375,16 @@ exclude_path() {
   grep -qxF "$rel" "$EXCL" 2>/dev/null || echo "$rel" >> "$EXCL"
 }
 if [ "$RELAUNCH" -eq 1 ]; then
+  # A replacement worker makes a deliberate no-worker declaration stale before
+  # it can become live, so the record is resolved as part of arming the
+  # replacement. A record whose meaning cannot be proved refuses HERE, while
+  # the task still has its prior incarnation's wiring: this exit rolls nothing
+  # back, so nothing may have been retired yet.
+  RELAUNCH_PRIOR_WORKER_STATE=$(fm_worker_state_status "$STATE_REAL" "$ID" "$T")
+  [ "$RELAUNCH_PRIOR_WORKER_STATE" != invalid ] || {
+    echo "error: task $ID has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control $ID repair-worker-state'" >&2
+    exit 1
+  }
   # Retire the previous incarnation's per-task harness wiring before arming the
   # new one. Without this, a harness switch would leave the old adapter's hook
   # files and turn-end token registry entries behind, and even a same-harness
@@ -2384,15 +2394,11 @@ if [ "$RELAUNCH" -eq 1 ]; then
     echo "error: could not retire $RELAUNCH_PRIOR_HARNESS wiring for task $ID; refusing to arm the replacement" >&2
     exit 1
   }
-  # A replacement worker makes a deliberate no-worker declaration stale before
-  # it can become live. The record is exact-bound to this endpoint and all
-  # relaunch preflight has passed, so a failure here refuses before any new
-  # harness wiring or launch input is written. Remember what was cleared: an
-  # abort before the replacement is published must hand the task back exactly
-  # as declared, not leave it worker-free AND undeclared.
-  RELAUNCH_PRIOR_WORKER_STATE=$(fm_worker_state_status "$STATE_REAL" "$ID" "$T")
+  # Remember what was cleared: an abort before the replacement is published
+  # must hand the task back exactly as declared, not leave it worker-free AND
+  # undeclared.
   fm_worker_state_clear "$STATE_REAL" "$ID" "$T" || {
-    echo "error: task $ID has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control $ID repair-worker-state'" >&2
+    echo "error: task $ID's worker-state record could not be cleared for the replacement; reconcile it with 'fm-control $ID repair-worker-state' and relaunch again" >&2
     exit 1
   }
   RELAUNCH_REPLACEMENT_PENDING=1

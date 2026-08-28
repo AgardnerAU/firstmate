@@ -1086,6 +1086,39 @@ test_prepublication_abort_restores_the_intentional_no_worker_record() {
   pass "fm-control relaunch: a pre-publication abort returns the task to its declared stand-down"
 }
 
+# The refusal on an unprovable record is a REFUSAL, so it must leave the task
+# exactly as it found it. Retiring the prior incarnation's wiring first would
+# strand it: that exit path arms no replacement, so it rolls nothing back.
+test_invalid_worker_state_refuses_before_retiring_prior_wiring() {
+  local dir out rc record wiring
+  dir=$(new_case standdowninvalid rl32)
+  add_ship_task "$dir" rl32 claude
+  record="$dir/home/state/rl32.worker-state"
+  wiring="$dir/wt/.claude/settings.local.json"
+  mkdir -p "$dir/wt/.claude"
+  printf '{"hooks":{}}\n' > "$wiring"
+  cat > "$record" <<'EOF'
+schema=1
+task_id=rl32
+endpoint=fmses:fm-some-other-endpoint
+state=stood-down
+EOF
+  out=$(run_control "$dir" rl32 relaunch --note "relaunch behind an unprovable record"); rc=$?
+  expect_code 1 "$rc" "an unprovable worker-state record must refuse the relaunch"$'\n'"$out"
+  assert_contains "$out" "repair-worker-state" \
+    "the refusal should name the supported reconciliation"
+  [ -f "$wiring" ] \
+    || fail "a refusal that arms no replacement must not retire the prior incarnation's wiring"
+  [ "$(meta_field "$dir" rl32 harness)" = claude ] \
+    || fail "a refused relaunch must leave the durable record untouched"
+  [ -f "$record" ] || fail "the refused relaunch must leave the record for repair"
+  out=$(run_control "$dir" rl32 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair should reconcile the record"$'\n'"$out"
+  out=$(run_control "$dir" rl32 relaunch --note "retry once the record is reconciled"); rc=$?
+  expect_code 0 "$rc" "the relaunch should work once the record is reconciled"$'\n'"$out"
+  pass "fm-spawn --relaunch: an unprovable worker-state record refuses with the prior wiring intact"
+}
+
 test_prepublication_abort_retires_replacement_wiring_and_busy_state() {
   local dir out rc real_mv meta
   dir=$(new_case prepublishcleanup rl28)
@@ -1413,6 +1446,7 @@ test_stop_transport_failure_reconciles_a_dead_agent
 test_complete_journal_failure_rolls_back_from_durable_phase
 test_prepublication_abort_retires_replacement_wiring_and_busy_state
 test_prepublication_abort_restores_the_intentional_no_worker_record
+test_invalid_worker_state_refuses_before_retiring_prior_wiring
 test_journal_records_the_checkpoint_it_proved
 test_secondmate_relaunch_checkpoints_child_work_and_spares_the_charter
 test_secondmate_relaunch_refuses_an_unmarked_home

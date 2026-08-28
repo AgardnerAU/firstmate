@@ -701,6 +701,32 @@ test_stand_down_refuses_while_an_instruction_is_unacknowledged() {
   pass "fm-control stand-down: an unacknowledged instruction is handled or withdrawn first"
 }
 
+# The active-run refusal is not a ship privilege: a scout checked out on a
+# branch can own a run exactly like a ship can. Its ordinary scratch
+# configuration - a detached HEAD, where no branch exists for a run to own -
+# still stands down normally.
+test_stand_down_checks_a_scout_on_a_branch_and_spares_a_detached_scratch() {
+  local dir out rc head
+  dir=$(new_case stand-down-scout)
+  add_task "$dir" t1 claude scout
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" awaiting_approval)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a scout on a branch with an in-flight run must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run" \
+    "the scout refusal should name the run that still needs a worker"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a refused scout stand-down must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "a refused scout stand-down must not stop the worker"
+  git -C "$dir/wt-t1" checkout -q --detach
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "a scout's detached scratch worktree owns no branch, so the hold proceeds"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the ordinary scout hold still publishes its declaration"
+  pass "fm-control stand-down: a scout is run-checked like a ship, and its scratch worktree still holds"
+}
+
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold() {
   local dir out rc
   dir=$(new_case stand-down-after-exit)
@@ -1221,6 +1247,7 @@ test_stand_down_refuses_when_no_run_check_can_answer
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_refuses_when_the_worktree_cannot_be_read
 test_stand_down_refuses_while_an_instruction_is_unacknowledged
+test_stand_down_checks_a_scout_on_a_branch_and_spares_a_detached_scratch
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold
 test_repair_clears_a_declaration_a_live_agent_contradicts
 test_repair_clears_an_unprovable_record_without_inferring_intent
