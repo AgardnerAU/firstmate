@@ -615,6 +615,92 @@ test_stand_down_refuses_when_no_run_check_can_answer() {
   pass "fm-control stand-down: an unanswerable run check refuses and names itself"
 }
 
+# The head rule exists to reject a HISTORICAL run on a reused branch. A run
+# that is still going owns the branch however far local work has advanced past
+# the commit it started on, so an unplaceable live run is doubt, not proof of
+# safety - from either attribution source.
+test_stand_down_refuses_a_live_run_it_cannot_place() {
+  local dir out rc base head
+  dir=$(new_case stand-down-unplaceable-run)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  base=$(git -C "$dir/wt-t1" rev-parse --short HEAD)
+  git -C "$dir/wt-t1" commit -q --allow-empty -m "work on top of the running run"
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="running  task-t1  $base  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a running row this worktree cannot place must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "cannot be placed" \
+    "the refusal should name the attribution that could not be established"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unplaceable live run must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unplaceable live run must not lose its worker"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$base" running)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "the same doubt from axi status must refuse too"$'\n'"$out"
+  assert_contains "$out" "cannot be placed" \
+    "the axi-status refusal should also name the unplaceable run"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unplaceable live run must publish no worker-state record"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-t1  $base  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "an unplaceable TERMINAL row is history, and history does not block a hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a historical run on a reused branch still leaves the task free to be stood down"
+  pass "fm-control stand-down: a live run that cannot be placed is doubt, not proof of safety"
+}
+
+# The preserved local copy IS the hold. If it cannot be read, neither can the
+# run state that decides whether the hold is safe to declare.
+test_stand_down_refuses_when_the_worktree_cannot_be_read() {
+  local dir out rc
+  dir=$(new_case stand-down-no-worktree)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  mv "$dir/wt-t1" "$dir/wt-t1-moved"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an absent worktree must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "absent or unreadable" \
+    "the refusal should name the worktree that could not be read"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unreadable worktree must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "an unreadable worktree must not lose its worker"
+  mv "$dir/wt-t1-moved" "$dir/wt-t1"
+  git -C "$dir/wt-t1" checkout -q --detach
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a detached HEAD leaves no branch to attribute a run to"$'\n'"$out"
+  assert_contains "$out" "detached HEAD" \
+    "the refusal should name the missing branch attribution"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a worktree with no branch must publish no worker-state record"
+  pass "fm-control stand-down: an unreadable worktree or a missing branch refuses instead of guessing"
+}
+
+# A steer nobody has acknowledged is work the hold would silence: the watcher's
+# re-ring ladder stops for a stood-down window and fm-send refuses to add to it.
+test_stand_down_refuses_while_an_instruction_is_unacknowledged() {
+  local dir out rc rec
+  dir=$(new_case stand-down-pending-steer)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  rec=$(bash -c '. "$1/bin/fm-task-inbox-lib.sh"; fm_task_inbox_write "$2" t1 "rebase onto main before you stop"' _ "$ROOT" "$dir/home/state")
+  [ -n "$rec" ] && [ -f "$rec" ] || fail "could not enqueue the durable instruction the test needs"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an unacknowledged instruction must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "$rec" "the refusal should name the instruction still waiting"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a pending instruction must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "a pending instruction must not lose its worker"
+  mv "$rec" "$dir/home/state/t1.inbox/handled/"
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "an acknowledged instruction should free the hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the hold publishes once nothing is waiting unread"
+  pass "fm-control stand-down: an unacknowledged instruction is handled or withdrawn first"
+}
+
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold() {
   local dir out rc
   dir=$(new_case stand-down-after-exit)
@@ -1132,6 +1218,9 @@ test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
+test_stand_down_refuses_a_live_run_it_cannot_place
+test_stand_down_refuses_when_the_worktree_cannot_be_read
+test_stand_down_refuses_while_an_instruction_is_unacknowledged
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold
 test_repair_clears_a_declaration_a_live_agent_contradicts
 test_repair_clears_an_unprovable_record_without_inferring_intent

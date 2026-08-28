@@ -398,6 +398,12 @@ recorded_windows() {
       # The record is an exemption only while the recovery-grade classifier
       # still proves there is no worker. A live replacement at a stale record
       # must enter the ordinary stale/wedge path immediately.
+      #
+      # Its scope is every per-window check fed from here, the steering-inbox
+      # re-ring ladder included, not the pane-stale path alone. That is sound
+      # only because nothing can be left waiting behind it: fm-control
+      # stand-down refuses while an unacknowledged instruction is pending, and
+      # fm-send refuses to enqueue one for a proven worker-free task.
       [ "$agent_state" = dead ] && continue
     fi
     case "$seen" in

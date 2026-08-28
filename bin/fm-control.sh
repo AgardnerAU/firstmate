@@ -46,7 +46,10 @@
 #              stand-down never cancels one for you. Refused too when that
 #              question cannot be answered at all, naming the check that could
 #              not answer, because the record it would publish suppresses
-#              supervision. An agent that already
+#              supervision. Refused as well while an unacknowledged steering
+#              instruction is still waiting in the task's inbox, naming it: the
+#              hold would silence its re-ring ladder, so the worker handles it
+#              or the operator withdraws it first. An agent that already
 #              exited can be declared intentional only when the task's status
 #              log already declares the hold (`paused:`/`captain-held:`), since
 #              deadness alone is the ambiguity this record exists to resolve.
@@ -160,6 +163,8 @@ DATA="${FM_DATA_OVERRIDE:-$FM_HOME/data}"
 . "$SCRIPT_DIR/fm-classify-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
+# shellcheck source=bin/fm-task-inbox-lib.sh
+. "$SCRIPT_DIR/fm-task-inbox-lib.sh"
 # shellcheck source=bin/fm-control-lib.sh
 . "$SCRIPT_DIR/fm-control-lib.sh"
 # shellcheck source=bin/fm-pr-lib.sh
@@ -536,7 +541,7 @@ do_exit() {
 # its proof visible instead of silently declaring a live or ambiguous task
 # healthy.
 #
-# Two preconditions keep the declaration honest rather than inferred:
+# Three preconditions keep the declaration honest rather than inferred:
 #   - No in-flight no-mistakes run may be attributed to this task. An active
 #     run owns the branch and needs a worker to answer its gates, so a hold is
 #     not the operator's to declare yet. Stand-down never cancels a run: the
@@ -547,12 +552,16 @@ do_exit() {
 #     honour, per bin/fm-classify-lib.sh). Deadness alone is exactly the
 #     ambiguity this record exists to resolve, so it never proves intent, and
 #     the hold is reversible by the ordinary next status append.
+#   - No unacknowledged steering instruction may be waiting for this worker.
+#     The hold stops the watcher's re-ring ladder for the task, so a message
+#     nobody has read yet must first be handled or explicitly withdrawn.
 do_stand_down() {
   local lifecycle state result
   [ "$KIND" != secondmate ] \
     || die "task $ID is a secondmate home; stand-down is only for held ship or scout work because a stopped secondmate would leave its own fleet unsupervised"
   require_state_verified_backend stand-down
   refuse_stand_down_during_active_run
+  refuse_stand_down_with_pending_instruction
   lifecycle=$(fm_worker_state_status "$STATE" "$ID" "$T")
   case "$lifecycle" in
     invalid)
@@ -616,19 +625,27 @@ task_is_declared_held() {
 # run owns the branch and expects a worker at its gates, and stand-down must
 # never cancel one on the operator's behalf.
 #
-# Standing down carries the burden of proof, because the record it publishes
-# removes the task from the watcher's stale and wedge detection: only a PROVEN
-# "no run is active here" may proceed. fm_nm_active_run_for_worktree consults
-# every source current-state reporting consults (bare `axi status` plus the
-# coarse runs listing, one shared attribution), and reports separately when it
-# could not answer at all - a timed-out or failing CLI, or a run row whose head
-# cannot be attributed here. That third answer refuses too, and names the check
-# that could not answer, rather than failing open into a silent suppression.
+# THE GOVERNING RULE HERE: IF IT CANNOT BE PROVEN SAFE, IT IS REFUSED, AND THE
+# REFUSAL NAMES WHAT COULD NOT BE PROVEN. The record a stand-down publishes
+# removes the task from the watcher's stale and wedge detection, so only a
+# proven "no run is active here" may proceed. Every input to that proof is held
+# to the same standard: an absent or unreadable worktree, an unreadable
+# repository, a worktree with no branch to attribute a run to, a CLI that did
+# not answer, and a live run the head rule could not place all refuse.
+# fm_nm_active_run_for_worktree carries the query half of the same rule and
+# names the check that could not answer.
 refuse_stand_down_during_active_run() {
   local branch rc
   [ "$KIND" = ship ] || return 0
-  [ -n "$WT" ] && [ -d "$WT" ] || return 0
+  [ -n "$WT" ] \
+    || die "task $ID records no worktree, so whether it owns an active no-mistakes run cannot be checked; refusing to declare a hold that would take a possibly-live run out of supervision"
+  [ -d "$WT" ] \
+    || die "task $ID's worktree $WT is absent or unreadable, so whether it owns an active no-mistakes run cannot be checked; restore the preserved copy before declaring a hold"
+  git -C "$WT" rev-parse --git-dir >/dev/null 2>&1 \
+    || die "task $ID's worktree $WT is not a readable git worktree, so whether it owns an active no-mistakes run cannot be checked; repair it before declaring a hold"
   branch=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+  [ -n "$branch" ] \
+    || die "task $ID's worktree $WT is at a detached HEAD, so no branch is available to attribute a no-mistakes run to; check the worktree out on its task branch before declaring a hold"
   if fm_nm_active_run_for_worktree "$WT" "$branch" "$NM_CONTROL_TIMEOUT"; then
     rc=0
   else
@@ -643,6 +660,20 @@ refuse_stand_down_during_active_run() {
       die "task $ID cannot be stood down because ${FM_NM_RUN_UNKNOWN_REASON:-a no-mistakes run check could not answer}; refusing to hide a possibly-live run from supervision. Re-run that check yourself, or finish or abort the run, and try again"
       ;;
   esac
+}
+
+# Refuse a stand-down while a durable steering instruction is still waiting for
+# this task's worker, under the same governing rule: a message nobody has
+# acknowledged is work the hold would silence, because the watcher's re-ring
+# ladder stops for a stood-down window and `fm-send` refuses to add to it.
+# The instruction is either handled by the worker or explicitly withdrawn by
+# the operator - the same acknowledgement move the worker itself makes - and
+# neither is something stand-down may decide on the task's behalf.
+refuse_stand_down_with_pending_instruction() {
+  local pending
+  pending=$(fm_task_inbox_oldest_unhandled "$STATE" "$ID" 2>/dev/null) || return 0
+  [ -n "$pending" ] || return 0
+  die "task $ID has an unacknowledged instruction waiting at $pending; let the worker handle it, or withdraw it explicitly with 'mv $pending $(fm_task_inbox_handled_dir "$STATE" "$ID")/', before standing the worker down"
 }
 
 # do_repair_worker_state: the one supported reconciliation of a worker-state

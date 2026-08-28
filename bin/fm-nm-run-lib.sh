@@ -123,6 +123,13 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
   fm_nm_run_is_active "$1"
 }
 
+# Record why a run question could not be answered, for the caller's refusal
+# message. FM_NM_RUN_UNKNOWN_REASON is this file's second return value on rc 2.
+fm_nm_run_unknown() {  # <reason>
+  # shellcheck disable=SC2034 # read by callers through the documented contract.
+  FM_NM_RUN_UNKNOWN_REASON=$1
+}
+
 # Coarse run attribution from the top-level `no-mistakes runs` listing, the
 # one fallback for the routine case where bare `axi status` answers with
 # ANOTHER branch's run (several crews validating the same underlying repo share
@@ -137,9 +144,20 @@ fm_nm_run_is_pipeline_owned_active() {  # <toon-output>
 # a matching row's head cannot be resolved here, which is UNKNOWN attribution
 # rather than a proven mismatch. A caller that must not act while a run is live
 # has to treat 2 as "not proved safe", not as "no run".
-fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
+#
+# The scan answers through FM_NM_RUNS_STATUS (the status word) so a caller can
+# read its second answer too: a row skipped by the head rule whose status is
+# NOT terminal is recorded in FM_NM_RUNS_UNATTRIBUTED_ACTIVE ("<status> <sha>"). The head rule exists to
+# reject a HISTORICAL run on a reused branch, and a non-terminal row is not
+# history: that run owns the branch right now however far this worktree's HEAD
+# has advanced past the commit it started on. Reporting may keep treating it as
+# no attribution (a coarse status word it cannot place is not a state to
+# render); a caller whose safety depends on the answer must not.
+fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-200} out rc row st rest br sha
   case "$limit" in ''|*[!0-9]*) limit=200 ;; esac
+  FM_NM_RUNS_STATUS=
+  FM_NM_RUNS_UNATTRIBUTED_ACTIVE=
   [ -n "$branch" ] || return 1
   if out=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then rc=0; else rc=$?; fi
   [ "$rc" = 0 ] || return 2
@@ -153,15 +171,33 @@ fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
     sha=${rest%% *}
     if [ "$br" = "$branch" ]; then
       if ! fm_nm_head_matches_worktree "$wt" "$sha"; then
+        case "$st" in
+          completed|failed|cancelled) ;;
+          *)
+            [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] \
+              || FM_NM_RUNS_UNATTRIBUTED_ACTIVE="$st $sha"
+            ;;
+        esac
         # An UNRESOLVABLE head is unknown attribution, not a proven mismatch.
         fm_nm_head_resolvable "$wt" "$sha" || return 2
         continue
       fi
-      printf '%s' "$st"
+      FM_NM_RUNS_STATUS=$st
       return 0
     fi
   done <<< "$out"
   return 1
+}
+
+# The printing form, for a reader that only wants the status word and treats
+# every unanswered question as silence. The scan above is the form a caller
+# whose safety depends on the answer must use: a command substitution runs in a
+# subshell, so its FM_NM_RUNS_* answers cannot reach the caller through this one.
+fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
+  local rc=0
+  fm_nm_runs_scan_for_branch "$@" || rc=$?
+  printf '%s' "$FM_NM_RUNS_STATUS"
+  return "$rc"
 }
 
 # Whether worktree $1, on branch $2, currently owns an IN-FLIGHT no-mistakes
@@ -181,16 +217,21 @@ fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
 # A caller for whom a live run is a refusal condition must refuse on 2 as well
 # as 0. An absent CLI is a proven 1, not an unanswered question: with no
 # no-mistakes installed there is no run to own the branch.
+#
+# THE GOVERNING RULE AT EVERY DECISION BELOW: IF IT CANNOT BE PROVEN SAFE, IT
+# IS REFUSED, AND THE REFUSAL NAMES WHAT COULD NOT BE PROVEN. So a non-terminal
+# run row for this branch that the head rule could not place is answer 2 with
+# the attribution named, never answer 1 - an unplaceable live run is exactly
+# the doubt this contract exists to carry, and only rc 1 licenses acting.
 fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
   local wt=$1 branch=$2 timeout=$3 out rc run_branch run_head coarse coarse_rc
+  local unattributed=
   # shellcheck disable=SC2034 # the attributed run id is this function's second
   # return value, read by the caller that refuses on it.
   FM_NM_ACTIVE_RUN_ID=
-  # shellcheck disable=SC2034 # named check for the caller's refusal message.
-  FM_NM_RUN_UNKNOWN_REASON=
+  fm_nm_run_unknown ""
   [ -d "$wt" ] || {
-    # shellcheck disable=SC2034 # named check for the caller's refusal message.
-    FM_NM_RUN_UNKNOWN_REASON="worktree '$wt' is not readable, so no run check could run"
+    fm_nm_run_unknown "worktree '$wt' is not readable, so no run check could run"
     return 2
   }
   # No branch (detached HEAD) means there is no branch a run could own here.
@@ -201,38 +242,49 @@ fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
     run_branch=$(fm_nm_strip_quotes "$(fm_nm_field "$out" branch)")
     if [ -n "$run_branch" ] && [ "$run_branch" = "$branch" ]; then
       run_head=$(fm_nm_strip_quotes "$(fm_nm_field "$out" head)")
-      if fm_nm_head_matches_worktree "$wt" "$run_head"         || fm_nm_run_is_pipeline_owned_active "$out"; then
+      if fm_nm_head_matches_worktree "$wt" "$run_head" \
+        || fm_nm_run_is_pipeline_owned_active "$out"; then
         fm_nm_run_is_active "$out" || return 1
         # shellcheck disable=SC2034 # read by callers through the documented contract.
         FM_NM_ACTIVE_RUN_ID=$(fm_nm_strip_quotes "$(fm_nm_field "$out" id)")
         return 0
+      elif fm_nm_run_is_active "$out"; then
+        unattributed="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
       fi
     fi
   fi
   # `axi status` did not settle this branch: it answered about another branch,
   # its same-branch attribution failed, or it did not answer at all. The coarse
   # listing is the only remaining source, so its silence is not an answer.
-  if coarse=$(fm_nm_runs_status_for_branch "$wt" "$branch" "$timeout"); then
+  if fm_nm_runs_scan_for_branch "$wt" "$branch" "$timeout"; then
     coarse_rc=0
   else
     coarse_rc=$?
+  fi
+  coarse=$FM_NM_RUNS_STATUS
+  if [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] && [ -z "$unattributed" ]; then
+    unattributed="the 'no-mistakes runs' listing shows a non-terminal run for branch $branch (${FM_NM_RUNS_UNATTRIBUTED_ACTIVE}) that cannot be placed against this worktree's HEAD"
   fi
   case "$coarse_rc" in
     0)
       case "$coarse" in
         running) return 0 ;;
-        completed|failed|cancelled) return 1 ;;
+        completed|failed|cancelled)
+          [ -z "$unattributed" ] || { fm_nm_run_unknown "$unattributed"; return 2; }
+          return 1
+          ;;
         *)
-          # shellcheck disable=SC2034 # named check for the caller's refusal message.
-          FM_NM_RUN_UNKNOWN_REASON="'no-mistakes runs' reported an unrecognised status '$coarse' for branch $branch"
+          fm_nm_run_unknown "'no-mistakes runs' reported an unrecognised status '$coarse' for branch $branch"
           return 2
           ;;
       esac
       ;;
-    1) return 1 ;;
+    1)
+      [ -z "$unattributed" ] || { fm_nm_run_unknown "$unattributed"; return 2; }
+      return 1
+      ;;
     *)
-      # shellcheck disable=SC2034 # named check for the caller's refusal message.
-      FM_NM_RUN_UNKNOWN_REASON="'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
+      fm_nm_run_unknown "'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
       return 2
       ;;
   esac

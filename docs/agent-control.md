@@ -55,9 +55,12 @@ Its short `standing-down` transition never suppresses monitoring, and the comple
 `fm-spawn --relaunch` clears a valid record immediately before preparing the replacement, so the same preserved worktree resumes normally; if that relaunch aborts before the replacement's metadata is published, the record is restored and the task returns to the hold it was in.
 `fm-send` refuses new input while the record and endpoint both prove that no worker is present, so a held task cannot accumulate an instruction that nobody can read.
 
-Two things a stand-down deliberately cannot do.
+Three things a stand-down deliberately cannot do.
 It cannot run while the task owns an in-flight no-mistakes run: that run owns the branch and needs a worker at its gates, so finish it or abort it yourself (`no-mistakes axi abort --run <id>`) first - stand-down never cancels a run for you.
 That question is asked of every source current-state reporting uses - `no-mistakes axi status` and, when that answers about another branch or not at all, the `no-mistakes runs` listing - and a stand-down that cannot get an answer from any of them refuses and names the check that could not answer, rather than publishing a record that would take a possibly-live run out of supervision.
+The rule at every one of those decisions is the same: if it cannot be proven safe, it is refused, and the refusal names what could not be proven.
+An absent or unreadable worktree, a worktree with no branch, and a live run for this branch that the head rule cannot place against the local HEAD are all refusals, not permissions - the head rule exists to reject a historical run on a reused branch, and a run that is still going owns the branch however far local work has advanced past the commit it started on.
+It cannot run while an unacknowledged steering instruction is still waiting in `state/<id>.inbox/`, because the hold stops the watcher's re-ring ladder for that task: the refusal names the record, and the worker handles it or the operator withdraws it with the same `mv <record> state/<id>.inbox/handled/` acknowledgement the worker would make.
 And it cannot turn an agent that is merely already gone into a deliberate hold, because deadness is exactly the ambiguity the record exists to resolve.
 To declare an ordinary prior `exit` intentional, first declare the hold the way both supervisors already read it - append a `paused: <reason>` (or `captain-held: <reason>`) line to `state/<id>.status` - then run `stand-down`.
 That declaration is reversible by the next ordinary status append.
@@ -140,6 +143,7 @@ The empirical basis for each adapter's value is the `harness-adapters` skill's v
 
 ## Verification
 
-- `tests/fm-control.test.sh` - the adapter contract for every verified harness, the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, idempotent, and deliberate stand-down lifecycle cases, and marker non-regression, all against a stubbed session provider.
+- `tests/fm-control.test.sh` - the adapter contract for every verified harness, the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, idempotent, and deliberate stand-down lifecycle cases, every stand-down refusal that carries the burden of proof (active run, unplaceable run, unanswerable check, unreadable worktree, pending instruction), and marker non-regression, all against a stubbed session provider.
+- `tests/fm-crew-state.test.sh` - includes the absence-as-healthy counterfactual: a stood-down record whose endpoint has vanished must report `unknown` and name the lost endpoint, so the test fails the moment absence is presented as a healthy hold, and an absent worker with no declaration at all is still reported as a problem.
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, a restart from a deliberately stood-down worker, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
 - `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
