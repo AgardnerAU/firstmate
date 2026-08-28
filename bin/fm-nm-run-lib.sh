@@ -146,7 +146,7 @@ fm_nm_inventory_says_unregistered() {  # <stderr-text>
   local text
   text=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
   case "$text" in
-    *"not initialized"*|*"not initialised"*) return 0 ;;
+    *"repo not initialized"*|*"repo not initialised"*) return 0 ;;
   esac
   return 1
 }
@@ -159,10 +159,12 @@ fm_nm_inventory_says_unregistered() {  # <stderr-text>
 # The optional display and TOON fields are reporting projections, never a
 # second safety decision: they are carried on an `unknown` verdict too, so an
 # unproven safety answer does not also blank run reporting the function already
-# holds - but only while nothing live went unplaced AND the inventory that ran
-# was whole, because a run that may be in flight must never be rendered from an
-# older terminal row. A truncated window and an unparsable row are both content
-# this branch's live row could be sitting in unexamined, so they carry nothing.
+# holds - but only while nothing live went unplaced AND the inventory answered
+# whole, because a run that may be in flight must never be rendered from an
+# older terminal row. An inventory that did not answer, a truncated window and
+# an unparsable row are all content this branch's live row could be sitting in
+# unexamined, so none of them carries anything: one rule, no matter which part
+# of the inventory went missing.
 # The inventory call is issued on every path except a placeable live `axi
 # status` answer, including one where `axi status` itself did not respond.
 # That is a deliberate reversal of the earlier single-call reporting shortcut,
@@ -211,14 +213,19 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       fi
     fi
   fi
-  inventory_err=$(mktemp "${TMPDIR:-/tmp}/fm-nm-runs-err.XXXXXX" 2>/dev/null) || inventory_err=
-  if [ -n "$inventory_err" ]; then
-    if inventory=$(fm_nm_run_bounded "$wt" "$timeout" runs --limit "$limit" 2>"$inventory_err"); then inventory_rc=0; else inventory_rc=$?; fi
-    inventory_stderr=$(cat "$inventory_err" 2>/dev/null || true)
-    rm -f "$inventory_err"
-  else
-    if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then inventory_rc=0; else inventory_rc=$?; fi
+  if command -v mktemp >/dev/null 2>&1; then
+    inventory_err=$(mktemp "${TMPDIR:-/tmp}/fm-nm-runs-err.XXXXXX" 2>/dev/null) || inventory_err=
   fi
+  if [ -z "$inventory_err" ]; then
+    inventory_err="${TMPDIR:-/tmp}/fm-nm-runs-err.$$.${RANDOM}${RANDOM}"
+    ( set -o noclobber; : > "$inventory_err" ) 2>/dev/null || {
+      FM_NM_BRANCH_RUN_REASON="no scratch file could be opened to capture the run inventory's own error output, so branch $branch cannot be proven quiet (check that ${TMPDIR:-/tmp} is writable)"
+      return 0
+    }
+  fi
+  if inventory=$(fm_nm_run_bounded "$wt" "$timeout" runs --limit "$limit" 2>"$inventory_err"); then inventory_rc=0; else inventory_rc=$?; fi
+  inventory_stderr=$(<"$inventory_err") || inventory_stderr=
+  rm -f "$inventory_err" 2>/dev/null || :
   if [ "$inventory_rc" != 0 ]; then
     if [ -z "$direct_live_unknown" ] && fm_nm_inventory_says_unregistered "$inventory_stderr"; then
       FM_NM_BRANCH_RUN_VERDICT=quiet
@@ -226,7 +233,6 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       return 0
     fi
     FM_NM_BRANCH_RUN_REASON=${direct_live_unknown:-"'no-mistakes runs --limit' could not answer whether branch $branch has an active run"}
-    [ -n "$direct_live_unknown" ] || FM_NM_BRANCH_RUN_TOON=$terminal_toon
     return 0
   fi
   while IFS= read -r row; do

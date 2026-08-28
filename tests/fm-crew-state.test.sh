@@ -1620,16 +1620,14 @@ EOF
   pass "a live inventory row beats a stale terminal axi status answer"
 }
 
-# An unproven safety answer must not blank reporting as well: when the
-# inventory itself did not run, the terminal run `axi status` already placed
-# against this worktree stays the most current thing known about the task, and
-# reporting keeps it rather than falling back to the status log's older
-# self-report.
-# The opposite holds once the inventory DID run but came back whole: a window
-# that came back exactly full is a window this branch's still-live row could be
-# sitting past, so the terminal answer it never corroborated must not be
-# rendered as the task's current state.
-test_unknown_verdict_keeps_only_the_run_the_inventory_left_uncontested() {
+# One rule governs the reporting projection an `unknown` verdict carries: a
+# terminal `axi status` answer is rendered as the task's current state only when
+# a whole inventory examined this branch and left it uncontested. Every way the
+# inventory can go missing - it did not answer, it came back exactly full, or it
+# named a live run this worktree cannot place - is unexamined content this
+# branch's still-live row could be sitting in, and reporting falls through to
+# the pane and status log instead of labelling the branch from the older row.
+test_unknown_verdict_renders_only_a_corroborated_terminal_run() {
   reset_fakes
   local d out; d=$(new_case f10-unknown-projection)
   make_repo_on_branch "$d/wt" fm/feat-f10e
@@ -1640,14 +1638,10 @@ test_unknown_verdict_keeps_only_the_run_the_inventory_left_uncontested() {
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-f10e)"
   FM_FAKE_NM_FAIL_RUNS=1
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: failed" \
-    "an inventory that never ran must not blank the failed run the verdict already placed here"
-  assert_contains "$out" "source: run-step" \
-    "the placed run stays the reporting source when the inventory could not be read at all"
-  assert_not_contains "$out" "source: status-log" \
-    "an unanswered inventory must not demote reporting to the crew's own older self-report"
-  # An exactly-full window is unexamined content this branch's live row could
-  # be in, so the terminal answer it never corroborated is not rendered.
+  assert_not_contains "$out" "state: failed" \
+    "an inventory that never answered must not report the branch failed from an older terminal row"
+  assert_not_contains "$out" "source: run-step" \
+    "an inventory that never answered must bind no run"
   FM_FAKE_NM_FAIL_RUNS=""
   FM_FAKE_RUNS_LIST="$(cat <<'EOF'
   completed  fm/other-crew aaaaaaa1  2026-08-28 12:09
@@ -1659,21 +1653,25 @@ EOF
     "a truncated window must not report the branch failed from an uncorroborated terminal answer"
   assert_not_contains "$out" "source: run-step" \
     "a window that could not prove the branch quiet must bind no run"
-  # Counterfactual: the same terminal answer IS rendered once a whole window
-  # corroborates it by showing nothing live for the branch.
-  out=$(FM_NM_RUNS_LIMIT=3 run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: failed" \
-    "a window that came back short leaves the placed terminal run authoritative"
-  assert_contains "$out" "source: run-step" \
-    "a corroborated terminal answer stays a run-step source"
-  # And a live row this worktree cannot place drops the projection outright.
   FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
   out=$(FM_NM_RUNS_LIMIT=3 run_crew_state "$d" feat-f10e)
   assert_not_contains "$out" "state: failed" \
     "an unplaceable live row must not report the branch failed from an older terminal answer"
   assert_not_contains "$out" "source: run-step" \
     "an unplaceable live row must bind no run at all"
-  pass "an unknown verdict renders only the run an inventory left uncontested"
+  # Counterfactual: the same terminal answer IS rendered once a whole window
+  # examines the branch and shows nothing live on it.
+  FM_FAKE_RUNS_LIST="$(cat <<'EOF'
+  completed  fm/other-crew aaaaaaa1  2026-08-28 12:09
+  completed  fm/other-crew aaaaaaa2  2026-08-28 11:53
+EOF
+)"
+  out=$(FM_NM_RUNS_LIMIT=3 run_crew_state "$d" feat-f10e)
+  assert_contains "$out" "state: failed" \
+    "a window that came back short leaves the placed terminal run authoritative"
+  assert_contains "$out" "source: run-step" \
+    "a corroborated terminal answer stays a run-step source"
+  pass "an unknown verdict renders only a terminal run a whole inventory left uncontested"
 }
 
 # T1 direction 2: a genuinely-failed run with NO later run on the branch still
@@ -1842,7 +1840,7 @@ test_local_advanced_past_run_head_invalidates
 test_pipeline_owned_active_run_beats_superseded_failed_row
 test_live_inventory_beats_terminal_axi_status
 test_failed_run_with_no_later_run_still_surfaces
-test_unknown_verdict_keeps_only_the_run_the_inventory_left_uncontested
+test_unknown_verdict_renders_only_a_corroborated_terminal_run
 test_coarse_unresolvable_active_row_never_falls_to_older_row
 test_non_pipeline_owned_unresolvable_head_not_attributed
 test_pipeline_owned_terminal_run_not_exempt

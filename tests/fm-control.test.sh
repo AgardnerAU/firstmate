@@ -165,6 +165,10 @@ if [ -n "${FM_FAKE_NM_UNREGISTERED:-}" ]; then
   echo "repo not initialized (run 'no-mistakes init' first)" >&2
   exit 1
 fi
+if [ -n "${FM_FAKE_NM_ERR:-}" ]; then
+  echo "$FM_FAKE_NM_ERR" >&2
+  exit 1
+fi
 case "${1:-} ${2:-}" in
   "axi status") printf '%s\n' "${FM_FAKE_AXI_STATUS:-}" ;;
   "runs "*|"runs")
@@ -667,6 +671,15 @@ test_stand_down_allows_a_project_with_no_run_registration() {
   expect_code 1 "$rc" "a silent CLI failure must still refuse the hold"$'\n'"$out"
   [ ! -e "$dir/home/state/t1.worker-state" ] \
     || fail "an unanswered run check must publish no worker-state record"
+  out=$(FM_FAKE_NM_ERR="database not initialized: cannot open run store" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an unrelated CLI failure must not read as proof of no registration"$'\n'"$out"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unrelated CLI failure must publish no worker-state record"
+  out=$(TMPDIR="$dir/absent-tmp" FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a check that cannot capture the CLI's own error must refuse rather than degrade"$'\n'"$out"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an uncapturable run check must publish no worker-state record"
   out=$(FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
   expect_code 0 "$rc" "a repository with no run registration owns no run to protect"$'\n'"$out"
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
