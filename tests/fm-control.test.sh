@@ -160,7 +160,9 @@ set -u
 [ -z "${FM_FAKE_NM_FAIL:-}" ] || exit 1
 case "${1:-} ${2:-}" in
   "axi status") printf '%s\n' "${FM_FAKE_AXI_STATUS:-}" ;;
-  "runs "*|"runs") printf '%s\n' "${FM_FAKE_RUNS_LIST:-}" ;;
+  "runs "*|"runs")
+    [ -z "${FM_FAKE_NM_FAIL_RUNS:-}" ] || exit 1
+    printf '%s\n' "${FM_FAKE_RUNS_LIST:-}" ;;
 esac
 exit 0
 SH
@@ -669,6 +671,69 @@ test_stand_down_allows_a_terminal_run_whose_head_never_reached_here() {
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
     "the hold publishes once the newest run for the branch is proven finished"
   pass "fm-control stand-down: a terminal run whose head never reached this worktree is history, not doubt"
+}
+
+# The runs listing's status column is each run's CURRENT status, so a finished
+# row says nothing about the rows below it: an older run that still says
+# `running` holds the branch and its worker. The scan has to read the whole
+# branch, whether or not the newer finished row can be placed here.
+test_stand_down_refuses_a_live_run_listed_below_a_finished_one() {
+  local dir out rc head short
+  dir=$(new_case stand-down-live-below-finished)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  short=$(git -C "$dir/wt-t1" rev-parse --short HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-t1  deadbeef1  2026-08-28
+running  task-t1  $short  2026-08-27  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a live run below an unplaceable finished row must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run" \
+    "the refusal should name the run that still needs a worker"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a live run below a finished row must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "a live run must not lose its worker to a hold"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="completed  task-t1  $short  2026-08-28
+running  task-t1  $short  2026-08-27  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a placeable finished row must not end the scan either"$'\n'"$out"
+  assert_contains "$out" "active no-mistakes run" \
+    "the refusal should still name the live run below the finished one"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a live run below a finished row must publish no worker-state record"
+  pass "fm-control stand-down: a finished row never ends the branch scan while a run is still live"
+}
+
+# When the listing DOES answer and names a live run it cannot place, the
+# refusal must say so - not send the operator back to re-run a listing that
+# already answered.
+test_stand_down_refusal_names_the_unplaceable_live_run_not_the_listing() {
+  local dir out rc head
+  dir=$(new_case stand-down-unplaceable-live-name)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="running  task-t1  deadbeef1  2026-08-28  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a live run with an unplaceable head must refuse the hold"$'\n'"$out"
+  assert_contains "$out" "cannot be placed" \
+    "the refusal should name the live run the listing could not place"
+  assert_not_contains "$out" "could not answer" \
+    "a listing that answered must not be reported as unable to answer"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unplaceable live run must publish no worker-state record"
+  git -C "$dir/wt-t1" commit -q --allow-empty -m "work on top of the running run"
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-t1" "$head" running)" \
+    FM_FAKE_NM_FAIL_RUNS=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "an unplaceable live run must refuse even when the listing cannot answer"$'\n'"$out"
+  assert_contains "$out" "cannot be placed" \
+    "a named live run outranks the generic unanswered-listing reason"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "an unplaceable live run must publish no worker-state record"
+  pass "fm-control stand-down: an unplaceable live run is named, not misreported as an unanswered check"
 }
 
 # The preserved local copy IS the hold. If it cannot be read, neither can the
@@ -1284,6 +1349,8 @@ test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
+test_stand_down_refuses_a_live_run_listed_below_a_finished_one
+test_stand_down_refusal_names_the_unplaceable_live_run_not_the_listing
 test_stand_down_refuses_when_the_worktree_cannot_be_read
 test_stand_down_refuses_while_an_instruction_is_unacknowledged
 test_stand_down_checks_a_scout_on_a_branch_and_spares_a_detached_scratch

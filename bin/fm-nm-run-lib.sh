@@ -138,28 +138,37 @@ fm_nm_run_unknown() {  # <reason>
 # separated by runs of spaces (no quoting), so branch plus the same head
 # identity rule used above is an exact read of "is there a run for THIS branch".
 #
-# Prints the first matching row's status word and returns 0; returns 1 when the
-# listing answered and proved this branch has no run in it; returns 2 when the
-# question could not be answered at all - the CLI call failed or timed out, or
-# a NON-TERMINAL row's head cannot be resolved here, which is UNKNOWN
-# attribution rather than a proven mismatch. A caller that must not act while a
-# run is live has to treat 2 as "not proved safe", not as "no run". An
-# unresolvable TERMINAL row stops the scan too (it must not bind an older,
-# superseded row), but it answers 1: the newest run on this branch has
-# finished, wherever its head lives.
+# The scan reads the WHOLE listing for this branch, because the status column is
+# each run's CURRENT status: an older row that still says `running` is a live
+# run, not history, however many finished rows sit above it. Stopping at the
+# first row would answer "nothing is in flight" while that run holds the branch.
 #
-# The scan answers through FM_NM_RUNS_STATUS (the status word) so a caller can
-# read its second answer too: a row skipped by the head rule whose status is
-# NOT terminal is recorded in FM_NM_RUNS_UNATTRIBUTED_ACTIVE ("<status> <sha>"). The head rule exists to
-# reject a HISTORICAL run on a reused branch, and a non-terminal row is not
-# history: that run owns the branch right now however far this worktree's HEAD
-# has advanced past the commit it started on. Reporting may keep treating it as
-# no attribution (a coarse status word it cannot place is not a state to
-# render); a caller whose safety depends on the answer must not.
+# It answers on three separate channels, because reporting and safety need
+# different things from the same rows:
+#   FM_NM_RUNS_STATUS            the status word to RENDER: the first row whose
+#                                head places against this worktree, and nothing
+#                                once an unresolvable head has been seen, so a
+#                                superseded older row is never rendered as the
+#                                current state.
+#   FM_NM_RUNS_ACTIVE_ATTRIBUTED "<status> <sha>" of a non-terminal row that
+#                                places here: a live run this task owns.
+#   FM_NM_RUNS_UNATTRIBUTED_ACTIVE  "<status> <sha>" of a non-terminal row that
+#                                does NOT place here (mismatched or
+#                                unresolvable head): a live run on this branch
+#                                that cannot be tied to this worktree's code
+#                                identity. The head rule exists to reject a
+#                                HISTORICAL run on a reused branch, and a
+#                                non-terminal row is not history, so this is
+#                                doubt - never proof of safety.
+# The return code carries only the reporting answer: 0 when FM_NM_RUNS_STATUS
+# was set, 2 when the CLI itself could not answer, 1 otherwise. A caller whose
+# safety depends on the result reads the two liveness channels, not the word.
 fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-200} out rc row st rest br sha
+  local render_locked=0
   case "$limit" in ''|*[!0-9]*) limit=200 ;; esac
   FM_NM_RUNS_STATUS=
+  FM_NM_RUNS_ACTIVE_ATTRIBUTED=
   FM_NM_RUNS_UNATTRIBUTED_ACTIVE=
   [ -n "$branch" ] || return 1
   if out=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then rc=0; else rc=$?; fi
@@ -172,32 +181,30 @@ fm_nm_runs_scan_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
     br=${rest%% *}
     rest=$(fm_nm_trim "${rest#* }")
     sha=${rest%% *}
-    if [ "$br" = "$branch" ]; then
-      if ! fm_nm_head_matches_worktree "$wt" "$sha"; then
-        case "$st" in
-          completed|failed|cancelled)
-            # An UNRESOLVABLE head is unknown attribution, so stop rather than
-            # bind an older, superseded row - but a TERMINAL newest row still
-            # proves the one thing a safety caller needs: nothing is in flight
-            # on this branch. A pipeline lane head that never reached this
-            # worktree is routine (see fm_nm_head_resolvable), and treating it
-            # as unanswerable would refuse a hold with no run to finish.
-            fm_nm_head_resolvable "$wt" "$sha" || return 1
-            ;;
-          *)
-            [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] \
-              || FM_NM_RUNS_UNATTRIBUTED_ACTIVE="$st $sha"
-            # A non-terminal row that cannot be placed is exactly the doubt the
-            # governing rule carries: unknown, never proof of safety.
-            fm_nm_head_resolvable "$wt" "$sha" || return 2
-            ;;
-        esac
-        continue
+    [ "$br" = "$branch" ] || continue
+    if fm_nm_head_matches_worktree "$wt" "$sha"; then
+      if [ "$render_locked" = 0 ] && [ -z "$FM_NM_RUNS_STATUS" ]; then
+        FM_NM_RUNS_STATUS=$st
       fi
-      FM_NM_RUNS_STATUS=$st
-      return 0
+      case "$st" in
+        completed|failed|cancelled) ;;
+        *)
+          [ -n "$FM_NM_RUNS_ACTIVE_ATTRIBUTED" ] \
+            || FM_NM_RUNS_ACTIVE_ATTRIBUTED="$st $sha"
+          ;;
+      esac
+      continue
     fi
+    case "$st" in
+      completed|failed|cancelled) ;;
+      *)
+        [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] \
+          || FM_NM_RUNS_UNATTRIBUTED_ACTIVE="$st $sha"
+        ;;
+    esac
+    fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
   done <<< "$out"
+  [ -z "$FM_NM_RUNS_STATUS" ] || return 0
   return 1
 }
 
@@ -236,7 +243,7 @@ fm_nm_runs_status_for_branch() {  # <worktree> <branch> <timeout_secs> [limit]
 # the attribution named, never answer 1 - an unplaceable live run is exactly
 # the doubt this contract exists to carry, and only rc 1 licenses acting.
 fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
-  local wt=$1 branch=$2 timeout=$3 out rc run_branch run_head coarse coarse_rc
+  local wt=$1 branch=$2 timeout=$3 out rc run_branch run_head coarse_rc
   local unattributed=
   # shellcheck disable=SC2034 # the attributed run id is this function's second
   # return value, read by the caller that refuses on it.
@@ -273,31 +280,22 @@ fm_nm_active_run_for_worktree() {  # <worktree> <branch> <timeout_secs>
   else
     coarse_rc=$?
   fi
-  coarse=$FM_NM_RUNS_STATUS
+  if [ -n "$FM_NM_RUNS_ACTIVE_ATTRIBUTED" ]; then
+    return 0
+  fi
   if [ -n "$FM_NM_RUNS_UNATTRIBUTED_ACTIVE" ] && [ -z "$unattributed" ]; then
     unattributed="the 'no-mistakes runs' listing shows a non-terminal run for branch $branch (${FM_NM_RUNS_UNATTRIBUTED_ACTIVE}) that cannot be placed against this worktree's HEAD"
   fi
-  case "$coarse_rc" in
-    0)
-      case "$coarse" in
-        running) return 0 ;;
-        completed|failed|cancelled)
-          [ -z "$unattributed" ] || { fm_nm_run_unknown "$unattributed"; return 2; }
-          return 1
-          ;;
-        *)
-          fm_nm_run_unknown "'no-mistakes runs' reported an unrecognised status '$coarse' for branch $branch"
-          return 2
-          ;;
-      esac
-      ;;
-    1)
-      [ -z "$unattributed" ] || { fm_nm_run_unknown "$unattributed"; return 2; }
-      return 1
-      ;;
-    *)
-      fm_nm_run_unknown "'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
-      return 2
-      ;;
-  esac
+  # A named live run outranks the generic "the CLI said nothing" reason: the
+  # refusal has to name what could not be proven, not send the operator back to
+  # a listing that already answered.
+  if [ -n "$unattributed" ]; then
+    fm_nm_run_unknown "$unattributed"
+    return 2
+  fi
+  if [ "$coarse_rc" = 2 ]; then
+    fm_nm_run_unknown "'no-mistakes runs --limit' could not answer whether branch $branch has an active run"
+    return 2
+  fi
+  return 1
 }
