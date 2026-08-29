@@ -146,7 +146,7 @@ fm_nm_runs_limit() {
 fm_nm_says_unregistered() {  # <response-text>...
   local response text
   for response in "$@"; do
-    text=$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]')
+    text=$(printf '%s' "$response" | LC_ALL=C tr '[:upper:]' '[:lower:]')
     case "$text" in
       *"repo not initialized"*|*"repo not initialised"*) return 0 ;;
     esac

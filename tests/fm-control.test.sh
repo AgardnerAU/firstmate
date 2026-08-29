@@ -761,6 +761,13 @@ test_stand_down_allows_a_project_with_no_run_registration() {
     "an unregistered response on stderr must remain a proof that the project owns no run"
   rm -f "$dir/home/state/t1.worker-state"
   alive_as "$dir" claude
+  out=$(FM_FAKE_NM_ERR="ERROR: REPO NOT INITIALISED (RUN 'NO-MISTAKES INIT' FIRST)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "the unregistered verdict must not depend on the runner's locale or diagnostic case"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "a case-varied unregistered response must still prove that the project owns no run"
+  rm -f "$dir/home/state/t1.worker-state"
+  alive_as "$dir" claude
   out=$(FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
   expect_code 0 "$rc" "a repository with no run registration owns no run to protect"$'\n'"$out"
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
