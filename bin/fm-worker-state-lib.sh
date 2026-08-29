@@ -104,12 +104,12 @@ fm_worker_state_write() {
 
 # fm_worker_state_repair <state-dir> <task-id> <endpoint> <agent-state>
 # The one supported reconciliation of a record against observed reality, so no
-# operator ever has to hand-edit or hand-remove one. Reality wins in exactly
-# two directions, and only ever toward ordinary supervision: a record whose
-# meaning cannot be proved is removed, and a declaration contradicted by a live
-# agent is removed. Deadness alone never writes, upgrades, or preserves intent,
-# because an absent agent is precisely the ambiguity this record exists to
-# resolve. Idempotent: a second call on an already-reconciled task is a no-op.
+# operator ever has to hand-edit or hand-remove one. A valid declaration is
+# retained only while the endpoint is positively classified as dead. A record
+# whose meaning cannot be proved, a declaration contradicted by a live agent,
+# or an endpoint whose absence cannot be proved is removed toward ordinary
+# supervision. Idempotent: a second call on an already-reconciled task is a
+# no-op.
 # Prints the outcome word; returns nonzero only when a removal failed.
 fm_worker_state_repair() {  # <state-dir> <task-id> <endpoint> <agent-state>
   local state_dir=$1 id=$2 endpoint=$3 observed=$4 record status
@@ -122,12 +122,17 @@ fm_worker_state_repair() {  # <state-dir> <task-id> <endpoint> <agent-state>
       printf 'cleared-invalid'
       ;;
     standing-down|stood-down)
-      if [ "$observed" = alive ]; then
-        rm -f -- "$record" || return 1
-        printf 'cleared-live-worker'
-      else
-        printf 'intact'
-      fi
+      case "$observed" in
+        dead) printf 'intact' ;;
+        alive)
+          rm -f -- "$record" || return 1
+          printf 'cleared-live-worker'
+          ;;
+        *)
+          rm -f -- "$record" || return 1
+          printf 'cleared-unproven-endpoint'
+          ;;
+      esac
       ;;
     *) printf 'intact' ;;
   esac

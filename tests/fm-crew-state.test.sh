@@ -144,7 +144,7 @@ SH
 make_no_timeout_toolbin() {  # <dir> -> echoes toolbin path
   local dir=$1 tb="$1/notimeoutbin" tool real
   mkdir -p "$tb"
-  for tool in bash git grep sed head cut tail dirname perl; do
+  for tool in bash git grep sed head cut tail dirname perl tr; do
     real=$(command -v "$tool" || true)
     [ -n "$real" ] || fail "missing tool for no-timeout path: $tool"
     ln -s "$real" "$tb/$tool"
@@ -685,6 +685,7 @@ test_terminal_passed() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-d.meta" "window=fm:fm-feat-d" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_passed fm/feat-d)"
+  FM_FAKE_RUNS_LIST="completed  fm/feat-d  $(git -C "$d/wt" rev-parse --short HEAD)  2026-08-29"
   local out; out=$(run_crew_state "$d" feat-d)
   assert_contains "$out" "state: done" "passed run -> done"
   assert_contains "$out" "source: run-step" "passed -> run-step source"
@@ -698,6 +699,7 @@ test_terminal_failed() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-e.meta" "window=fm:fm-feat-e" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-e)"
+  FM_FAKE_RUNS_LIST="failed  fm/feat-e  $(git -C "$d/wt" rev-parse --short HEAD)  2026-08-29"
   local out; out=$(run_crew_state "$d" feat-e)
   assert_contains "$out" "state: failed" "failed run -> failed"
   assert_contains "$out" "source: run-step" "failed -> run-step source"
@@ -719,6 +721,7 @@ state=stood-down
 EOF
   printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-stood-down.status"
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-stood-down)"
+  FM_FAKE_RUNS_LIST="failed  fm/feat-stood-down  $(git -C "$d/wt" rev-parse --short HEAD)  2026-08-29"
   # The declared hold: the endpoint is still there and merely has no agent, so
   # the preserved worktree and work can be relaunched in place.
   FM_FAKE_TMUX_WINDOWS="fm-feat-stood-down"
@@ -829,6 +832,7 @@ endpoint=fm:fm-some-other-endpoint
 state=stood-down
 EOF
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-invalid-record)"
+  FM_FAKE_RUNS_LIST="failed  fm/feat-invalid-record  $(git -C "$d/wt" rev-parse --short HEAD)  2026-08-29"
   FM_FAKE_TMUX_MISSING=1
   out=$(run_crew_state "$d" feat-invalid-record)
   assert_contains "$out" "state: failed" \
@@ -1212,6 +1216,7 @@ test_dead_window_still_reports_terminal_run_step() {
   fm_write_meta "$d/state/feat-dead-done.meta" "window=fm:fm-feat-dead-done" "worktree=$d/wt" "kind=ship"
   printf 'done: PR https://github.com/o/r/pull/3 checks green\n' > "$d/state/feat-dead-done.status"
   FM_FAKE_AXI_STATUS="$(run_passed fm/feat-dead-done)"
+  FM_FAKE_RUNS_LIST="completed  fm/feat-dead-done  $(git -C "$d/wt" rev-parse --short HEAD)  2026-08-29"
   FM_FAKE_TMUX_MISSING=1   # the crew's window has closed
   local out; out=$(run_crew_state "$d" feat-dead-done)
   assert_contains "$out" "state: done" "closed pane still reports terminal run-step done"
@@ -1620,13 +1625,9 @@ EOF
   pass "a live inventory row beats a stale terminal axi status answer"
 }
 
-# Reporting renders whatever established the verdict, and nothing else. A
-# readable branch read that placed a terminal run on this branch establishes
-# `quiet`, so that run is the task's current state however the repo-wide
-# corroboration listing fared - it cannot answer the branch question either
-# way. A live row the listing does find outranks it, and a branch read that
-# could not be made at all renders nothing.
-test_reporting_renders_what_established_the_verdict() {
+# Terminal reporting requires both reads to place the same terminal branch and
+# head. A live row from either source still establishes active on its own.
+test_terminal_reporting_requires_corroboration() {
   reset_fakes
   local d out; d=$(new_case f10-projection-source)
   make_repo_on_branch "$d/wt" fm/feat-f10e
@@ -1637,12 +1638,10 @@ test_reporting_renders_what_established_the_verdict() {
   FM_FAKE_AXI_STATUS="$(run_failed fm/feat-f10e)"
   FM_FAKE_NM_FAIL_RUNS=1
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: failed" \
-    "a corroboration listing that never answered must not blank the run the branch read placed"
-  assert_contains "$out" "source: run-step" \
-    "the placed run stays the reporting source when only corroboration was lost"
-  # An exactly-full window is corroboration that adds nothing, not a reason to
-  # lose the branch read's own answer.
+  assert_contains "$out" "state: unknown" \
+    "a terminal branch read without corroboration must fall back to endpoint reality"
+  assert_contains "$out" "source: pane" \
+    "an uncorroborated terminal read must not become established run state"
   FM_FAKE_NM_FAIL_RUNS=""
   FM_FAKE_RUNS_LIST="$(cat <<'EOF'
   completed  fm/other-crew aaaaaaa1  2026-08-28 12:09
@@ -1650,10 +1649,10 @@ test_reporting_renders_what_established_the_verdict() {
 EOF
 )"
   out=$(FM_NM_RUNS_LIMIT=2 run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: failed" \
-    "a full corroboration window must not blank the run the branch read placed"
-  assert_contains "$out" "source: run-step" \
-    "a full window is corroboration, not a lost reporting source"
+  assert_contains "$out" "state: unknown" \
+    "an unrelated full window must not establish a terminal result"
+  assert_contains "$out" "source: pane" \
+    "an unrelated full window supplies no terminal corroboration"
   # A live row for this branch outranks the terminal branch read.
   FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
   out=$(run_crew_state "$d" feat-f10e)
@@ -1661,17 +1660,16 @@ EOF
     "a live row for this branch outranks a terminal branch read"
   assert_not_contains "$out" "state: failed" \
     "a live row must not be reported as the older terminal outcome"
-  # When the branch read names no run of its own, the corroboration listing's
-  # placeable row for this branch is what established the quiet answer, so that
-  # is what reporting renders.
+  # A terminal listing row cannot establish reporting without a matching
+  # terminal branch read.
   FM_FAKE_AXI_STATUS=""
   FM_FAKE_RUNS_LIST="  failed     fm/feat-f10e $(git -C "$d/wt" rev-parse --short=8 HEAD)  2026-08-28 12:20"
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: failed" \
-    "the listing row that placed against this worktree is the reporting source"
-  assert_contains "$out" "source: run-step" \
-    "a placed listing row is established state, not a guess"
-  pass "reporting renders what established the verdict, and nothing else"
+  assert_contains "$out" "state: unknown" \
+    "a listing-only terminal row must not become established state"
+  assert_contains "$out" "source: pane" \
+    "terminal reporting requires agreement from both reads"
+  pass "terminal reporting requires corroboration while live evidence remains additive"
 }
 
 # T1 direction 2: a genuinely-failed run with NO later run on the branch still
@@ -1839,7 +1837,7 @@ test_local_advanced_past_run_head_invalidates
 test_pipeline_owned_active_run_beats_superseded_failed_row
 test_live_inventory_beats_terminal_axi_status
 test_failed_run_with_no_later_run_still_surfaces
-test_reporting_renders_what_established_the_verdict
+test_terminal_reporting_requires_corroboration
 test_coarse_unresolvable_active_row_never_falls_to_older_row
 test_non_pipeline_owned_unresolvable_head_not_attributed
 test_pipeline_owned_terminal_run_not_exempt

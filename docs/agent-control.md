@@ -33,7 +33,7 @@ A recorded `harness=` is not always an exact adapter name: a task launched from 
 | `interrupt` | Deliver the harness's verified interrupt sequence while leaving the agent running. | Delivery succeeds while the endpoint still exists and the agent is still alive where the backend can classify that; cancellation is confirmed only from an adapter-owned acknowledgement and otherwise reports `cancel=unconfirmed`. |
 | `exit` | Stop the agent, preserving the endpoint, the worktree, and every uncommitted change. | The backend's recovery-grade classifier reports the agent gone. Already-stopped is idempotent success. |
 | `stand-down` | Stop a held ship or scout task and record that it deliberately has no worker. | The control plane first proves the agent is gone, then writes an exact worker-state record bound to the task and endpoint. A live worker at a stale record stays in ordinary stale and wedge detection. |
-| `repair-worker-state` | Reconcile a worker-state record against what the endpoint really shows. | An unprovable record, and a declaration a live agent contradicts, are cleared and reported; anything else is left exactly as it is. Repeat runs are no-ops. |
+| `repair-worker-state` | Reconcile a worker-state record against what the endpoint really shows. | A valid record is retained only for a proven dead endpoint. An unprovable record, a live agent, or a missing or unreadable endpoint clears the declaration toward ordinary supervision. Repeat runs are no-ops. |
 | `relaunch` | Replace the running agent with a new one in the same endpoint and worktree, on the exact recorded adapter or an explicitly chosen harness, model, and effort. | The new agent is alive on the recorded endpoint, and the durable record names the harness that is actually running. |
 
 An exit that delivers lifecycle input but cannot prove the agent stopped fails with `exit=unconfirmed`, reports the observed agent state and any interrupt cancellation claim, and never claims that nothing changed.
@@ -49,7 +49,7 @@ The clear is refused before anything is sent when the recorded backend cannot de
 `exit` stops an agent and preserves everything else.
 Removing a worktree, closing an endpoint, or discarding work stays with [`bin/fm-teardown.sh`](../bin/fm-teardown.sh), which owns the landed-work test.
 
-`stand-down` is the explicit companion for a held ship or scout task that does not need a worker for a while.
+`stand-down` is the explicit companion for a held ship or scout task on the tmux backend that does not need a worker for a while.
 Both kinds are checked for an in-flight run the same way, and a worktree with no branch at all - a scout's scratch copy, or a ship between spawn and its worker's first `git checkout -b` - owns no run to be held back by, because a run is keyed by branch.
 It preserves the worktree, branch, commits, endpoint, and uncommitted work exactly as `exit` does, then writes `state/<id>.worker-state` only after proving the worker is gone.
 Its short `standing-down` transition never suppresses monitoring, and the completed `stood-down` record is ignored when the endpoint has a live worker.
@@ -125,8 +125,10 @@ Switching harness is therefore one ordinary relaunch rather than a separate mech
   Muse is a crewmate and scout adapter only, so relaunching a secondmate onto it refuses while its agent is still up rather than leaving that secondmate with no agent when the launch owner refuses.
 - A backend that cannot deliver the harness's interrupt key, or the composer clear that key needs, is refused rather than sent a different key.
   Orca's terminal API exposes only an interrupt and an Enter, so it can deliver neither Escape nor Ctrl+U.
-- `exit`, `stand-down`, and `relaunch` require a backend with a recovery-grade agent-state classifier - tmux and herdr - because without one the "the agent stopped" postcondition cannot be proven.
+- `exit` requires a backend with a recovery-grade agent-state classifier - tmux or herdr - because without one the "the agent stopped" postcondition cannot be proven.
   zellij, orca, and cmux are refused rather than reported as successful blind.
+- The worker-state verbs `stand-down`, `repair-worker-state`, and `relaunch` are supported only on tmux.
+  They do not drive Herdr lifecycle behaviour.
 - An ambiguous or unreadable endpoint state refuses.
   Only a positively classified state acts.
 - `fm-spawn --relaunch` independently refuses unless the recorded endpoint is positively agent-free and its shell is sitting in the recorded worktree, so a replacement can never join a live agent or start outside the copy holding the work.
@@ -151,4 +153,4 @@ The empirical basis for each adapter's value is the `harness-adapters` skill's v
 - `tests/fm-control.test.sh` - the adapter contract for every verified harness, the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, idempotent, and deliberate stand-down lifecycle cases, every stand-down refusal that carries the burden of proof (active run, unplaceable run, unanswerable check, unreadable worktree, pending instruction), and marker non-regression, all against a stubbed session provider.
 - `tests/fm-crew-state.test.sh` - includes the absence-as-healthy counterfactual: a stood-down record whose endpoint has vanished must report `unknown` and name the lost endpoint, so the test fails the moment absence is presented as a healthy hold, and an absent worker with no declaration at all is still reported as a problem.
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, a restart from a deliberately stood-down worker, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
-- `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
+- `tests/fm-control-herdr-smoke.test.sh` - interrupt and exit on the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.

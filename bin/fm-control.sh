@@ -105,10 +105,10 @@
 #     is refused rather than guessed at.
 #   - A backend that cannot deliver the harness's interrupt key is refused
 #     (Orca's terminal API has no Escape).
-#   - `exit`, `stand-down`, and `relaunch` require a backend with a recovery-grade agent-state
-#     classifier (tmux, herdr), because without one the "the agent stopped"
-#     postcondition cannot be proven. zellij, orca, and cmux are refused rather
-#     than reported as successful blind.
+#   - `exit` requires a backend with a recovery-grade agent-state classifier
+#     (tmux or herdr). The worker-state verbs stand-down, repair-worker-state,
+#     and relaunch are supported only on tmux. zellij, orca, and cmux are
+#     refused rather than reported as successful blind.
 #   - An ambiguous or unreadable endpoint state refuses; only a positively
 #     classified state acts.
 #
@@ -388,6 +388,11 @@ require_state_verified_backend() {  # <verb>
   die "task $ID runs on the $BACKEND backend, which has no recovery-grade agent-state classifier, so '$1' cannot prove the agent actually stopped; refusing rather than reporting an unproven transition as done"
 }
 
+require_worker_lifecycle_backend() {  # <verb>
+  [ "$BACKEND" = tmux ] && return 0
+  die "task $ID runs on the $BACKEND backend, where '$1' worker-lifecycle control is not supported; use the backend's authorised lifecycle path instead"
+}
+
 # send_interrupt_keys: deliver the harness's interrupt key the verified number
 # of times, then the composer-clear key when the adapter needs one. Refuses
 # before sending anything when the backend cannot deliver either key, because
@@ -559,6 +564,7 @@ do_stand_down() {
   local lifecycle state result
   [ "$KIND" != secondmate ] \
     || die "task $ID is a secondmate home; stand-down is only for held ship or scout work because a stopped secondmate would leave its own fleet unsupervised"
+  require_worker_lifecycle_backend stand-down
   require_state_verified_backend stand-down
   refuse_stand_down_during_active_run
   refuse_stand_down_with_pending_instruction
@@ -680,12 +686,12 @@ refuse_stand_down_with_pending_instruction() {
 }
 
 # do_repair_worker_state: the one supported reconciliation of a worker-state
-# record, so an operator never has to hand-remove one. Reality wins and only
-# ever toward supervision - an unprovable record, and a declaration a live
-# agent contradicts, are both cleared and reported. A dead endpoint is never
-# read as intent, so repair can never CREATE or preserve a suppression.
+# record, so an operator never has to hand-remove one. A valid declaration is
+# retained only for a proven dead endpoint. An unprovable record, a live agent,
+# or an endpoint that cannot be proved dead clears toward ordinary supervision.
 do_repair_worker_state() {
   local state outcome
+  require_worker_lifecycle_backend repair-worker-state
   state=$(agent_state 2>/dev/null || true)
   [ -n "$state" ] || state=unreadable
   outcome=$(fm_worker_state_repair "$STATE" "$ID" "$T" "$state") \
@@ -696,6 +702,9 @@ do_repair_worker_state() {
       ;;
     cleared-invalid)
       echo "warning: task $ID had a worker-state record that no longer describes this task and endpoint; it was cleared and the task is back under ordinary supervision" >&2
+      ;;
+    cleared-unproven-endpoint)
+      echo "warning: task $ID declared no worker but its endpoint could not be proven dead; the declaration was cleared and the task is back under ordinary supervision" >&2
       ;;
   esac
   printf '%s agent-state=%s' "$outcome" "$state"
@@ -992,6 +1001,7 @@ do_relaunch() {
   local exit_result state note_line
   local -a spawn_args
 
+  require_worker_lifecycle_backend relaunch
   require_state_verified_backend relaunch
   resolve_relaunch_profile
 

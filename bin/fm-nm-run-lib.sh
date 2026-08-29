@@ -205,15 +205,18 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 # reporting nicety rather than a safety setting.
 #
 # The optional display and TOON fields are reporting projections, never a
-# second safety decision, and they are assigned in exactly one place below:
-# whatever established the verdict is what reporting renders, so an
-# uncorroborated listing row is never presented as this task's state.
+# second safety decision, and they are assigned in exactly one place below.
+# Live evidence from either source can be projected. A terminal result is
+# projected only when both sources place the same status and head, so neither
+# an uncorroborated direct result nor a listing-only row is presented as this
+# task's state.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-}
   local status_out='' status_rc status_stderr='' run_branch run_head
   local branch_state=unknown branch_reason='' active_id='' active_toon='' terminal_toon=''
+  local terminal_status='' terminal_outcome='' terminal_head='' terminal_corroborated=0
   local inventory row st rest br sha render_locked=0
-  local listing_live='' listing_display=''
+  local listing_live='' direct_full='' listing_full=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
   FM_NM_BRANCH_RUN_REASON=
   FM_NM_BRANCH_RUN_ID=
@@ -250,6 +253,14 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
         fi
       elif fm_nm_head_matches_worktree "$wt" "$run_head"; then
         terminal_toon=$status_out
+        terminal_status=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" status)")
+        terminal_outcome=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" outcome)")
+        case "$terminal_outcome" in
+          failed) terminal_status=failed ;;
+          cancelled) terminal_status=cancelled ;;
+          passed|checks-passed) terminal_status=completed ;;
+        esac
+        terminal_head=$run_head
       fi
     fi
   elif [ "$status_rc" != 0 ] && fm_nm_says_unregistered "$status_stderr"; then
@@ -274,7 +285,14 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       case "$st" in
         completed|failed|cancelled)
           if fm_nm_head_matches_worktree "$wt" "$sha"; then
-            if [ "$render_locked" = 0 ] && [ -z "$listing_display" ]; then listing_display=$st; fi
+            if [ "$render_locked" = 0 ] && [ -n "$terminal_toon" ] \
+              && [ "$st" = "$terminal_status" ]; then
+              direct_full=$(git -C "$wt" rev-parse --verify "${terminal_head}^{commit}" 2>/dev/null || true)
+              listing_full=$(git -C "$wt" rev-parse --verify "${sha}^{commit}" 2>/dev/null || true)
+              if [ -n "$direct_full" ] && [ "$direct_full" = "$listing_full" ]; then
+                terminal_corroborated=1
+              fi
+            fi
           else
             fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
           fi
@@ -296,10 +314,8 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   fi
   if [ "$branch_state" = quiet ]; then
     FM_NM_BRANCH_RUN_VERDICT=quiet
-    if [ -n "$terminal_toon" ]; then
+    if [ "$terminal_corroborated" = 1 ]; then
       FM_NM_BRANCH_RUN_TOON=$terminal_toon
-    else
-      FM_NM_BRANCH_RUN_DISPLAY=$listing_display
     fi
     return 0
   fi

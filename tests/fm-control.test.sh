@@ -461,12 +461,12 @@ test_unverified_state_backends_refuse_stop_verbs() {
     [ -z "$(literals "$dir")" ] || fail "$backend must receive no exit command"
     out=$(run_control "$dir" t1 stand-down); rc=$?
     expect_code 1 "$rc" "stand-down on $backend should refuse"$'\n'"$out"
-    assert_contains "$out" "no recovery-grade agent-state classifier" \
-      "the $backend stand-down refusal should name the missing stop proof"
+    assert_contains "$out" "worker-lifecycle control is not supported" \
+      "the $backend stand-down refusal should name the unsupported lifecycle surface"
     out=$(run_control "$dir" t1 relaunch --note x); rc=$?
     expect_code 1 "$rc" "relaunch on $backend should refuse"$'\n'"$out"
-    assert_contains "$out" "no recovery-grade agent-state classifier" \
-      "the $backend relaunch refusal should name the missing stop proof"
+    assert_contains "$out" "worker-lifecycle control is not supported" \
+      "the $backend relaunch refusal should name the unsupported lifecycle surface"
   done
   pass "fm-control: a backend that cannot prove an agent stopped refuses exit, stand-down, and relaunch"
 }
@@ -480,6 +480,32 @@ test_state_verified_backends_are_exactly_tmux_and_herdr() {
       && fail "$backend has no recovery-grade classifier and must not claim one"
   done
   pass "fm-control-lib: stop-proving verbs are gated on the backends that really classify agent state"
+}
+
+test_worker_lifecycle_verbs_refuse_herdr() {
+  local dir out rc verb
+  for verb in stand-down repair-worker-state relaunch; do
+    dir=$(new_case "herdr-$verb")
+    add_task "$dir" t1 claude ship herdr "lab:pane-1"
+    {
+      echo "herdr_session=lab"
+      echo "herdr_workspace_id=workspace-1"
+      echo "herdr_tab_id=tab-1"
+      echo "herdr_pane_id=pane-1"
+    } >> "$dir/home/state/t1.meta"
+    if [ "$verb" = relaunch ]; then
+      out=$(run_control "$dir" t1 "$verb" --note x); rc=$?
+    else
+      out=$(run_control "$dir" t1 "$verb"); rc=$?
+    fi
+    expect_code 1 "$rc" "$verb on herdr should refuse"$'\n'"$out"
+    assert_contains "$out" "worker-lifecycle control is not supported" \
+      "$verb should name the unsupported Herdr lifecycle surface"
+    [ -z "$(literals "$dir")" ] || fail "$verb on herdr must send no lifecycle command"
+    [ ! -e "$dir/home/state/t1.worker-state" ] \
+      || fail "$verb on herdr must not publish or alter worker state"
+  done
+  pass "fm-control: worker-state lifecycle verbs do not drive Herdr"
 }
 
 test_stand_down_proves_stop_then_records_intent() {
@@ -856,6 +882,7 @@ completed  task-other  aaaaaaa3  2026-08-28" \
   # Counterfactual: a live row for this branch inside the same full window still
   # refuses, so the window is read, not ignored.
   rm -f "$dir/home/state/t1.worker-state"
+  : > "$dir/fake/literal"
   alive_as "$dir" claude
   out=$(FM_NM_RUNS_LIMIT=3 \
     FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
@@ -1063,6 +1090,31 @@ EOF
   [ ! -e "$dir/home/state/t1.worker-state" ] \
     || fail "repair must never create a suppression from a dead endpoint alone"
   pass "fm-control repair-worker-state: an unprovable record is cleared toward supervision, never toward intent"
+}
+
+test_repair_clears_a_record_when_the_endpoint_vanished() {
+  local dir out rc
+  dir=$(new_case repair-missing)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "stand-down should publish the record first"$'\n'"$out"
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair should retain a declaration for a proven dead endpoint"$'\n'"$out"
+  assert_contains "$out" "intact agent-state=dead" \
+    "repair should retain only the positively proved dead case"
+  [ -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a declaration for a proven dead endpoint should remain intact"
+  : > "$dir/fake/windows"
+  out=$(run_control "$dir" t1 repair-worker-state); rc=$?
+  expect_code 0 "$rc" "repair should clear a declaration whose endpoint vanished"$'\n'"$out"
+  assert_contains "$out" "cleared-unproven-endpoint" \
+    "repair should report that endpoint absence was not proved dead"
+  assert_contains "$out" "agent-state=missing" \
+    "repair should report the vanished endpoint observation"
+  [ ! -e "$dir/home/state/t1.worker-state" ] \
+    || fail "a declaration for a vanished endpoint must not survive repair"
+  pass "fm-control repair-worker-state: a vanished endpoint returns to supervision"
 }
 
 # --- 3. exact-id scoping ----------------------------------------------------
@@ -1506,6 +1558,7 @@ test_harness_kind_capability
 test_orca_refuses_an_escape_harness_interrupt
 test_unverified_state_backends_refuse_stop_verbs
 test_state_verified_backends_are_exactly_tmux_and_herdr
+test_worker_lifecycle_verbs_refuse_herdr
 test_stand_down_proves_stop_then_records_intent
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
 test_stand_down_refuses_while_the_task_owns_an_active_run
@@ -1527,6 +1580,7 @@ test_stand_down_checks_a_scout_on_a_branch_and_spares_a_detached_scratch
 test_a_prior_exit_becomes_intentional_only_after_a_declared_hold
 test_repair_clears_a_declaration_a_live_agent_contradicts
 test_repair_clears_an_unprovable_record_without_inferring_intent
+test_repair_clears_a_record_when_the_endpoint_vanished
 test_window_label_is_refused_with_the_exact_id
 test_explicit_endpoint_is_refused
 test_unknown_task_is_refused
