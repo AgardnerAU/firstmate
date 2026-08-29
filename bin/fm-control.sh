@@ -634,10 +634,10 @@ task_is_declared_held() {
 # THE GOVERNING RULE HERE: IF IT CANNOT BE PROVEN SAFE, IT IS REFUSED, AND THE
 # REFUSAL NAMES WHAT COULD NOT BE PROVEN. The record a stand-down publishes
 # removes the task from the watcher's stale and wedge detection, so only a
-# proven "no run is active here" may proceed. Every input to that proof is held
-# to the same standard: an absent or unreadable worktree, an unreadable
-# repository, a CLI that did not answer, and a live run the head rule could not
-# place all refuse.
+# proven "no run is active here" may proceed. An absent or unreadable worktree,
+# an unreadable branch-scoped status, and a live run the head rule could not
+# place all refuse. The optional repo-wide listing cannot weaken a readable
+# quiet branch result or make unavailable corroboration a refusal.
 # fm_nm_branch_run_verdict carries the query half of the same rule and names
 # the one condition that could not prove the branch quiet.
 #
