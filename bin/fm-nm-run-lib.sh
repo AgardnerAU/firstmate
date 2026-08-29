@@ -143,7 +143,7 @@ fm_nm_runs_limit() {
 # owns no run, so that is an answer, not a failure to answer - the same
 # reasoning the branchless worktree rests on. firstmate supports whole project
 # modes (direct-PR, local-only) that never run `no-mistakes init`.
-fm_nm_says_unregistered() {  # <stderr-text>
+fm_nm_says_unregistered() {  # <response-text>
   local text
   text=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
   case "$text" in
@@ -154,8 +154,9 @@ fm_nm_says_unregistered() {  # <stderr-text>
 
 # Bounded `no-mistakes` call in $1 whose stdout and stderr are written into the
 # variables named by $2 and $3 rather than stderr being discarded, so a caller
-# can tell an error the CLI explained from one it did not. Both variables are
-# assigned in the caller's scope - the call must NOT be wrapped in a command
+# can inspect the CLI's complete response when it explains a failure on either
+# stream. Both variables are assigned in the caller's scope - the call must NOT
+# be wrapped in a command
 # substitution - and the CLI's exit status is returned, or 1 when no scratch
 # file could be opened for the error stream.
 fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs> <args...>
@@ -277,7 +278,9 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
         terminal_head=$run_head
       fi
     fi
-  elif [ "$status_rc" != 0 ] && fm_nm_says_unregistered "$status_stderr"; then
+  elif [ "$status_rc" != 0 ] \
+    && { fm_nm_says_unregistered "$status_out" \
+      || fm_nm_says_unregistered "$status_stderr"; }; then
     branch_state=quiet
   else
     branch_reason="'no-mistakes axi status' could not answer whether branch $branch has a run in flight"

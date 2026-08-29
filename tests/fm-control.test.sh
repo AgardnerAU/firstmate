@@ -155,14 +155,15 @@ SH
 # timed-out CLI does, so a test can pose the unanswerable question;
 # FM_FAKE_NM_UNREGISTERED reproduces the installed CLI's answer in a repository
 # it holds no registration for - exit 1, no rows, and the not-initialized
-# message on stderr.
+# response on stdout.
 add_axi_stub() {  # <case-dir>
   cat > "$1/fakebin/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -u
 [ -z "${FM_FAKE_NM_FAIL:-}" ] || exit 1
 if [ -n "${FM_FAKE_NM_UNREGISTERED:-}" ]; then
-  echo "repo not initialized (run 'no-mistakes init' first)" >&2
+  echo "error: repo not initialized (run 'no-mistakes init' first)"
+  echo "help[1]: Run \`no-mistakes init\` to set up the gate in this repository"
   exit 1
 fi
 if [ -n "${FM_FAKE_NM_ERR:-}" ]; then
