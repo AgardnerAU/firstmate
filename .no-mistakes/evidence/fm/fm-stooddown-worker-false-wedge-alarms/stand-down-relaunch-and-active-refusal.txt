@@ -1,0 +1,20 @@
+$ fm-control proof-task stand-down
+stood-down proof-task harness=claude backend=tmux endpoint=fmses:fm-proof-task worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.B7PLoP/evidence-lifecycle-15331/wt
+$ persisted worker state
+schema=1
+task_id=proof-task
+endpoint=fmses:fm-proof-task
+state=stood-down
+$ fm-control proof-task relaunch --note "resume after upstream wait"
+warning: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.B7PLoP/evidence-lifecycle-15331/home/data/proof-task/brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+relaunched proof-task harness=claude from=claude model=default effort=default backend=tmux endpoint=fmses:fm-proof-task worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.B7PLoP/evidence-lifecycle-15331/wt
+branch preserved: task-proof-task
+commit preserved: 7c4dd0ae5c3f85869bed57604ea0af3b93430528
+same branch/head: yes
+worker-state cleared after relaunch: yes
+replacement agent: claude
+$ fm-control active-task stand-down  # branch has active validation run
+error: task active-task owns an active no-mistakes run (01ACTIVE) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run 01ACTIVE', before standing the worker down
+exit: 1
+worker remained alive: claude
+stood-down record created: no

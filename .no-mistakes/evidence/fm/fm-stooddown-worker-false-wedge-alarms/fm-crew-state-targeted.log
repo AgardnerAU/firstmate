@@ -1,0 +1,66 @@
+ok - active run-step is authoritative
+ok - active verdict does not guess needs-decision history is stale
+ok - active verdict does not guess blocked history is stale
+ok - active gate details remain withheld without corroboration
+ok - scalar gate details remain withheld without corroboration
+ok - gate block details remain withheld without corroboration
+ok - active verdict outranks a ready status log
+ok - active ci-monitor verdict withholds uncorroborated detail
+ok - top-level active ci verdict withholds uncorroborated detail
+ok - active no-checks ci-monitor withholds uncorroborated detail
+ok - base-advance rearm after green stays working
+ok - pending no-checks ci-monitor marker stays working
+ok - ci-monitoring run with checks not yet green stays working
+ok - a fresh issue after an earlier green reading is not masked
+ok - stale checks-green status log does not mask CI relapse
+ok - ci fixing is not overridden by an earlier green marker
+ok - top-level fixing is not overridden by a stale ci running row
+ok - top-level fixing is not overridden by a stale done log
+ok - terminal passed run is authoritative
+ok - terminal failed run is authoritative
+ok - a stood-down worker state outranks historical failed validation state
+ok - a stood-down record whose endpoint vanished is reported as unknown, not as a healthy hold
+ok - an absent worker with no declaration is still reported as a problem
+ok - an active verdict outranks worker state without a listing lookup
+ok - an unprovable worker-state record never masks a real run outcome
+ok - cross-branch listing activity remains authoritative without projection
+ok - cross-branch listing-only activity reports active with details withheld
+ok - listing-only activity does not probe another branch's ci log
+ok - another branch's run is ignored, falls back
+ok - no run + a busy semantic record reads working, attributed to its source
+ok - a converted adapter never reads working from rendered footer text
+ok - grok still reads working through its isolated rendered-tail fallback
+ok - herdr's native busy verdict reads working with no record present
+ok - a mid-tool-call crew stays working because its record outranks herdr's generation state
+ok - an idle record with idle agent_status stays not-busy (no regression for a human-blocked agent)
+ok - no run + idle pane uses the status-log verb
+ok - no run + idle pane parses keyed status syntax
+ok - no run + idle pane on a paused: status reports state: paused with its reason
+ok - no run + idle pane honors the configured paused verb
+ok - a trailing resolved: event does not corrupt state render (idle stays idle)
+ok - dead window ignores stale status log
+ok - closed pane still reports a terminal run-step
+ok - closed pane still reports an active run-step
+ok - no timeout command uses perl bound
+ok - scout skips the run lookup
+ok - torn-down worktree is handled gracefully
+ok - fm-crew-state remote: alive endpoint falls through to the routed status log
+ok - fm-crew-state remote: an idle alive endpoint reads alive, never gone or dead
+ok - fm-crew-state remote: an unreachable host reads unknown-remote, never gone or dead
+ok - fm-crew-state remote: the remote host's own dead verdict is reported truthfully
+ok - missing meta is handled gracefully
+ok - crew_is_provably_working uses worker evidence when run projection is uncorroborated
+ok - crew_is_provably_working still surfaces a genuinely stopped crew (safety property preserved)
+ok - usage error exits 2
+ok - historical same-branch rewritten head is not attributed as current
+ok - active run with valid descendant fix head remains current
+ok - local work advanced past run head invalidates attribution
+ok - pipeline-owned active run binds without head equality and beats the failed row
+ok - a live inventory row reports active without projecting details
+ok - a genuinely failed run with no later run is not hidden
+ok - terminal reporting requires corroboration while live evidence remains additive
+ok - listing-only activity suppresses older terminal state with details withheld
+ok - the exemption requires branch_sync.state=pipeline_owned
+ok - the exemption never applies to a terminal run
+ok - missing run head falls back instead of matching by branch
+all fm-crew-state tests passed

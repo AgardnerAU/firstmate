@@ -1,0 +1,12 @@
+$ fm-control quiet-task stand-down  # no no-mistakes CLI installed
+stood-down quiet-task harness=claude backend=tmux endpoint=fmses:fm-quiet-task worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control.RW1TC3/evidence-absent-cli-20130/wt-quiet-task
+exit: 0
+recorded state: stood-down
+$ fm-control quiet-task stand-down  # repository is not initialised
+stood-down quiet-task harness=claude backend=tmux endpoint=fmses:fm-quiet-task worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control.RW1TC3/evidence-unregistered-25081/wt-quiet-task
+exit: 0
+recorded state: stood-down
+$ fm-control quiet-task stand-down  # mature repository, full 3-row corroboration window
+stood-down quiet-task harness=claude backend=tmux endpoint=fmses:fm-quiet-task worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control.RW1TC3/evidence-full-window-831/wt-quiet-task
+exit: 0
+recorded state: stood-down

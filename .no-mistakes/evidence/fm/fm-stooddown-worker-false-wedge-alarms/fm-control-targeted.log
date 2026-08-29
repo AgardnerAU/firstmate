@@ -1,0 +1,60 @@
+ok - fm-control exit: every verified harness gets its own verified exit command
+ok - fm-control interrupt: every verified harness gets its own verified key and repeat count
+ok - fm-control interrupt: opencode needs a double Escape, claude a single one
+ok - fm-control: a harness with no verified control mechanics is refused, not guessed at
+ok - fm-control-lib: a recorded harness resolves to its verified adapter without guessing
+ok - fm-control: prefixed recorded harnesses reach interrupt and exit mechanics
+ok - fm-control-lib: the backend key matrix matches each adapter's real send-key surface
+ok - fm-control-lib: adapter capability is per task kind, not per adapter alone
+ok - fm-control interrupt: a backend that cannot deliver the harness's key refuses instead of sending another
+ok - fm-control: a backend that cannot prove an agent stopped refuses exit, stand-down, and relaunch
+ok - fm-control-lib: stop-proving verbs are gated on the backends that really classify agent state
+ok - fm-control: worker-state verbs do not drive Herdr
+ok - fm-control: ordinary Herdr relaunch remains admitted
+ok - fm-control stand-down: a proven exit becomes an exact durable no-worker declaration
+ok - fm-control stand-down: an unexplained dead agent remains eligible for recovery
+ok - fm-control stand-down: an in-flight validation run keeps its worker, and is never cancelled for the operator
+ok - fm-control stand-down: only an in-flight run blocks the hold
+ok - fm-control stand-down: run attribution uses every source, not just axi status
+ok - fm-control stand-down: an unanswerable run check refuses and names itself
+ok - fm-control stand-down: malformed active branch identity fails closed
+ok - fm-control stand-down: an absent run CLI licenses the hold, an unanswered one does not
+ok - fm-control stand-down: a project with no run registration is held, while a silent failure still refuses
+ok - fm-control stand-down: a garbled listing row adds no run and overturns no answer
+ok - fm-control stand-down: a live run that cannot be placed is doubt, not proof of safety
+ok - fm-control stand-down: a terminal run whose head never reached this worktree is history, not doubt
+ok - fm-control stand-down: a finished row never ends the branch scan while a run is still live
+ok - fm-control stand-down: the listing adds a live run, and its silence never overturns the branch read
+ok - fm-control stand-down: a full window adds no run, and the live row it shows still refuses
+ok - fm-control stand-down: an unplaceable live run is named, not misreported as an unanswered check
+ok - fm-control stand-down: an unreadable worktree refuses, while a branchless one owns no run
+ok - fm-control stand-down: an unacknowledged instruction is handled or withdrawn first
+ok - fm-control stand-down: a scout is run-checked like a ship, and its scratch worktree still holds
+ok - fm-control stand-down: an ordinary prior exit becomes intentional only through an explicit reversible hold
+ok - fm-control repair-worker-state: reality wins over a stale declaration, idempotently
+ok - fm-control repair-worker-state: an unprovable record is cleared toward supervision, never toward intent
+ok - fm-control repair-worker-state: a vanished endpoint returns to supervision
+ok - fm-control: a legacy window label is refused and the exact task id is named
+ok - fm-control: an explicit backend endpoint is never a control target
+ok - fm-control: an unrecorded task id is refused
+ok - fm-control: a record whose endpoint identity names another task is refused
+ok - fm-control: a remotely placed secondmate is refused by placement, not by a metadata complaint
+ok - fm-control: interrupt, exit, and stand-down lock before task-state resolution
+ok - fm-control: the verb list is closed - no raw keys, arbitrary text, or clear verb
+ok - fm-control: resume is refused with the determinism reason and the alternative
+ok - fm-control: profile and note flags belong to relaunch only
+ok - fm-control exit: an already-stopped agent is idempotent success with no bytes sent
+ok - fm-control exit: a vanished endpoint refuses instead of silently succeeding
+ok - fm-control interrupt: refuses when no agent is running rather than keying a shell
+ok - fm-control exit: an endpoint whose process cannot be attributed refuses
+ok - fm-control exit: a busy agent receives interrupt delivery before the exit command
+ok - fm-control exit: an idle agent goes straight to its exit command
+ok - fm-control interrupt: unconfirmed delivery preserves observed busy state
+ok - fm-control interrupt: muse confirms cancellation from its session log
+ok - fm-control interrupt: postconditions are revalidated after acknowledgement polling
+ok - fm-control exit: an interrupt-stopped agent satisfies the gone-state postcondition
+ok - fm-control exit: a stubborn agent reports delivered input and an unconfirmed exit
+ok - fm-control interrupt: grok reports delivery without claiming cancellation
+ok - fm-control interrupt: grok's idle footer does not confirm cancellation
+ok - fm-control: a lifecycle command to a secondmate is unmarked and opens no reply expectation
+ok - fm-control's arrival leaves fm-send's from-firstmate marking untouched
