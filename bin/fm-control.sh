@@ -105,10 +105,10 @@
 #     is refused rather than guessed at.
 #   - A backend that cannot deliver the harness's interrupt key is refused
 #     (Orca's terminal API has no Escape).
-#   - `exit` requires a backend with a recovery-grade agent-state classifier
-#     (tmux or herdr). The worker-state verbs stand-down, repair-worker-state,
-#     and relaunch are supported only on tmux. zellij, orca, and cmux are
-#     refused rather than reported as successful blind.
+#   - `exit` and `relaunch` require a backend with a recovery-grade agent-state
+#     classifier (tmux or herdr). The worker-state verbs stand-down and
+#     repair-worker-state are supported only on tmux. zellij, orca, and cmux
+#     are refused rather than reported as successful blind.
 #   - An ambiguous or unreadable endpoint state refuses; only a positively
 #     classified state acts.
 #
@@ -1001,7 +1001,6 @@ do_relaunch() {
   local exit_result state note_line
   local -a spawn_args
 
-  require_worker_lifecycle_backend relaunch
   require_state_verified_backend relaunch
   resolve_relaunch_profile
 

@@ -465,8 +465,8 @@ test_unverified_state_backends_refuse_stop_verbs() {
       "the $backend stand-down refusal should name the unsupported lifecycle surface"
     out=$(run_control "$dir" t1 relaunch --note x); rc=$?
     expect_code 1 "$rc" "relaunch on $backend should refuse"$'\n'"$out"
-    assert_contains "$out" "worker-lifecycle control is not supported" \
-      "the $backend relaunch refusal should name the unsupported lifecycle surface"
+    assert_contains "$out" "no recovery-grade agent-state classifier" \
+      "the $backend relaunch refusal should name the missing stop proof"
   done
   pass "fm-control: a backend that cannot prove an agent stopped refuses exit, stand-down, and relaunch"
 }
@@ -482,9 +482,9 @@ test_state_verified_backends_are_exactly_tmux_and_herdr() {
   pass "fm-control-lib: stop-proving verbs are gated on the backends that really classify agent state"
 }
 
-test_worker_lifecycle_verbs_refuse_herdr() {
+test_worker_state_verbs_refuse_herdr() {
   local dir out rc verb
-  for verb in stand-down repair-worker-state relaunch; do
+  for verb in stand-down repair-worker-state; do
     dir=$(new_case "herdr-$verb")
     add_task "$dir" t1 claude ship herdr "lab:pane-1"
     {
@@ -493,11 +493,7 @@ test_worker_lifecycle_verbs_refuse_herdr() {
       echo "herdr_tab_id=tab-1"
       echo "herdr_pane_id=pane-1"
     } >> "$dir/home/state/t1.meta"
-    if [ "$verb" = relaunch ]; then
-      out=$(run_control "$dir" t1 "$verb" --note x); rc=$?
-    else
-      out=$(run_control "$dir" t1 "$verb"); rc=$?
-    fi
+    out=$(run_control "$dir" t1 "$verb"); rc=$?
     expect_code 1 "$rc" "$verb on herdr should refuse"$'\n'"$out"
     assert_contains "$out" "worker-lifecycle control is not supported" \
       "$verb should name the unsupported Herdr lifecycle surface"
@@ -505,7 +501,27 @@ test_worker_lifecycle_verbs_refuse_herdr() {
     [ ! -e "$dir/home/state/t1.worker-state" ] \
       || fail "$verb on herdr must not publish or alter worker state"
   done
-  pass "fm-control: worker-state lifecycle verbs do not drive Herdr"
+  pass "fm-control: worker-state verbs do not drive Herdr"
+}
+
+test_herdr_relaunch_reaches_existing_validation_path() {
+  local dir out rc
+  dir=$(new_case herdr-relaunch)
+  add_task "$dir" t1 claude ship herdr "lab:pane-1"
+  {
+    echo "herdr_session=lab"
+    echo "herdr_workspace_id=workspace-1"
+    echo "herdr_tab_id=tab-1"
+    echo "herdr_pane_id=pane-1"
+  } >> "$dir/home/state/t1.meta"
+  out=$(run_control "$dir" t1 relaunch); rc=$?
+  expect_code 1 "$rc" "Herdr relaunch without a progress note should reach ordinary validation"$'\n'"$out"
+  assert_contains "$out" "relaunch of a ship task requires --note" \
+    "Herdr relaunch should be admitted before relaunch-specific validation"
+  assert_not_contains "$out" "worker-lifecycle control is not supported" \
+    "ordinary Herdr relaunch must not be rejected as worker-state control"
+  [ -z "$(literals "$dir")" ] || fail "a note refusal must send no lifecycle command"
+  pass "fm-control: ordinary Herdr relaunch remains admitted"
 }
 
 test_stand_down_proves_stop_then_records_intent() {
@@ -1588,7 +1604,8 @@ test_harness_kind_capability
 test_orca_refuses_an_escape_harness_interrupt
 test_unverified_state_backends_refuse_stop_verbs
 test_state_verified_backends_are_exactly_tmux_and_herdr
-test_worker_lifecycle_verbs_refuse_herdr
+test_worker_state_verbs_refuse_herdr
+test_herdr_relaunch_reaches_existing_validation_path
 test_stand_down_proves_stop_then_records_intent
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
 test_stand_down_refuses_while_the_task_owns_an_active_run
