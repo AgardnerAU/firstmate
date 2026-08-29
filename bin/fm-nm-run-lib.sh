@@ -204,15 +204,15 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 #
 # The optional display and TOON fields are reporting projections, never a
 # second safety decision, and they are assigned in exactly one place below.
-# A result is projected only when both sources place the same activity state
-# and head, so neither an uncorroborated direct result nor a listing-only row is
-# presented as this task's state.
+# Terminal detail is projected only when both sources place the same state and
+# head. Active evidence remains authoritative without projecting details, and
+# a direct active answer skips the optional listing entirely.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-}
   local status_out='' status_rc status_stderr='' status_body='' direct_status=''
   local run_branch_raw='' run_branch='' run_head=''
-  local branch_state=unknown branch_reason='' active_id='' active_toon='' terminal_toon=''
-  local active_corroborated=0 terminal_status='' terminal_outcome='' terminal_head='' terminal_corroborated=0
+  local branch_state=unknown branch_reason='' active_id='' terminal_toon=''
+  local terminal_status='' terminal_outcome='' terminal_head='' terminal_corroborated=0
   local inventory row st rest br sha render_locked=0
   local listing_live='' direct_full='' listing_full=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
@@ -259,7 +259,6 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
             || fm_nm_run_is_pipeline_owned_active "$status_out"; then
             branch_state=active
             active_id=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" id)")
-            active_toon=$status_out
           else
             branch_state=unknown
             branch_reason="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
@@ -283,7 +282,8 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   else
     branch_reason="'no-mistakes axi status' could not answer whether branch $branch has a run in flight"
   fi
-  if inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then
+  if [ "$branch_state" != active ] \
+    && inventory=$(fm_nm_run_checked "$wt" "$timeout" runs --limit "$limit"); then
     while IFS= read -r row; do
       row=$(fm_nm_trim "$row")
       [ -n "$row" ] || continue
@@ -313,14 +313,6 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
           ;;
         *)
           [ -n "$listing_live" ] || listing_live="$st $sha"
-          if [ "$branch_state" = active ]; then
-            direct_full=$(git -C "$wt" rev-parse --verify "${run_head}^{commit}" 2>/dev/null || true)
-            listing_full=$(git -C "$wt" rev-parse --verify "${sha}^{commit}" 2>/dev/null || true)
-            if { [ -n "$direct_full" ] && [ "$direct_full" = "$listing_full" ]; } \
-              || { [ -z "$direct_full" ] && [ "$run_head" = "$sha" ]; }; then
-              active_corroborated=1
-            fi
-          fi
           ;;
       esac
     done <<< "$inventory"
@@ -335,10 +327,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   else
     FM_NM_BRANCH_RUN_REASON=$branch_reason
   fi
-  if [ "$FM_NM_BRANCH_RUN_VERDICT" = active ] \
-    && [ "$active_corroborated" = 1 ]; then
-    FM_NM_BRANCH_RUN_TOON=$active_toon
-  elif [ "$FM_NM_BRANCH_RUN_VERDICT" = quiet ] \
+  if [ "$FM_NM_BRANCH_RUN_VERDICT" = quiet ] \
     && [ "$terminal_corroborated" = 1 ]; then
     FM_NM_BRANCH_RUN_TOON=$terminal_toon
   fi

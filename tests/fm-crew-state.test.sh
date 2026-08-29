@@ -10,8 +10,8 @@
 # repos with a fake `no-mistakes` (run-step source) and a fake `tmux` (pane
 # source):
 #   (a) active run-step is authoritative                          -> run-step
-#   (b) needs-decision/blocked log + resumed run = SUPERSEDED     -> run-step
-#   (c) genuine parked run + needs-decision log = NOT superseded  -> run-step
+#   (b) active verdict with withheld detail makes no stale-log claim -> run-step
+#   (c) active run details without corroboration are withheld     -> run-step
 #   (d) terminal run-step (passed/failed) is authoritative        -> run-step
 #   (e) cross-branch attribution: this branch's own run found via list lookup
 #   (f) no run + semantic busy                                    -> pane
@@ -62,6 +62,7 @@ make_fakebin() {  # <dir> -> echoes fakebin path
   cat > "$fb/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -u
+[ -z "${FM_FAKE_NM_CALLS:-}" ] || printf '%s\n' "$*" >> "$FM_FAKE_NM_CALLS"
 case "${1:-}" in
   axi)
     shift
@@ -179,6 +180,7 @@ reset_fakes() {
   FM_FAKE_AXI_STATUS_RUN=""
   FM_FAKE_RUNS_LIST=""
   FM_FAKE_NM_FAIL_RUNS=""
+  FM_FAKE_NM_CALLS=""
   FM_FAKE_BUSY=0
   FM_FAKE_BUSY_TEXT=
   FM_FAKE_TMUX_MISSING=0
@@ -189,7 +191,7 @@ reset_fakes() {
   FM_FAKE_HERDR_MISSING=0
   FM_FAKE_HERDR_AGENT_STATUS=""
   FM_FAKE_CI_LOGS=""
-  export FM_FAKE_AXI_STATUS FM_FAKE_AXI_STATUS_RUN FM_FAKE_RUNS_LIST FM_FAKE_NM_FAIL_RUNS FM_FAKE_BUSY FM_FAKE_BUSY_TEXT FM_FAKE_TMUX_MISSING
+  export FM_FAKE_AXI_STATUS FM_FAKE_AXI_STATUS_RUN FM_FAKE_RUNS_LIST FM_FAKE_NM_FAIL_RUNS FM_FAKE_NM_CALLS FM_FAKE_BUSY FM_FAKE_BUSY_TEXT FM_FAKE_TMUX_MISSING
   export FM_FAKE_TMUX_WINDOWS FM_FAKE_TMUX_CURRENT_COMMAND FM_FAKE_TMUX_TTY
   export FM_FAKE_HERDR_BUSY FM_FAKE_HERDR_MISSING FM_FAKE_HERDR_AGENT_STATUS FM_FAKE_CI_LOGS
 }
@@ -387,12 +389,12 @@ test_active_run_is_authoritative() {
   local out; out=$(run_crew_state "$d" feat-a)
   assert_contains "$out" "state: working" "active run -> working"
   assert_contains "$out" "source: run-step" "active run -> run-step source"
-  assert_contains "$out" "validating (running)" "active run reports the step"
+  assert_contains "$out" "active run (details withheld)" "active verdict withholds uncorroborated details"
   pass "active run-step is authoritative"
 }
 
 # (b) needs-decision log + a resumed (running/fixing) run = SUPERSEDED
-test_stale_needs_decision_superseded() {
+test_active_verdict_does_not_guess_needs_decision_is_stale() {
   reset_fakes
   local d; d=$(new_case superseded)
   make_repo_on_branch "$d/wt" fm/feat-b
@@ -402,14 +404,14 @@ test_stale_needs_decision_superseded() {
   FM_FAKE_AXI_STATUS="$(run_fixing fm/feat-b)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-b)
-  assert_contains "$out" "state: working" "resumed run -> working despite needs-decision log"
-  assert_contains "$out" "source: run-step" "resumed run -> run-step source"
-  assert_contains "$out" "superseded" "stale needs-decision log flagged superseded"
-  pass "stale needs-decision over active run is superseded"
+  assert_contains "$out" "state: working" "active verdict remains working despite needs-decision history"
+  assert_contains "$out" "source: run-step" "active verdict remains the source"
+  assert_not_contains "$out" "superseded" "withheld run details cannot prove the log stale"
+  pass "active verdict does not guess needs-decision history is stale"
 }
 
 # blocked log + a resumed run is also superseded
-test_stale_blocked_superseded() {
+test_active_verdict_does_not_guess_blocked_is_stale() {
   reset_fakes
   local d; d=$(new_case superseded-blocked)
   make_repo_on_branch "$d/wt" fm/feat-bb
@@ -419,13 +421,13 @@ test_stale_blocked_superseded() {
   FM_FAKE_AXI_STATUS="$(run_running fm/feat-bb)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-bb)
-  assert_contains "$out" "state: working" "resumed run -> working despite blocked log"
-  assert_contains "$out" "superseded" "stale blocked log flagged superseded"
-  pass "stale blocked over active run is superseded"
+  assert_contains "$out" "state: working" "active verdict remains working despite blocked history"
+  assert_not_contains "$out" "superseded" "withheld run details cannot prove blocked history stale"
+  pass "active verdict does not guess blocked history is stale"
 }
 
-# (c) genuine parked run + needs-decision log AGREE -> parked, NOT superseded
-test_genuine_parked_not_superseded() {
+# (c) active gate details remain withheld without corroboration.
+test_active_gate_details_are_withheld() {
   reset_fakes
   local d; d=$(new_case parked)
   make_repo_on_branch "$d/wt" fm/feat-c
@@ -435,15 +437,15 @@ test_genuine_parked_not_superseded() {
   FM_FAKE_AXI_STATUS="$(run_parked fm/feat-c)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-c)
-  assert_contains "$out" "state: parked" "genuine parked run -> parked"
-  assert_contains "$out" "source: run-step" "parked -> run-step source"
-  assert_contains "$out" "2 finding(s)" "parked includes gate finding count"
-  assert_contains "$out" "ask-user" "parked surfaces ask-user finding"
-  assert_not_contains "$out" "superseded" "agreeing parked+needs-decision not flagged stale"
-  pass "genuine parked run is not flagged superseded"
+  assert_contains "$out" "state: working" "active gate remains active"
+  assert_contains "$out" "source: run-step" "active verdict remains the source"
+  assert_contains "$out" "active run (details withheld)" "uncorroborated gate details stay withheld"
+  assert_not_contains "$out" "2 finding(s)" "uncorroborated finding details are not projected"
+  assert_not_contains "$out" "ask-user" "uncorroborated action details are not projected"
+  pass "active gate details remain withheld without corroboration"
 }
 
-test_scalar_gate_parked_not_superseded() {
+test_scalar_gate_details_are_withheld() {
   reset_fakes
   local d; d=$(new_case parked-scalar-gate)
   make_repo_on_branch "$d/wt" fm/feat-cs
@@ -453,15 +455,14 @@ test_scalar_gate_parked_not_superseded() {
   FM_FAKE_AXI_STATUS="$(run_parked_scalar_gate_running fm/feat-cs)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-cs)
-  assert_contains "$out" "state: parked" "scalar gate wait -> parked"
-  assert_contains "$out" "source: run-step" "scalar gate wait -> run-step source"
-  assert_contains "$out" "parked at review" "scalar gate wait names the gate"
-  assert_contains "$out" "1 finding(s)" "scalar gate wait includes finding count"
-  assert_not_contains "$out" "superseded" "scalar gate wait not flagged stale"
-  pass "scalar gate parked run is not flagged superseded"
+  assert_contains "$out" "state: working" "scalar gate remains active"
+  assert_contains "$out" "source: run-step" "scalar gate uses the active verdict"
+  assert_contains "$out" "active run (details withheld)" "scalar gate details stay withheld"
+  assert_not_contains "$out" "parked at review" "uncorroborated scalar gate is not projected"
+  pass "scalar gate details remain withheld without corroboration"
 }
 
-test_gate_block_parked_not_superseded() {
+test_gate_block_details_are_withheld() {
   reset_fakes
   local d; d=$(new_case parked-gate-block)
   make_repo_on_branch "$d/wt" fm/feat-cb
@@ -471,15 +472,14 @@ test_gate_block_parked_not_superseded() {
   FM_FAKE_AXI_STATUS="$(run_parked_in_gate_block fm/feat-cb)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-cb)
-  assert_contains "$out" "state: parked" "gate block wait -> parked"
-  assert_contains "$out" "source: run-step" "gate block wait -> run-step source"
-  assert_contains "$out" "parked at review" "gate block wait names the gate"
-  assert_contains "$out" "1 finding(s)" "gate block wait includes finding count"
-  assert_not_contains "$out" "superseded" "gate block wait not flagged stale"
-  pass "gate block parked run is not flagged superseded"
+  assert_contains "$out" "state: working" "gate block remains active"
+  assert_contains "$out" "source: run-step" "gate block uses the active verdict"
+  assert_contains "$out" "active run (details withheld)" "gate block details stay withheld"
+  assert_not_contains "$out" "parked at review" "uncorroborated gate block is not projected"
+  pass "gate block details remain withheld without corroboration"
 }
 
-test_ci_ready_done_log_beats_monitoring_run() {
+test_active_verdict_beats_ci_ready_log() {
   reset_fakes
   local d; d=$(new_case ci-ready)
   make_repo_on_branch "$d/wt" fm/feat-ci
@@ -489,19 +489,16 @@ test_ci_ready_done_log_beats_monitoring_run() {
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-ci)"
   corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-ci)
-  assert_contains "$out" "state: done" "ci-ready status log -> done"
-  assert_contains "$out" "source: status-log" "ci-ready state comes from the status log"
-  assert_contains "$out" "checks green" "ci-ready detail preserves the report"
-  assert_not_contains "$out" "state: working" "ci-ready is not hidden by monitoring run"
-  pass "ci-ready status log beats monitoring run"
+  assert_contains "$out" "state: working" "active verdict outranks a ready status log"
+  assert_contains "$out" "source: run-step" "active verdict remains authoritative"
+  assert_contains "$out" "active run (details withheld)" "active details remain withheld"
+  assert_not_contains "$out" "state: done" "status-log history cannot override an active verdict"
+  pass "active verdict outranks a ready status log"
 }
 
-# Regression for the PR #252 incident: the crew's own status log never got a
-# "done: ... checks green" line (log_reports_ci_ready above does not apply),
-# but the ci step's log tail shows CI is actually green and only waiting on
-# merge/close. fm-crew-state must surface this as done, not "validating
-# (running)", so a green PR is never silently absorbed as still-in-progress.
-test_ci_monitoring_checks_green_surfaces_done() {
+# A direct active verdict does not publish CI detail from an uncorroborated
+# status object or its associated log.
+test_active_ci_monitor_withholds_green_detail() {
   reset_fakes
   local d; d=$(new_case ci-green)
   make_repo_on_branch "$d/wt" fm/feat-cigreen
@@ -516,14 +513,14 @@ all CI checks passed - still monitoring until merged or closed
 EOF
 )
   local out; out=$(run_crew_state "$d" feat-cigreen)
-  assert_contains "$out" "state: done" "green ci-monitor run -> done"
-  assert_contains "$out" "source: run-step" "green ci-monitor -> run-step source"
-  assert_contains "$out" "checks green" "green ci-monitor detail mentions checks green"
-  assert_not_contains "$out" "state: working" "green ci-monitor must not read as still validating"
-  pass "ci-monitoring run with checks already green surfaces done"
+  assert_contains "$out" "state: working" "active ci-monitor verdict remains working"
+  assert_contains "$out" "source: run-step" "active ci-monitor verdict remains authoritative"
+  assert_contains "$out" "active run (details withheld)" "uncorroborated ci detail stays withheld"
+  assert_not_contains "$out" "checks green" "uncorroborated ci log detail is not projected"
+  pass "active ci-monitor verdict withholds uncorroborated detail"
 }
 
-test_top_level_ci_checks_green_surfaces_done() {
+test_top_level_active_ci_withholds_green_detail() {
   reset_fakes
   local d; d=$(new_case top-level-ci-green)
   make_repo_on_branch "$d/wt" fm/feat-topcigreen
@@ -533,14 +530,14 @@ test_top_level_ci_checks_green_surfaces_done() {
   corroborate_axi_status
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-topcigreen)
-  assert_contains "$out" "state: done" "top-level ci with green log -> done"
-  assert_contains "$out" "source: run-step" "top-level ci green -> run-step source"
-  assert_contains "$out" "checks green" "top-level ci green detail mentions checks green"
-  assert_not_contains "$out" "state: working" "top-level ci green must not stay working"
-  pass "top-level ci status uses ci log green marker"
+  assert_contains "$out" "state: working" "top-level active ci verdict remains working"
+  assert_contains "$out" "source: run-step" "top-level active ci verdict remains authoritative"
+  assert_contains "$out" "active run (details withheld)" "top-level ci details stay withheld"
+  assert_not_contains "$out" "checks green" "uncorroborated top-level ci detail is not projected"
+  pass "top-level active ci verdict withholds uncorroborated detail"
 }
 
-test_ci_monitoring_no_checks_terminal_surfaces_done() {
+test_active_no_checks_ci_withholds_detail() {
   reset_fakes
   local d; d=$(new_case ci-nochecks)
   make_repo_on_branch "$d/wt" fm/feat-cinochecks
@@ -550,9 +547,10 @@ test_ci_monitoring_no_checks_terminal_surfaces_done() {
   corroborate_axi_status
   FM_FAKE_CI_LOGS="no CI checks reported - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-cinochecks)
-  assert_contains "$out" "state: done" "terminal no-checks ci-monitor run -> done"
-  assert_contains "$out" "checks green" "terminal no-checks ci-monitor detail mentions checks green"
-  pass "terminal no-checks ci-monitor marker surfaces done"
+  assert_contains "$out" "state: working" "active no-checks ci-monitor remains working"
+  assert_contains "$out" "active run (details withheld)" "no-checks detail stays withheld"
+  assert_not_contains "$out" "checks green" "uncorroborated no-checks detail is not projected"
+  pass "active no-checks ci-monitor withholds uncorroborated detail"
 }
 
 test_ci_monitoring_green_then_rearm_stays_working() {
@@ -684,7 +682,7 @@ test_top_level_fixing_ci_running_after_green_stays_working() {
   local out; out=$(run_crew_state "$d" feat-topfixingci)
   assert_contains "$out" "state: working" "top-level fixing with ci running must stay working"
   assert_contains "$out" "source: run-step" "top-level fixing with ci running remains run-step sourced"
-  assert_contains "$out" "validating (fixing)" "top-level fixing keeps fixing detail"
+  assert_contains "$out" "active run (details withheld)" "top-level fixing detail stays withheld"
   assert_not_contains "$out" "state: done" "top-level fixing must not use stale green marker"
   pass "top-level fixing is not overridden by a stale ci running row"
 }
@@ -702,7 +700,7 @@ test_top_level_fixing_done_log_stays_working() {
   local out; out=$(run_crew_state "$d" feat-topfixing)
   assert_contains "$out" "state: working" "top-level fixing must stay working"
   assert_contains "$out" "source: run-step" "top-level fixing remains run-step sourced"
-  assert_contains "$out" "validating (fixing)" "top-level fixing keeps fixing detail"
+  assert_contains "$out" "active run (details withheld)" "top-level fixing detail stays withheld"
   assert_not_contains "$out" "state: done" "top-level fixing must not read as stale checks-green done"
   pass "top-level fixing is not overridden by a stale done log"
 }
@@ -823,7 +821,7 @@ test_an_absent_worker_without_a_declaration_is_still_reported() {
 # only a supervisor can action, so it must survive the record untouched.
 test_active_run_outranks_a_stood_down_record() {
   reset_fakes
-  local d out
+  local d out calls_file
   d=$(new_case stood-down-active-run)
   make_repo_on_branch "$d/wt" fm/feat-still-parked
   make_fakebin "$d" >/dev/null
@@ -836,15 +834,22 @@ state=stood-down
 EOF
   FM_FAKE_AXI_STATUS="$(run_parked fm/feat-still-parked)"
   corroborate_axi_status
+  calls_file="$d/no-mistakes.calls"
+  : > "$calls_file"
+  FM_FAKE_NM_CALLS=$calls_file
   FM_FAKE_TMUX_MISSING=1
   out=$(run_crew_state "$d" feat-still-parked)
   assert_contains "$out" "source: run-step" \
     "an active run must keep reporting authority over a worker-state record"
-  assert_contains "$out" "parked at review" \
-    "the actionable gate must not be dropped by the no-worker declaration"
+  assert_contains "$out" "state: working" \
+    "an active verdict must not fall through to the worker-state record"
+  assert_contains "$out" "active run (details withheld)" \
+    "uncorroborated active details must stay withheld"
   assert_not_contains "$out" "worker deliberately stood down" \
     "a stand-down record must not replace an active run's own current state"
-  pass "an active run-step outranks a stood-down worker-state record"
+  assert_not_contains "$(<"$calls_file")" "runs --limit" \
+    "a direct active verdict must not issue the discarded listing lookup"
+  pass "an active verdict outranks worker state without a listing lookup"
 }
 
 # An unprovable record is a repair prompt, not a mask: it must never hide a
@@ -883,7 +888,7 @@ EOF
 # runs-listing subcommand at all), so attribution silently failed every time
 # the repo-wide answer was not this crew's own branch. Listing-only evidence is
 # a safety verdict and is not projected as run state.
-test_cross_branch_listing_only_activity_uses_worker_state() {
+test_cross_branch_listing_only_activity_uses_active_verdict() {
   reset_fakes
   local d short; d=$(new_case crossbranch)
   make_repo_on_branch "$d/wt" fm/feat-f
@@ -904,11 +909,11 @@ EOF
   "$ROOT/bin/fm-busy-event.sh" apply "$d/state" feat-f busy --gen "$gen" \
     --source claude-hook --event user-prompt-submit
   local out; out=$(run_crew_state "$d" feat-f)
-  assert_contains "$out" "state: working" "the live worker remains working without a run projection"
-  assert_contains "$out" "source: pane" "listing-only evidence must fall back to worker evidence"
-  assert_contains "$out" "claude-hook" "the fallback should name its semantic worker signal"
-  assert_not_contains "$out" "source: run-step" "a listing-only active row must not be projected"
-  pass "cross-branch listing-only evidence is not projected as run state"
+  assert_contains "$out" "state: working" "listing-only activity establishes an active verdict"
+  assert_contains "$out" "source: run-step" "the active verdict remains authoritative"
+  assert_contains "$out" "active run (details withheld)" "listing-only details stay withheld"
+  assert_not_contains "$out" "claude-hook" "worker evidence cannot replace an active verdict"
+  pass "cross-branch listing activity remains authoritative without projection"
 }
 
 # A listing-only active row and an older terminal row are both uncorroborated
@@ -928,10 +933,11 @@ test_cross_branch_listing_only_rows_are_not_projected() {
 EOF
 )"
   local out; out=$(run_crew_state "$d" feat-fq)
-  assert_contains "$out" "state: unknown" "listing-only activity must fall back to endpoint reality"
-  assert_contains "$out" "source: pane" "listing-only activity must not become a run projection"
-  assert_not_contains "$out" "source: run-step" "no uncorroborated listing row may be projected"
-  pass "cross-branch listing-only activity exports no run projection"
+  assert_contains "$out" "state: working" "listing-only activity establishes an active verdict"
+  assert_contains "$out" "source: run-step" "the active verdict outranks endpoint uncertainty"
+  assert_contains "$out" "active run (details withheld)" "listing details remain unprojected"
+  assert_not_contains "$out" "state: failed" "the older terminal row cannot replace live activity"
+  pass "cross-branch listing-only activity reports active with details withheld"
 }
 
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status() {
@@ -950,10 +956,10 @@ EOF
 )"
   FM_FAKE_CI_LOGS="CI checks running, waiting for results..."
   local out; out=$(run_crew_state "$d" feat-coarseready)
-  assert_contains "$out" "state: unknown" "listing-only activity falls back to endpoint reality"
-  assert_contains "$out" "source: pane" "listing-only activity does not become run-step state"
-  assert_not_contains "$out" "source: run-step" "another branch's CI detail must not be projected"
-  assert_not_contains "$out" "state: working" "coarse ready status must not be suppressed by another branch log"
+  assert_contains "$out" "state: working" "listing-only activity remains authoritative"
+  assert_contains "$out" "source: run-step" "the active verdict outranks stale ready history"
+  assert_contains "$out" "active run (details withheld)" "another branch's CI details are not projected"
+  assert_not_contains "$out" "checks green" "another branch's CI log cannot supply withheld detail"
   pass "listing-only activity does not probe another branch's ci log"
 }
 
@@ -1664,10 +1670,11 @@ test_live_inventory_beats_terminal_axi_status() {
 EOF
 )"
   local out; out=$(run_crew_state "$d" feat-f10-stale)
-  assert_contains "$out" "state: unknown" "live inventory activity must suppress stale terminal projection"
-  assert_contains "$out" "source: pane" "uncorroborated live inventory must fall back to endpoint reality"
+  assert_contains "$out" "state: working" "live inventory activity establishes an active verdict"
+  assert_contains "$out" "source: run-step" "the active verdict outranks stale terminal history"
+  assert_contains "$out" "active run (details withheld)" "inventory details stay withheld"
   assert_not_contains "$out" "state: failed" "stale terminal axi status must not report a healthy worker failed"
-  pass "a live inventory row suppresses stale terminal reporting without being projected"
+  pass "a live inventory row reports active without projecting details"
 }
 
 # Reporting requires both reads to place the same activity state and head.
@@ -1698,33 +1705,39 @@ EOF
     "an unrelated full window must not establish a terminal result"
   assert_contains "$out" "source: pane" \
     "an unrelated full window supplies no terminal corroboration"
-  # A live listing row is sufficient for the active safety verdict, but not for
-  # reporting when the direct branch read is terminal.
+  # A live listing row is sufficient for the active verdict, but its details
+  # remain withheld when the direct branch read is terminal.
   FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: unknown" \
-    "listing-only active evidence must fall back to endpoint reality"
-  assert_contains "$out" "source: pane" \
-    "listing-only active evidence must not publish a run projection"
+  assert_contains "$out" "state: working" \
+    "listing-only active evidence must remain authoritative"
+  assert_contains "$out" "source: run-step" \
+    "listing-only activity reports through the verdict"
+  assert_contains "$out" "active run (details withheld)" \
+    "listing-only details must not be projected"
   assert_not_contains "$out" "state: failed" \
     "a live row must not be reported as the older terminal outcome"
-  # A direct active result is likewise not projected when corroboration is
-  # unavailable.
+  # A direct active result is authoritative without projecting its details.
   FM_FAKE_AXI_STATUS="$(run_running fm/feat-f10e)"
   FM_FAKE_NM_FAIL_RUNS=1
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: unknown" \
-    "direct-only active evidence must fall back to endpoint reality"
-  assert_contains "$out" "source: pane" \
-    "direct-only active evidence must not publish a run projection"
-  # Agreement on activity and head restores the detailed direct projection.
+  assert_contains "$out" "state: working" \
+    "direct-only active evidence must remain authoritative"
+  assert_contains "$out" "source: run-step" \
+    "direct-only activity reports through the verdict"
+  assert_contains "$out" "active run (details withheld)" \
+    "direct-only details must not be projected"
+  # A listing row that would agree is not queried after direct activity is
+  # established, so details remain withheld.
   FM_FAKE_NM_FAIL_RUNS=""
   corroborate_axi_status
   out=$(run_crew_state "$d" feat-f10e)
   assert_contains "$out" "state: working" \
-    "corroborated active evidence should publish the detailed run"
+    "direct active evidence remains authoritative"
   assert_contains "$out" "source: run-step" \
-    "two-source active agreement should publish one run projection"
+    "the active verdict remains the reporting source"
+  assert_contains "$out" "active run (details withheld)" \
+    "the unused listing row must not publish direct details"
   # A terminal listing row cannot establish reporting without a matching
   # terminal branch read.
   FM_FAKE_AXI_STATUS=""
@@ -1778,11 +1791,11 @@ EOF
     --source claude-hook --event user-prompt-submit
   local out; out=$(run_crew_state "$d" feat-f10c)
   assert_not_contains "$out" "state: failed" "a live row must not fall through to the older failed row"
-  assert_contains "$out" "state: working" "worker evidence remains current beside listing-only activity"
-  assert_contains "$out" "source: pane" "listing-only activity must not become the reporting source"
-  assert_contains "$out" "claude-hook" "worker evidence should remain visible in the fallback detail"
-  assert_not_contains "$out" "source: run-step" "an uncorroborated live row must not be projected"
-  pass "listing-only activity suppresses older terminal state without being projected"
+  assert_contains "$out" "state: working" "listing-only activity establishes an active verdict"
+  assert_contains "$out" "source: run-step" "the active verdict becomes the reporting source"
+  assert_contains "$out" "active run (details withheld)" "listing-only details stay withheld"
+  assert_not_contains "$out" "claude-hook" "worker evidence cannot replace an active verdict"
+  pass "listing-only activity suppresses older terminal state with details withheld"
 }
 
 # Negative control: the exemption is gated on pipeline_owned specifically - any
@@ -1845,15 +1858,15 @@ test_missing_run_head_falls_back_to_current_state() {
 }
 
 test_active_run_is_authoritative
-test_stale_needs_decision_superseded
-test_stale_blocked_superseded
-test_genuine_parked_not_superseded
-test_scalar_gate_parked_not_superseded
-test_gate_block_parked_not_superseded
-test_ci_ready_done_log_beats_monitoring_run
-test_ci_monitoring_checks_green_surfaces_done
-test_top_level_ci_checks_green_surfaces_done
-test_ci_monitoring_no_checks_terminal_surfaces_done
+test_active_verdict_does_not_guess_needs_decision_is_stale
+test_active_verdict_does_not_guess_blocked_is_stale
+test_active_gate_details_are_withheld
+test_scalar_gate_details_are_withheld
+test_gate_block_details_are_withheld
+test_active_verdict_beats_ci_ready_log
+test_active_ci_monitor_withholds_green_detail
+test_top_level_active_ci_withholds_green_detail
+test_active_no_checks_ci_withholds_detail
 test_ci_monitoring_green_then_rearm_stays_working
 test_ci_monitoring_no_checks_yet_stays_working
 test_ci_monitoring_still_waiting_stays_working
@@ -1869,7 +1882,7 @@ test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
 test_an_absent_worker_without_a_declaration_is_still_reported
 test_active_run_outranks_a_stood_down_record
 test_invalid_worker_state_record_does_not_mask_a_failed_run
-test_cross_branch_listing_only_activity_uses_worker_state
+test_cross_branch_listing_only_activity_uses_active_verdict
 test_cross_branch_listing_only_rows_are_not_projected
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status
 test_other_branch_run_ignored

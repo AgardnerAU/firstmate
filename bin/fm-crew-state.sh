@@ -28,17 +28,13 @@
 #      gone/dead.
 #   2. Attribute an active or terminal no-mistakes run under the branch, head,
 #      pipeline-custody, and newest-first rules owned by bin/fm-nm-run-lib.sh.
-#      The run-step is AUTHORITATIVE: running/fixing -> working, ci -> working,
-#      awaiting_approval/fix_review -> parked (with gate findings), terminal
-#      passed/checks-passed -> done, failed/cancelled -> failed. EXCEPT: while
-#      the active step is ci, `axi status` alone cannot tell "still waiting on
-#      checks" from "checks green, waiting on merge" (see nm_ci_checks_state) -
-#      a ci-step log-tail check overrides working -> done once checks read
-#      green, so a green PR is never silently read as still-validating.
+#      The verdict is AUTHORITATIVE. Active reports working with optional
+#      details withheld; a corroborated terminal projection reports done or
+#      failed from its outcome.
 #   3. Reconcile the status log: if its last line says needs-decision/blocked but
-#      the run-step shows the run moved on, the log is deterministically stale and
-#      is flagged superseded. A genuinely parked run plus a needs-decision log
-#      agree, and are reported as parked.
+#      a detailed run-step shows the run moved on, the log is deterministically
+#      stale and is flagged superseded. A verdict with withheld details makes no
+#      claim about whether that log is stale.
 #   4. No run for this crew (pre-validation, or kind=scout): fall back to the
 #      recorded backend's pane busy state, then the status log's last line only
 #      when its verb maps to a recognized run-state. Decision-only events such as
@@ -403,7 +399,7 @@ CREW_BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true
 
 HAVE_RUN=0
 # RUN_SOURCE distinguishes the detailed TOON projection from a compact status
-# projection of the one branch-run verdict.
+# projection or an active verdict whose optional details were withheld.
 RUN_SOURCE=full
 COARSE_STATUS=""
 # Scouts and secondmates never drive a no-mistakes validation of their own
@@ -419,6 +415,9 @@ if [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ]; then
         HAVE_RUN=1
         RUN_SOURCE=coarse
         COARSE_STATUS=$FM_NM_BRANCH_RUN_DISPLAY
+      else
+        HAVE_RUN=1
+        RUN_SOURCE=verdict
       fi
       ;;
     quiet)
@@ -444,7 +443,10 @@ if [ "$HAVE_RUN" = 1 ]; then
   CI_STEP_STATUS=""
   CI_LOG_STATE=""
   RUN_STATUS=""
-  if [ "$RUN_SOURCE" = coarse ]; then
+  if [ "$RUN_SOURCE" = verdict ]; then
+    RUN_STATE=working
+    RUN_DETAIL="active run (details withheld)"
+  elif [ "$RUN_SOURCE" = coarse ]; then
     # No step/gate detail is available from the plain runs list - only ever
     # true/working, done, or failed. A crew genuinely parked at a gate still
     # gets full detail once `axi status` reports its own branch again (e.g.
@@ -520,7 +522,9 @@ if [ "$HAVE_RUN" = 1 ]; then
     fi
   fi
 
-  if [ "$RUN_STATE" = working ] && log_reports_ci_ready; then
+  if [ "$RUN_SOURCE" != verdict ] \
+    && [ "$RUN_STATE" = working ] \
+    && log_reports_ci_ready; then
     if [ "$RUN_SOURCE" = coarse ]; then
       emit "done" status-log "$(status_line_note "$LOG_LINE")${SEP}run still monitoring PR"
     fi
@@ -540,17 +544,19 @@ if [ "$HAVE_RUN" = 1 ]; then
   # Reconcile the status log. A needs-decision/blocked log line that the run-step
   # has moved past (anything but a genuinely parked run) is deterministically
   # stale: the gate resolved and the run resumed or finished.
-  case "$LOG_VERB" in
-    needs-decision|blocked)
-      if [ "$RUN_STATE" != parked ]; then
-        if [ "$RUN_STATE" = working ]; then
-          RUN_DETAIL="$RUN_DETAIL${SEP}status-log superseded by active run"
-        else
-          RUN_DETAIL="$RUN_DETAIL${SEP}status-log superseded (run $RUN_STATE)"
+  if [ "$RUN_SOURCE" != verdict ]; then
+    case "$LOG_VERB" in
+      needs-decision|blocked)
+        if [ "$RUN_STATE" != parked ]; then
+          if [ "$RUN_STATE" = working ]; then
+            RUN_DETAIL="$RUN_DETAIL${SEP}status-log superseded by active run"
+          else
+            RUN_DETAIL="$RUN_DETAIL${SEP}status-log superseded (run $RUN_STATE)"
+          fi
         fi
-      fi
-      ;;
-  esac
+        ;;
+    esac
+  fi
 
   # A terminal run is history; an intentional stand-down published after it is
   # the newer statement about this task, so it outranks the terminal outcome
