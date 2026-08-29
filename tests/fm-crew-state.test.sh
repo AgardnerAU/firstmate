@@ -194,6 +194,18 @@ reset_fakes() {
   export FM_FAKE_HERDR_BUSY FM_FAKE_HERDR_MISSING FM_FAKE_HERDR_AGENT_STATUS FM_FAKE_CI_LOGS
 }
 
+corroborate_axi_status() {
+  local st br sha
+  st=$(printf '%s\n' "$FM_FAKE_AXI_STATUS" | sed -n 's/^[[:space:]]*status:[[:space:]]*//p' | head -1)
+  br=$(printf '%s\n' "$FM_FAKE_AXI_STATUS" | sed -n 's/^[[:space:]]*branch:[[:space:]]*//p' | head -1)
+  sha=$(printf '%s\n' "$FM_FAKE_AXI_STATUS" | sed -n 's/^[[:space:]]*head:[[:space:]]*//p' | head -1)
+  sha=${sha#\"}
+  sha=${sha%\"}
+  [ -n "$st" ] && [ -n "$br" ] && [ -n "$sha" ] \
+    || fail "active axi fixture cannot be corroborated"
+  FM_FAKE_RUNS_LIST="$st  $br  $sha  2026-08-29"
+}
+
 # --- run-object fixtures (TOON, as `no-mistakes axi status` emits) -----------
 
 run_running() {  # <branch>
@@ -371,6 +383,7 @@ test_active_run_is_authoritative() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-a.meta" "window=fm:fm-feat-a" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_running fm/feat-a)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-a)
   assert_contains "$out" "state: working" "active run -> working"
   assert_contains "$out" "source: run-step" "active run -> run-step source"
@@ -387,6 +400,7 @@ test_stale_needs_decision_superseded() {
   fm_write_meta "$d/state/feat-b.meta" "window=fm:fm-feat-b" "worktree=$d/wt" "kind=ship"
   printf 'working: started\nneeds-decision: pick A or B\n' > "$d/state/feat-b.status"
   FM_FAKE_AXI_STATUS="$(run_fixing fm/feat-b)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-b)
   assert_contains "$out" "state: working" "resumed run -> working despite needs-decision log"
   assert_contains "$out" "source: run-step" "resumed run -> run-step source"
@@ -403,6 +417,7 @@ test_stale_blocked_superseded() {
   fm_write_meta "$d/state/feat-bb.meta" "window=fm:fm-feat-bb" "worktree=$d/wt" "kind=ship"
   printf 'blocked: waiting on review answer\n' > "$d/state/feat-bb.status"
   FM_FAKE_AXI_STATUS="$(run_running fm/feat-bb)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-bb)
   assert_contains "$out" "state: working" "resumed run -> working despite blocked log"
   assert_contains "$out" "superseded" "stale blocked log flagged superseded"
@@ -418,6 +433,7 @@ test_genuine_parked_not_superseded() {
   fm_write_meta "$d/state/feat-c.meta" "window=fm:fm-feat-c" "worktree=$d/wt" "kind=ship"
   printf 'needs-decision: review gate\n' > "$d/state/feat-c.status"
   FM_FAKE_AXI_STATUS="$(run_parked fm/feat-c)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-c)
   assert_contains "$out" "state: parked" "genuine parked run -> parked"
   assert_contains "$out" "source: run-step" "parked -> run-step source"
@@ -435,6 +451,7 @@ test_scalar_gate_parked_not_superseded() {
   fm_write_meta "$d/state/feat-cs.meta" "window=fm:fm-feat-cs" "worktree=$d/wt" "kind=ship"
   printf 'needs-decision: review gate\n' > "$d/state/feat-cs.status"
   FM_FAKE_AXI_STATUS="$(run_parked_scalar_gate_running fm/feat-cs)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-cs)
   assert_contains "$out" "state: parked" "scalar gate wait -> parked"
   assert_contains "$out" "source: run-step" "scalar gate wait -> run-step source"
@@ -452,6 +469,7 @@ test_gate_block_parked_not_superseded() {
   fm_write_meta "$d/state/feat-cb.meta" "window=fm:fm-feat-cb" "worktree=$d/wt" "kind=ship"
   printf 'needs-decision: review gate\n' > "$d/state/feat-cb.status"
   FM_FAKE_AXI_STATUS="$(run_parked_in_gate_block fm/feat-cb)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-cb)
   assert_contains "$out" "state: parked" "gate block wait -> parked"
   assert_contains "$out" "source: run-step" "gate block wait -> run-step source"
@@ -469,6 +487,7 @@ test_ci_ready_done_log_beats_monitoring_run() {
   fm_write_meta "$d/state/feat-ci.meta" "window=fm:fm-feat-ci" "worktree=$d/wt" "kind=ship"
   printf 'done: PR https://github.com/o/r/pull/2 checks green\n' > "$d/state/feat-ci.status"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-ci)"
+  corroborate_axi_status
   local out; out=$(run_crew_state "$d" feat-ci)
   assert_contains "$out" "state: done" "ci-ready status log -> done"
   assert_contains "$out" "source: status-log" "ci-ready state comes from the status log"
@@ -490,6 +509,7 @@ test_ci_monitoring_checks_green_surfaces_done() {
   fm_write_meta "$d/state/feat-cigreen.meta" "window=fm:fm-feat-cigreen" "worktree=$d/wt" "kind=ship"
   # No status-log line at all: the crew never reported its own checks-green line.
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cigreen)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS=$(cat <<'EOF'
 CI checks running, waiting for results...
 all CI checks passed - still monitoring until merged or closed
@@ -510,6 +530,7 @@ test_top_level_ci_checks_green_surfaces_done() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-topcigreen.meta" "window=fm:fm-feat-topcigreen" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_top_level_ci fm/feat-topcigreen)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-topcigreen)
   assert_contains "$out" "state: done" "top-level ci with green log -> done"
@@ -526,6 +547,7 @@ test_ci_monitoring_no_checks_terminal_surfaces_done() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-cinochecks.meta" "window=fm:fm-feat-cinochecks" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cinochecks)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="no CI checks reported - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-cinochecks)
   assert_contains "$out" "state: done" "terminal no-checks ci-monitor run -> done"
@@ -540,6 +562,7 @@ test_ci_monitoring_green_then_rearm_stays_working() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-cirearm.meta" "window=fm:fm-feat-cirearm" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cirearm)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS=$(cat <<'EOF'
 all CI checks passed - still monitoring until merged or closed
 base branch advanced (aaaaaaa..bbbbbbb), re-arming CI monitor timeout
@@ -559,6 +582,7 @@ test_ci_monitoring_no_checks_yet_stays_working() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-cinochecksyet.meta" "window=fm:fm-feat-cinochecksyet" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cinochecksyet)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS=$(cat <<'EOF'
 no CI checks reported - still monitoring until merged or closed
 base branch advanced (aaaaaaa..bbbbbbb), re-arming CI monitor timeout
@@ -579,6 +603,7 @@ test_ci_monitoring_still_waiting_stays_working() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-ciwait.meta" "window=fm:fm-feat-ciwait" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-ciwait)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="CI checks running, waiting for results..."
   local out; out=$(run_crew_state "$d" feat-ciwait)
   assert_contains "$out" "state: working" "ci step still red -> working"
@@ -595,6 +620,7 @@ test_ci_monitoring_green_then_new_issue_stays_working() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-cirelapse.meta" "window=fm:fm-feat-cirelapse" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cirelapse)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS=$(cat <<'EOF'
 all CI checks passed - still monitoring until merged or closed
 base branch advanced (aaaaaaa..bbbbbbb), re-arming CI monitor timeout
@@ -615,6 +641,7 @@ test_ci_ready_done_log_relapse_stays_working() {
   fm_write_meta "$d/state/feat-cireadyrelapse.meta" "window=fm:fm-feat-cireadyrelapse" "worktree=$d/wt" "kind=ship"
   printf 'done: PR https://github.com/o/r/pull/2 checks green\n' > "$d/state/feat-cireadyrelapse.status"
   FM_FAKE_AXI_STATUS="$(run_ci_monitoring fm/feat-cireadyrelapse)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS=$(cat <<'EOF'
 all CI checks passed - still monitoring until merged or closed
 base branch advanced (aaaaaaa..bbbbbbb), re-arming CI monitor timeout
@@ -636,6 +663,7 @@ test_ci_fixing_after_green_stays_working() {
   fm_write_meta "$d/state/feat-cifixing.meta" "window=fm:fm-feat-cifixing" "worktree=$d/wt" "kind=ship"
   printf 'done: PR https://github.com/o/r/pull/2 checks green\n' > "$d/state/feat-cifixing.status"
   FM_FAKE_AXI_STATUS="$(run_ci_fixing fm/feat-cifixing)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-cifixing)
   assert_contains "$out" "state: working" "ci fixing step must stay working"
@@ -651,6 +679,7 @@ test_top_level_fixing_ci_running_after_green_stays_working() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-topfixingci.meta" "window=fm:fm-feat-topfixingci" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_fixing_ci_running fm/feat-topfixingci)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-topfixingci)
   assert_contains "$out" "state: working" "top-level fixing with ci running must stay working"
@@ -668,6 +697,7 @@ test_top_level_fixing_done_log_stays_working() {
   fm_write_meta "$d/state/feat-topfixing.meta" "window=fm:fm-feat-topfixing" "worktree=$d/wt" "kind=ship"
   printf 'done: PR https://github.com/o/r/pull/2 checks green\n' > "$d/state/feat-topfixing.status"
   FM_FAKE_AXI_STATUS="$(run_fixing fm/feat-topfixing)"
+  corroborate_axi_status
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   local out; out=$(run_crew_state "$d" feat-topfixing)
   assert_contains "$out" "state: working" "top-level fixing must stay working"
@@ -805,6 +835,7 @@ endpoint=fm:fm-feat-still-parked
 state=stood-down
 EOF
   FM_FAKE_AXI_STATUS="$(run_parked fm/feat-still-parked)"
+  corroborate_axi_status
   FM_FAKE_TMUX_MISSING=1
   out=$(run_crew_state "$d" feat-still-parked)
   assert_contains "$out" "source: run-step" \
@@ -841,7 +872,7 @@ EOF
   pass "an unprovable worker-state record never masks a real run outcome"
 }
 
-# (e) cross-branch attribution: `axi status` returns ANOTHER branch's run (the
+# (e) cross-branch safety attribution: `axi status` returns ANOTHER branch's run (the
 # routine case once more than one crew validates the same underlying repo
 # concurrently - they share ONE no-mistakes repo registration), so the helper
 # falls back to the real top-level `no-mistakes runs` listing to learn whether
@@ -850,14 +881,15 @@ EOF
 # (bare) expecting a `runs[N]{...}:` TOON table that the real CLI never emits
 # (verified against the installed v1.32.2 - the `axi` surface has no
 # runs-listing subcommand at all), so attribution silently failed every time
-# the repo-wide answer was not this crew's own branch.
-test_cross_branch_attribution_via_runs_list() {
+# the repo-wide answer was not this crew's own branch. Listing-only evidence is
+# a safety verdict and is not projected as run state.
+test_cross_branch_listing_only_activity_uses_worker_state() {
   reset_fakes
   local d short; d=$(new_case crossbranch)
   make_repo_on_branch "$d/wt" fm/feat-f
   short=$(git -C "$d/wt" rev-parse --short=7 HEAD)
   make_fakebin "$d" >/dev/null
-  fm_write_meta "$d/state/feat-f.meta" "window=fm:fm-feat-f" "worktree=$d/wt" "kind=ship"
+  fm_write_meta "$d/state/feat-f.meta" "window=fm:fm-feat-f" "worktree=$d/wt" "kind=ship" "harness=claude"
   # The repo-wide active/most-recent run belongs to a different crew's branch.
   FM_FAKE_AXI_STATUS="$(run_running fm/other-crew)"
   # Real `no-mistakes runs` shape: plain text, newest-first, no run id, no
@@ -867,15 +899,21 @@ test_cross_branch_attribution_via_runs_list() {
   running    fm/feat-f ${short}  2026-07-02 22:05
 EOF
 )"
+  FM_FAKE_BUSY=1
+  local gen; gen=$("$ROOT/bin/fm-busy-event.sh" arm "$d/state" feat-f)
+  "$ROOT/bin/fm-busy-event.sh" apply "$d/state" feat-f busy --gen "$gen" \
+    --source claude-hook --event user-prompt-submit
   local out; out=$(run_crew_state "$d" feat-f)
-  assert_contains "$out" "state: working" "this branch's own run attributed via the runs list"
-  assert_contains "$out" "source: run-step" "runs-list-resolved run -> run-step source"
-  pass "cross-branch run is attributed via the real runs list"
+  assert_contains "$out" "state: working" "the live worker remains working without a run projection"
+  assert_contains "$out" "source: pane" "listing-only evidence must fall back to worker evidence"
+  assert_contains "$out" "claude-hook" "the fallback should name its semantic worker signal"
+  assert_not_contains "$out" "source: run-step" "a listing-only active row must not be projected"
+  pass "cross-branch listing-only evidence is not projected as run state"
 }
 
-# The runs list is newest-first; a branch with an OLDER completed run must not
-# shadow its own newer active one - the first (topmost) matching row wins.
-test_cross_branch_attribution_picks_most_recent_row() {
+# A listing-only active row and an older terminal row are both uncorroborated
+# reporting inputs.
+test_cross_branch_listing_only_rows_are_not_projected() {
   reset_fakes
   local d short; d=$(new_case crossbranch-mostrecent)
   make_repo_on_branch "$d/wt" fm/feat-fq
@@ -890,9 +928,10 @@ test_cross_branch_attribution_picks_most_recent_row() {
 EOF
 )"
   local out; out=$(run_crew_state "$d" feat-fq)
-  assert_contains "$out" "state: working" "most recent (running) row wins over an older completed row"
-  assert_contains "$out" "source: run-step" "most-recent-row resolution -> run-step source"
-  pass "cross-branch attribution picks the branch's most recent row"
+  assert_contains "$out" "state: unknown" "listing-only activity must fall back to endpoint reality"
+  assert_contains "$out" "source: pane" "listing-only activity must not become a run projection"
+  assert_not_contains "$out" "source: run-step" "no uncorroborated listing row may be projected"
+  pass "cross-branch listing-only activity exports no run projection"
 }
 
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status() {
@@ -911,10 +950,11 @@ EOF
 )"
   FM_FAKE_CI_LOGS="CI checks running, waiting for results..."
   local out; out=$(run_crew_state "$d" feat-coarseready)
-  assert_contains "$out" "state: done" "coarse ready status -> done"
-  assert_contains "$out" "source: status-log" "coarse ready status remains status-log sourced"
+  assert_contains "$out" "state: unknown" "listing-only activity falls back to endpoint reality"
+  assert_contains "$out" "source: pane" "listing-only activity does not become run-step state"
+  assert_not_contains "$out" "source: run-step" "another branch's CI detail must not be projected"
   assert_not_contains "$out" "state: working" "coarse ready status must not be suppressed by another branch log"
-  pass "coarse run does not probe another branch's ci log"
+  pass "listing-only activity does not probe another branch's ci log"
 }
 
 # A different-branch run with NO matching runs-list row must NOT be
@@ -1234,6 +1274,7 @@ test_dead_window_still_reports_active_run_step() {
   make_fakebin "$d" >/dev/null
   fm_write_meta "$d/state/feat-dead-act.meta" "window=fm:fm-feat-dead-act" "worktree=$d/wt" "kind=ship"
   FM_FAKE_AXI_STATUS="$(run_running fm/feat-dead-act)"
+  corroborate_axi_status
   FM_FAKE_TMUX_MISSING=1
   local out; out=$(run_crew_state "$d" feat-dead-act)
   assert_contains "$out" "state: working" "closed pane still reports active run-step"
@@ -1422,26 +1463,29 @@ test_missing_meta() {
 # (k) crew_is_provably_working end-to-end over the REAL fm-crew-state.sh (not a
 # canned fake verdict, unlike tests/fm-watch-triage.test.sh's classifier
 # coverage). This is the direct regression pair for the 2026-07-02 herdr
-# incident: a validating crew whose bare `axi status` answer belongs to
-# another branch must still be absorbed by the watcher via the runs-list
-# fallback (working), while a crew with genuinely no run anywhere and an idle
-# pane must still surface (the safety property the fix must never widen away).
-test_provably_working_via_runs_list_fallback() {
+# incident: a live worker must still be absorbed when its run is visible only
+# through uncorroborated listing evidence, while a crew with genuinely no run
+# anywhere and an idle pane must still surface.
+test_provably_working_with_listing_only_run_uses_worker_evidence() {
   reset_fakes
   local d short; d=$(new_case provably-working-crossbranch)
   make_repo_on_branch "$d/wt" fm/feat-provable
   short=$(git -C "$d/wt" rev-parse --short=7 HEAD)
   make_fakebin "$d" >/dev/null
-  fm_write_meta "$d/state/feat-provable.meta" "window=fm:fm-feat-provable" "worktree=$d/wt" "kind=ship"
+  fm_write_meta "$d/state/feat-provable.meta" "window=fm:fm-feat-provable" "worktree=$d/wt" "kind=ship" "harness=claude"
   FM_FAKE_AXI_STATUS="$(run_running fm/other-crew)"
   FM_FAKE_RUNS_LIST="$(cat <<EOF
   running    fm/other-crew aaaaaaa  2026-07-02 22:10
   running    fm/feat-provable ${short}  2026-07-02 22:05
 EOF
 )"
+  FM_FAKE_BUSY=1
+  local gen; gen=$("$ROOT/bin/fm-busy-event.sh" arm "$d/state" feat-provable)
+  "$ROOT/bin/fm-busy-event.sh" apply "$d/state" feat-provable busy --gen "$gen" \
+    --source claude-hook --event user-prompt-submit
   PATH="$d/fakebin:$PATH" FM_STATE_OVERRIDE="$d/state" crew_is_provably_working feat-provable \
-    || fail "cross-branch attribution via the runs list was not treated as provably working"
-  pass "crew_is_provably_working absorbs a validating crew found only via the runs-list fallback"
+    || fail "a live worker with listing-only run evidence was not treated as provably working"
+  pass "crew_is_provably_working uses worker evidence when run projection is uncorroborated"
 }
 
 test_not_provably_working_when_stopped() {
@@ -1519,6 +1563,7 @@ test_active_run_descendant_fix_head_remains_current() {
   fm_write_meta "$d/state/pipe.meta" "window=fm:fm-pipe" "worktree=$d/wt" "kind=ship"
   FM_FAKE_RUN_HEAD="$fix_head"
   FM_FAKE_AXI_STATUS="$(run_fixing fm/feat-pipeline)"
+  corroborate_axi_status
   out=$(run_crew_state "$d" pipe)
   assert_contains "$out" "source: run-step" "descendant pipeline fix head remains run-step"
   assert_contains "$out" "state: working" "active fixing run remains working"
@@ -1619,14 +1664,14 @@ test_live_inventory_beats_terminal_axi_status() {
 EOF
 )"
   local out; out=$(run_crew_state "$d" feat-f10-stale)
-  assert_contains "$out" "state: working" "live inventory row must outrank stale terminal axi status"
-  assert_contains "$out" "source: run-step" "live inventory row must remain a run-step source"
+  assert_contains "$out" "state: unknown" "live inventory activity must suppress stale terminal projection"
+  assert_contains "$out" "source: pane" "uncorroborated live inventory must fall back to endpoint reality"
   assert_not_contains "$out" "state: failed" "stale terminal axi status must not report a healthy worker failed"
-  pass "a live inventory row beats a stale terminal axi status answer"
+  pass "a live inventory row suppresses stale terminal reporting without being projected"
 }
 
-# Terminal reporting requires both reads to place the same terminal branch and
-# head. A live row from either source still establishes active on its own.
+# Reporting requires both reads to place the same activity state and head.
+# A live row from either source still establishes active for safety on its own.
 test_terminal_reporting_requires_corroboration() {
   reset_fakes
   local d out; d=$(new_case f10-projection-source)
@@ -1653,13 +1698,33 @@ EOF
     "an unrelated full window must not establish a terminal result"
   assert_contains "$out" "source: pane" \
     "an unrelated full window supplies no terminal corroboration"
-  # A live row for this branch outranks the terminal branch read.
+  # A live listing row is sufficient for the active safety verdict, but not for
+  # reporting when the direct branch read is terminal.
   FM_FAKE_RUNS_LIST="  running    fm/feat-f10e f0f0f0f0  2026-08-28 12:20"
   out=$(run_crew_state "$d" feat-f10e)
-  assert_contains "$out" "state: working" \
-    "a live row for this branch outranks a terminal branch read"
+  assert_contains "$out" "state: unknown" \
+    "listing-only active evidence must fall back to endpoint reality"
+  assert_contains "$out" "source: pane" \
+    "listing-only active evidence must not publish a run projection"
   assert_not_contains "$out" "state: failed" \
     "a live row must not be reported as the older terminal outcome"
+  # A direct active result is likewise not projected when corroboration is
+  # unavailable.
+  FM_FAKE_AXI_STATUS="$(run_running fm/feat-f10e)"
+  FM_FAKE_NM_FAIL_RUNS=1
+  out=$(run_crew_state "$d" feat-f10e)
+  assert_contains "$out" "state: unknown" \
+    "direct-only active evidence must fall back to endpoint reality"
+  assert_contains "$out" "source: pane" \
+    "direct-only active evidence must not publish a run projection"
+  # Agreement on activity and head restores the detailed direct projection.
+  FM_FAKE_NM_FAIL_RUNS=""
+  corroborate_axi_status
+  out=$(run_crew_state "$d" feat-f10e)
+  assert_contains "$out" "state: working" \
+    "corroborated active evidence should publish the detailed run"
+  assert_contains "$out" "source: run-step" \
+    "two-source active agreement should publish one run projection"
   # A terminal listing row cannot establish reporting without a matching
   # terminal branch read.
   FM_FAKE_AXI_STATUS=""
@@ -1713,9 +1778,11 @@ EOF
     --source claude-hook --event user-prompt-submit
   local out; out=$(run_crew_state "$d" feat-f10c)
   assert_not_contains "$out" "state: failed" "a live row must not fall through to the older failed row"
-  assert_contains "$out" "state: working" "a live row for this branch reads as a run in flight"
-  assert_contains "$out" "source: run-step" "the live row the listing found is the reporting source"
-  pass "the listing binds this branch's live row instead of the older row below it"
+  assert_contains "$out" "state: working" "worker evidence remains current beside listing-only activity"
+  assert_contains "$out" "source: pane" "listing-only activity must not become the reporting source"
+  assert_contains "$out" "claude-hook" "worker evidence should remain visible in the fallback detail"
+  assert_not_contains "$out" "source: run-step" "an uncorroborated live row must not be projected"
+  pass "listing-only activity suppresses older terminal state without being projected"
 }
 
 # Negative control: the exemption is gated on pipeline_owned specifically - any
@@ -1802,8 +1869,8 @@ test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
 test_an_absent_worker_without_a_declaration_is_still_reported
 test_active_run_outranks_a_stood_down_record
 test_invalid_worker_state_record_does_not_mask_a_failed_run
-test_cross_branch_attribution_via_runs_list
-test_cross_branch_attribution_picks_most_recent_row
+test_cross_branch_listing_only_activity_uses_worker_state
+test_cross_branch_listing_only_rows_are_not_projected
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status
 test_other_branch_run_ignored
 test_no_run_busy_pane
@@ -1828,7 +1895,7 @@ test_remote_alive_idle_is_healthy_not_gone
 test_remote_unreachable_is_unknown_remote_not_dead
 test_remote_dead_reports_remote_verdict
 test_missing_meta
-test_provably_working_via_runs_list_fallback
+test_provably_working_with_listing_only_run_uses_worker_evidence
 test_not_provably_working_when_stopped
 test_usage_error
 test_historical_same_branch_rewritten_head_not_current

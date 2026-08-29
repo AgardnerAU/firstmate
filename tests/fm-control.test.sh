@@ -603,9 +603,8 @@ test_stand_down_allows_a_terminal_run_for_the_same_task() {
 # Cross-branch attribution is routine: several crews validating one underlying
 # repo share a single no-mistakes registration, so bare `axi status` in this
 # worktree can answer about whichever branch was touched most recently. The
-# refusal must consult the same coarse runs listing current-state reporting
-# falls back to, or a gated run silently loses its worker AND its watcher
-# supervision at the same moment.
+# refusal must consult the coarse runs listing as additive safety evidence, or
+# a gated run can silently lose the worker it still needs.
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute() {
   local dir out rc head short
   dir=$(new_case stand-down-coarse-run)
@@ -652,6 +651,37 @@ test_stand_down_refuses_when_no_run_check_can_answer() {
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
     "an answering run check that proves no active run permits the hold"
   pass "fm-control stand-down: an unanswerable run check refuses and names itself"
+}
+
+test_stand_down_refuses_an_active_status_without_a_placeable_branch() {
+  local branch_line case_name dir head out rc
+  for case_name in absent truncated malformed; do
+    dir=$(new_case "stand-down-$case_name-active-branch")
+    add_task "$dir" t1 claude
+    alive_as "$dir" claude
+    head=$(git -C "$dir/wt-t1" rev-parse HEAD)
+    case "$case_name" in
+      absent) branch_line= ;;
+      truncated) branch_line='  branch: "task-t1' ;;
+      malformed) branch_line='  branch: bad branch' ;;
+    esac
+    out=$(FM_FAKE_AXI_STATUS="$(cat <<EOF
+run:
+  id: "01ACTIVE"
+$branch_line
+  head: "$head"
+  status: running
+EOF
+)" FM_FAKE_NM_FAIL_RUNS=1 run_control "$dir" t1 stand-down); rc=$?
+    expect_code 1 "$rc" "an active status with a $case_name branch identity must refuse"$'\n'"$out"
+    assert_contains "$out" "no placeable branch identity" \
+      "the $case_name branch refusal should name the unplaceable direct result"
+    [ ! -e "$dir/home/state/t1.worker-state" ] \
+      || fail "a $case_name active branch identity must publish no worker-state record"
+    [ "$(cat "$dir/fake/command")" = claude ] \
+      || fail "a $case_name active branch identity must leave the worker alive"
+  done
+  pass "fm-control stand-down: malformed active branch identity fails closed"
 }
 
 # A home that does not install `no-mistakes` at all runs no pipeline, so no run
@@ -1565,6 +1595,7 @@ test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
 test_stand_down_refuses_a_run_only_the_runs_list_can_attribute
 test_stand_down_refuses_when_no_run_check_can_answer
+test_stand_down_refuses_an_active_status_without_a_placeable_branch
 test_stand_down_allows_a_home_without_the_run_cli
 test_stand_down_allows_a_project_with_no_run_registration
 test_stand_down_reads_a_garbled_listing_row_as_no_run_at_all

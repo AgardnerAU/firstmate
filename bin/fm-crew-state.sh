@@ -402,8 +402,8 @@ nm_ci_checks_state() {
 CREW_BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
 
 HAVE_RUN=0
-# RUN_SOURCE distinguishes the detailed TOON projection from the listing's
-# display projection of the one branch-run verdict.
+# RUN_SOURCE distinguishes the detailed TOON projection from a compact status
+# projection of the one branch-run verdict.
 RUN_SOURCE=full
 COARSE_STATUS=""
 # Scouts and secondmates never drive a no-mistakes validation of their own
@@ -412,10 +412,11 @@ if [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ]; then
   fm_nm_branch_run_verdict "$WT" "$CREW_BRANCH" "$NM_TIMEOUT"
   case "$FM_NM_BRANCH_RUN_VERDICT" in
     active)
-      HAVE_RUN=1
       if [ -n "$FM_NM_BRANCH_RUN_TOON" ]; then
+        HAVE_RUN=1
         RUN_OUT=$FM_NM_BRANCH_RUN_TOON
-      else
+      elif [ -n "$FM_NM_BRANCH_RUN_DISPLAY" ]; then
+        HAVE_RUN=1
         RUN_SOURCE=coarse
         COARSE_STATUS=$FM_NM_BRANCH_RUN_DISPLAY
       fi
