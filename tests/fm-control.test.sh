@@ -754,6 +754,13 @@ test_stand_down_allows_a_project_with_no_run_registration() {
   expect_code 1 "$rc" "a check that cannot capture the CLI's own error must refuse rather than degrade"$'\n'"$out"
   [ ! -e "$dir/home/state/t1.worker-state" ] \
     || fail "an uncapturable run check must publish no worker-state record"
+  out=$(FM_FAKE_NM_ERR="repo not initialized (run 'no-mistakes init' first)" \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "the earlier stderr form of the unregistered response must still license the hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "an unregistered response on stderr must remain a proof that the project owns no run"
+  rm -f "$dir/home/state/t1.worker-state"
+  alive_as "$dir" claude
   out=$(FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
   expect_code 0 "$rc" "a repository with no run registration owns no run to protect"$'\n'"$out"
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \

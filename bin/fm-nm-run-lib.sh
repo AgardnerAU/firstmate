@@ -143,12 +143,14 @@ fm_nm_runs_limit() {
 # owns no run, so that is an answer, not a failure to answer - the same
 # reasoning the branchless worktree rests on. firstmate supports whole project
 # modes (direct-PR, local-only) that never run `no-mistakes init`.
-fm_nm_says_unregistered() {  # <response-text>
-  local text
-  text=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
-  case "$text" in
-    *"repo not initialized"*|*"repo not initialised"*) return 0 ;;
-  esac
+fm_nm_says_unregistered() {  # <response-text>...
+  local response text
+  for response in "$@"; do
+    text=$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]')
+    case "$text" in
+      *"repo not initialized"*|*"repo not initialised"*) return 0 ;;
+    esac
+  done
   return 1
 }
 
@@ -279,8 +281,7 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       fi
     fi
   elif [ "$status_rc" != 0 ] \
-    && { fm_nm_says_unregistered "$status_out" \
-      || fm_nm_says_unregistered "$status_stderr"; }; then
+    && fm_nm_says_unregistered "$status_out" "$status_stderr"; then
     branch_state=quiet
   else
     branch_reason="'no-mistakes axi status' could not answer whether branch $branch has a run in flight"
