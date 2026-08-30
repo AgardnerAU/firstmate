@@ -1,0 +1,16 @@
+Operator command: fm-send t1 "recover this missing endpoint"
+Exit status: 0
+CLI diagnostics:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Durable inbox record:
+schema=fm-task-inbox.v1
+at=2026-08-30T02:32:14Z
+--
+recover this missing endpointTerminal doorbell log:
+Firstmate instruction waiting: list /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-inbox.Gon8Ho/evidence-missing/home/state/t1.inbox/*.msg and, in numeric order, read and act on each, then mv each handled file to /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-inbox.Gon8Ho/evidence-missing/home/state/t1.inbox/handled/.

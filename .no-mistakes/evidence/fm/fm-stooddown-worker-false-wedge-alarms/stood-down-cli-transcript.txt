@@ -1,0 +1,11 @@
+Operator command: fm-control t1 stand-down
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control.iZBKLr/evidence-stand-down-11644/wt-t1
+Persisted worker-state:
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+Repeated operator command: fm-control t1 stand-down
+already-stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control.iZBKLr/evidence-stand-down-11644/wt-t1
+Exit commands delivered to worker: 1
+
