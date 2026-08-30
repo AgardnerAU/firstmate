@@ -195,9 +195,11 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 #
 # The optional display and TOON fields are reporting projections, never a
 # second safety decision, and they are assigned in exactly one place below.
-# Terminal detail is projected only when both sources place the same state and
-# head. Active evidence remains authoritative without projecting details, and
-# a direct active answer skips the optional listing entirely.
+# Terminal detail is projected only when the branch read agrees in state and
+# head with the newest same-branch terminal listing row; older terminal rows
+# can never corroborate it. Active evidence remains authoritative without
+# projecting details, and a direct active answer skips the optional listing
+# entirely.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-}
   local status_out='' status_rc status_stderr='' status_body='' direct_status=''

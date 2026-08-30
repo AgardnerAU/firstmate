@@ -76,7 +76,7 @@ A valid declaration is preserved while its exact endpoint is proven dead, but a 
 Repair can therefore retain an established hold or return a task to ordinary monitoring, but never infer a new hold from worker absence.
 
 `fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an active verdict keeps run-step authority even when its uncorroborated details are withheld, so it reports `working` rather than falling through to the hold.
-Terminal run details are reported only when the branch read and repo-wide listing corroborate the same state and head.
+Terminal run details are reported only when the branch read agrees in state and head with the newest same-branch terminal row in the repo-wide listing; [`bin/fm-nm-run-lib.sh`](../bin/fm-nm-run-lib.sh) owns the exact attribution rule.
 It is also only ever a park while the recorded endpoint is still there and merely has no agent.
 An endpoint that has vanished reports `unknown` and names the lost endpoint, because the declared hold - worktree, work, and an in-place relaunch - can no longer be resumed where it was declared.
 

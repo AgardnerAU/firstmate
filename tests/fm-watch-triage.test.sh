@@ -26,6 +26,7 @@ WATCH="$ROOT/bin/fm-watch.sh"
 DRAIN="$ROOT/bin/fm-wake-drain.sh"
 
 TMP_ROOT=$(fm_test_tmproot fm-watch-triage-tests)
+TMP_ROOT=$(cd -P "$TMP_ROOT" && pwd -P)
 
 ack_stopped_cycle() {  # <state>
   local state=$1 err sequence generation
