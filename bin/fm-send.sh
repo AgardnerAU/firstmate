@@ -424,17 +424,16 @@ fm_send_resolve_target "$RAW_TARGET" || exit 1
 T=$RESOLVED_TARGET
 shift
 
-# A held task with a proven stood-down worker has no receiver for either inbox
-# or typed-plane input. Refuse instead of leaving an unread durable instruction
-# that the watcher correctly no longer polls. A stale record never blocks a
-# live endpoint, because the same recovery-grade classifier that protects the
-# watcher must still prove there is no agent before this guard applies.
+# A held task with a proven stood-down worker in its recorded endpoint has no
+# receiver for either inbox or typed-plane input. Refuse instead of leaving an
+# unread durable instruction. Missing or unprovable endpoints remain under
+# ordinary supervision, and a stale record never blocks a live endpoint.
 if [ -n "$TARGET_META" ] && [ "$TARGET_BACKEND" != remote ]; then
   TARGET_WORKER_ID=$(fm_send_id_from_meta "$TARGET_META")
   if [ "$(fm_worker_state_status "$STATE" "$TARGET_WORKER_ID" "$T")" = stood-down ]; then
     TARGET_WORKER_AGENT_STATE=$(fm_backend_agent_state "$TARGET_BACKEND" "$T" 2>/dev/null || true)
     case "$TARGET_WORKER_AGENT_STATE" in
-      dead|missing)
+      dead)
         echo "error: task $TARGET_WORKER_ID deliberately has no worker; relaunch it before sending an instruction" >&2
         exit 1
         ;;
