@@ -79,18 +79,6 @@ fm_nm_head_matches_worktree() {  # <worktree> <run_head>
   git -C "$wt" merge-base --is-ancestor "$local_full" "$run_full" 2>/dev/null
 }
 
-# 0 if head $2 resolves to a commit object in worktree $1 at all. This
-# distinguishes a PROVEN mismatch (resolvable but not current: a historical or
-# diverged head fm_nm_head_matches_worktree correctly rejects) from UNKNOWN
-# attribution (unresolvable: e.g. a pipeline-owned lane head that never
-# reached this worktree). The corroboration scan uses it on TERMINAL rows only,
-# to stop reporting from rendering an older row as this task's state once a
-# newer one could not be placed; a live row is bound by branch regardless.
-fm_nm_head_resolvable() {  # <worktree> <head>
-  [ -n "$2" ] || return 1
-  git -C "$1" rev-parse --verify --quiet "$2^{commit}" >/dev/null 2>&1
-}
-
 # branch_sync.state from captured `axi status` TOON $1: the scalar directly
 # under the top-level `branch_sync:` block. The first `state:` inside the
 # block is the direct child (the nested local/pipeline/target/remote
@@ -302,8 +290,10 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       [ "$br" = "$branch" ] || continue
       case "$st" in
         completed|failed|cancelled)
-          if fm_nm_head_matches_worktree "$wt" "$sha"; then
-            if [ "$render_locked" = 0 ] && [ -n "$terminal_toon" ] \
+          if [ "$render_locked" = 0 ]; then
+            render_locked=1
+            if fm_nm_head_matches_worktree "$wt" "$sha" \
+              && [ -n "$terminal_toon" ] \
               && [ "$st" = "$terminal_status" ]; then
               direct_full=$(git -C "$wt" rev-parse --verify "${terminal_head}^{commit}" 2>/dev/null || true)
               listing_full=$(git -C "$wt" rev-parse --verify "${sha}^{commit}" 2>/dev/null || true)
@@ -311,8 +301,6 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
                 terminal_corroborated=1
               fi
             fi
-          else
-            fm_nm_head_resolvable "$wt" "$sha" || render_locked=1
           fi
           ;;
         *)

@@ -734,6 +734,33 @@ test_terminal_failed() {
   pass "terminal failed run is authoritative"
 }
 
+test_newest_terminal_inventory_row_controls_projection() {
+  reset_fakes
+  local d out short
+  d=$(new_case newest-terminal-projection)
+  make_repo_on_branch "$d/wt" fm/feat-newest-terminal
+  short=$(git -C "$d/wt" rev-parse --short=8 HEAD)
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-newest-terminal.meta" \
+    "window=fm:fm-feat-newest-terminal" "worktree=$d/wt" "kind=ship" "harness=claude"
+  printf 'needs-decision: keep the current worker state\n' > "$d/state/feat-newest-terminal.status"
+  arm_idle_record "$d/state" feat-newest-terminal
+  FM_FAKE_AXI_STATUS="$(run_failed fm/feat-newest-terminal)"
+  FM_FAKE_RUNS_LIST="$(cat <<EOF
+  completed  fm/feat-newest-terminal  $short  2026-08-29 13:00
+  failed     fm/feat-newest-terminal  $short  2026-08-29 12:00
+EOF
+)"
+  out=$(run_crew_state "$d" feat-newest-terminal)
+  assert_contains "$out" "state: parked" \
+    "a newer completed row must prevent an older failed row corroborating stale status"
+  assert_contains "$out" "source: status-log" \
+    "contradictory terminal evidence must fall back to current worker state"
+  assert_not_contains "$out" "state: failed" \
+    "an older terminal row must not control projection"
+  pass "the newest same-branch terminal row alone controls terminal projection"
+}
+
 test_stood_down_worker_outranks_a_historical_failed_run() {
   reset_fakes
   local d out
@@ -1877,6 +1904,7 @@ test_top_level_fixing_ci_running_after_green_stays_working
 test_top_level_fixing_done_log_stays_working
 test_terminal_passed
 test_terminal_failed
+test_newest_terminal_inventory_row_controls_projection
 test_stood_down_worker_outranks_a_historical_failed_run
 test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
 test_an_absent_worker_without_a_declaration_is_still_reported
