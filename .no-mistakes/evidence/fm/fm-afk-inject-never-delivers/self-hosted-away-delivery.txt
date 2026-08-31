@@ -1,0 +1,18 @@
+SELF-HOSTED AWAY-DAEMON ACCEPTANCE TRANSCRIPT
+=============================================
+
+Scenario 1 - actionable wait delivered despite reflected native busy
+self-hosted target: default:w1:p2
+native backend state: busy (daemon reflection)
+delivered digest contains blocker: yes
+declared-wait pause marker retained: yes
+escalation buffer cleared after proven delivery: yes
+delivered digest:
+⁣FIRSTMATE_OP: v1 away-supervisor: Supervisor escalate (       1 event(s)): stale + actionable status: blocked [key=release]: need captain approval (pre-read; re-arm not needed — watcher daemon-managed)
+
+Scenario 2 - swallowed Enter is not reported as delivery
+submit verdict: pending
+buffer still contains escalation: yes
+wedge marker remains raised: yes
+preserved buffer:
+event A: worker died
