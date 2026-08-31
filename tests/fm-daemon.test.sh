@@ -2578,6 +2578,53 @@ test_inject_msg_delivers_while_self_hosted_native_busy() {
   pass "inject_msg: delivers an away-mode escalation whose target reads native busy only because the daemon hosts it"
 }
 
+# Composition regression for #3050 with the later status-span and declared-wait
+# contracts. A blocker followed by routine progress and a current pause must be
+# surfaced without losing the pause cadence, then delivered even when the
+# self-hosted daemon pins its target's native state busy.
+test_self_hosted_delivery_preserves_actionable_wait_contracts() {
+  local dir state task win key reason sent seen log_size
+  dir=$(make_supercase self-hosted-actionable-wait)
+  state="$dir/state"; task=waiting-selfhost-r11; win="sess:fm-$task"; sent="$dir/sent"
+  key=$(printf '%s' "$task" | tr ':/.' '___')
+  printf 'blocked [key=release]: need captain approval\nworking: preserving the checkout\npaused: waiting for release access\n' \
+    > "$state/$task.status"
+  reason="stale: $win (idle 250s, possible wedge, escalation 3, demand-deep-inspection: inspect the repeated wedge)"
+
+  FM_ESCALATE_BATCH_SECS=999999 handle_wake "$reason" "$state"
+  grep -F "blocked [key=release]: need captain approval" "$state/.subsuper-escalations" >/dev/null \
+    || fail "a later routine wait hid its earlier actionable status from the escalation buffer"
+  [ -e "$state/.subsuper-paused-$key" ] \
+    || fail "surfacing the actionable status dropped the current declared-wait cadence"
+  [ ! -e "$state/.subsuper-stale-$key" ] \
+    || fail "the actionable current wait was also left on the wedge cadence"
+  seen=$(status_seen_offset "$state" "$task")
+  log_size=$(wc -c < "$state/$task.status" | tr -d ' ')
+  [ "$seen" = "$log_size" ] \
+    || fail "classification did not commit through the captured status-span endpoint"
+
+  afk_enter "$state"
+  (
+    fm_backend_target_exists() { return 0; }
+    fm_backend_busy_state() { printf 'busy'; }
+    fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
+    fm_backend_composer_state() { printf 'empty'; }
+    fm_backend_send_text_submit() { printf '%s' "$3" > "$sent"; printf 'empty'; }
+    TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
+      FM_STATE_OVERRIDE="$state" FM_DAEMON_PRIMARY_HARNESS=claude \
+      FM_SUPERVISOR_BACKEND=herdr FM_SUPERVISOR_TARGET="default:w1:p2" \
+      escalate_flush "$state" \
+      || fail "the actionable wait digest was not delivered from the self-hosted native-busy pane"
+  ) || fail "self-hosted actionable-wait delivery subshell failed"
+  grep -F "blocked [key=release]: need captain approval" "$sent" >/dev/null \
+    || fail "the delivered digest omitted the actionable status hidden behind later routine lines"
+  [ ! -s "$state/.subsuper-escalations" ] \
+    || fail "the delivered actionable wait remained in the escalation buffer"
+  [ -e "$state/.subsuper-paused-$key" ] \
+    || fail "successful self-hosted delivery cleared the independent pause cadence"
+  pass "self-hosted delivery composes with actionable status spans and declared-wait cadence"
+}
+
 # The other half of the same boundary: delivery must not be ASSUMED either.
 # On the native hosting the pane's native agent_status is pinned `working` by
 # the daemon's own background job, and the retries-exhausted queued-Enter
@@ -2884,6 +2931,7 @@ test_pane_is_busy_self_hosted_native_busy_falls_through_to_rendered
 test_pane_is_busy_self_hosted_still_defers_on_a_real_turn
 test_pane_is_busy_terminal_hosted_native_busy_stays_conclusive
 test_inject_msg_delivers_while_self_hosted_native_busy
+test_self_hosted_delivery_preserves_actionable_wait_contracts
 test_escalate_flush_preserves_a_swallowed_self_hosted_escalation
 test_primary_busy_guard_is_harness_scoped
 test_pane_is_busy_defaults_to_tmux_when_backend_omitted
