@@ -347,6 +347,7 @@ So Herdr's native `busy` reports that something is running in the pane, not that
 
 The away-mode daemon on the native hosting IS such a background job, of the very agent it injects into, so it pins its own target's native state for as long as away mode lasts.
 `tests/fm-daemon.test.sh` pins the resulting precedence portably and with no harness: a self-hosted daemon falls through native `busy` to the rendered delivery signature and delivers, a self-hosted daemon still defers while that signature shows a live turn, a daemon hosted in its own terminal keeps native `busy` conclusive, and a submit that never left the composer keeps its escalation buffered.
+The same suite composes self-hosted delivery with the current status-span and declared-wait contracts: it surfaces an earlier actionable event, commits through the captured status endpoint, preserves the independent pause cadence, and delivers the digest while self-hosted native state reads busy.
 `tests/fm-backend-herdr.test.sh` pins the same boundary at the adapter's single native-state reader: a self-hosted pane's `working` reports no status and classifies as `unknown` rather than `idle`, every other status and every other pane passes through unchanged, and a self-hosted submit confirms only on a rendered transition or a cleared composer.
 
 ### Prune and respawn
