@@ -349,17 +349,14 @@ state_line_pr() { # <state-line>
 # true together. A run-step state carries the PR its own run opened, or none; a
 # status-log state carries the PR its own line names. A separately recorded task
 # PR is neither, so it is never borrowed here.
-terminal_outcome_pr() { # <state-line> <status> <last-line>
-  local line=$1 status=$2 last=$3 value
+terminal_outcome_pr() { # <state-line> <last-line>
+  local line=$1 last=$2 value
   if [ "$(state_line_source "$line")" = run-step ]; then
     clean_field "$(state_line_pr "$line")"
     return 0
   fi
   value=$(printf '%s\n' "$last" \
     | grep -Eo 'https?://[^[:space:])"]+/pull/[0-9]+' | head -1 || true)
-  if [ -z "$value" ] && [ -f "$status" ]; then
-    value=$(grep -Eo 'https?://[^[:space:])"]+/pull/[0-9]+' "$status" 2>/dev/null | tail -1 || true)
-  fi
   clean_field "$value"
 }
 
@@ -573,7 +570,7 @@ reconcile_direct_child_locked() { # <id> <meta> <secondmate-id-or-empty> <timeou
     *) return 0 ;;
   esac
   terminal_outcome_corroborated "$state" "$last" || return 0
-  pr=$(terminal_outcome_pr "$state_line" "$status" "$last")
+  pr=$(terminal_outcome_pr "$state_line" "$last")
   incarnation=$(meta_incarnation "$meta")
   fingerprint=$(sha256_text "$incarnation|$id|$state|$pr|$(clean_field "$last")")
   if [ -n "$self" ]; then
