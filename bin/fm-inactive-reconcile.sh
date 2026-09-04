@@ -55,9 +55,8 @@
 # self-declared word (done, failed, or the configured paused verb) does not
 # contradict it, and its PR identity comes from the same record as its state -
 # the run's own published PR for a run-step state, that line's own PR for a
-# status-log state, and never a separately recorded task PR. Both rules exist
-# because on 2026-08-27 one queued record told the captain that healthy work had
-# failed and named a pull request the current run had not opened.
+# status-log state, and never a separately recorded task PR. Together they
+# prevent one captain-facing record from combining claims from different runs.
 # Working, paused, parked, blocked, unknown, persistent secondmates, and
 # captain-held work retain their existing supervision semantics.
 #
@@ -320,11 +319,7 @@ meta_incarnation() { # <meta>
   printf 'legacy-%s\n' "$(sha256_text "$identity")"
 }
 
-# bin/fm-crew-state.sh's one canonical line is
-#   state: <state> · source: <source> · <detail>
-# and it is the sole current-state source here. A terminal outcome must take its
-# state AND its pull-request identity from that same line, so these read the two
-# fields instead of re-deriving either from an older record.
+# Parse the canonical state line described by this script's header.
 STATE_LINE_SEP=' · '
 
 state_line_source() { # <state-line>
@@ -334,21 +329,14 @@ state_line_source() { # <state-line>
   printf '%s' "$rest"
 }
 
-# The pull request the authoritative run itself published, empty when it
-# published none (a run that never reached its pr step opened none, and that
-# absence is the point).
+# Read the optional pull request published in the canonical state line.
 state_line_pr() { # <state-line>
   local rest=${1##*"$STATE_LINE_SEP"pr=}
   [ "$rest" != "$1" ] || return 0
   printf '%s' "$rest"
 }
 
-# A terminal outcome's PR must come from the SAME record as its state. The
-# 2026-08-27 false report named the task's previously recorded PR beside a state
-# read from a different run, so one record asserted two things that were never
-# true together. A run-step state carries the PR its own run opened, or none; a
-# status-log state carries the PR its own line names. A separately recorded task
-# PR is neither, so it is never borrowed here.
+# Enforce the header's same-record pull-request contract.
 terminal_outcome_pr() { # <state-line>
   local line=$1 value
   if [ "$(state_line_source "$line")" = run-step ]; then
@@ -360,16 +348,7 @@ terminal_outcome_pr() { # <state-line>
   clean_field "$value"
 }
 
-# The captain protection that does not depend on the reader getting precedence
-# right. A terminal outcome is a CAPTAIN-FACING claim, so it is manufactured only
-# when the crew's own last self-declared word does not contradict it.
-# Self-declared means the verbs a crew uses to state its own outcome or wait -
-# done, failed, and the configured paused verb. Every other last line (working,
-# needs-decision, blocked, resolved, or none at all) declares no outcome and
-# cannot contradict anything, so a crew that simply stopped mid-work still
-# reaches the captain. On a genuine disagreement nothing is presented and
-# ordinary supervision keeps the work: presenting a failure the crew's own record
-# calls done is exactly the 2026-08-27 harm, and the mirror case is no safer.
+# Enforce the header's independent captain-facing corroboration contract.
 terminal_outcome_corroborated() { # <state> <last-status-line>
   local state=$1 last=$2 declared
   if status_is_paused "$last"; then
