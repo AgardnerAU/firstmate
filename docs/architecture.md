@@ -74,7 +74,8 @@ Any direct or remaining historical annotation prints every status line unread at
 A run head the task copy cannot resolve locally is attributed only when the pipeline's own runs ledger proves it is an active continuation of the submitted head, so a pipeline fix round never reads as an older failed run.
 A terminal failed or cancelled run is authoritative only while nothing newer contradicts it, because head identity binds whatever run last sat on this head rather than proving it is the branch's current one.
 A later run the ledger proves current answers instead, a later self-declared pause or completion the ledger's date proves post-dates the failed run answers instead, and a distinct later run that cannot be bound here reads as unknown even when that newer row is terminal.
-The newest terminal row's short SHA distinguishes it from the attributed run itself, so with no later identity or ordering evidence the failure stands and a real failure is never hidden.
+The ledger has no run ID, so equal heads do not identify reruns; a terminal row supplies newer truth when its observable status, head, or pull request differs from the full run answer, or when the reader reached it through the coarse fallback.
+When all observable terminal fields agree and there is no later ordering evidence, the failure stands so a real failure is never hidden.
 A terminal reading also publishes the pull request its own run opened, or none when it opened none, so a consumer never lends it an older one.
 During no-mistakes' `ci` monitor phase, it also reads the ci step log tail because `axi status` reports both "still waiting on checks" and "checks green, waiting on merge" as `ci,running`.
 The most recent recognized ci log marker wins, so checks-green monitoring reports done while a later re-arm, failed-check, or issue marker returns the crew to working.
