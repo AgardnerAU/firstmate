@@ -1712,7 +1712,8 @@ EOF
 # two live homes start with different stale config subsets; after push each is
 # updated and each live agent receives only its own changed-content instruction.
 test_config_reread_per_home_changed_sets_and_exact_bytes() {
-  local w head log out err status instr_a instr_b multiline_json writing_style pointer
+  local w head log out err status instr_a instr_b instruction multiline_json writing_style pointer
+  local ordinary_framing mandatory_framing
   w=$(new_world config-reread-per-home)
   head=$(git -C "$w/main" rev-parse HEAD)
   add_sm_worktree "$w" alpha "$head"
@@ -1765,12 +1766,17 @@ test_config_reread_per_home_changed_sets_and_exact_bytes() {
 
   # Deterministic allowlist path order and exact destination bytes for alpha
   # (allowlisted config items were missing/stale and therefore pushed).
-  assert_grep "These inherited config files changed" "$instr_a" "alpha framing missing"
-  assert_grep "defaults/rules" "$instr_a" "alpha must preserve agent judgment framing"
-  assert_contains "$(cat "$instr_a")" "$FM_CONFIG_REREAD_MANDATORY_FRAMING" \
-    "worker writing style must receive mandatory reread framing"
-  assert_contains "$(cat "$instr_a")" "$FM_CONFIG_REREAD_FRAMING" \
-    "ordinary inherited config must retain defaults-and-judgment framing"
+  instruction=$(cat "$instr_a")
+  ordinary_framing='These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.'
+  mandatory_framing='This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.'
+  assert_contains "$instruction" "$(printf '%s\n\n%s' "$ordinary_framing" 'config/crew-dispatch.json')" \
+    "ordinary config item did not receive defaults-and-judgment framing"
+  assert_not_contains "$instruction" "$(printf '%s\n\n%s' "$mandatory_framing" 'config/crew-dispatch.json')" \
+    "ordinary config item received mandatory framing"
+  assert_contains "$instruction" "$(printf '%s\n\n%s' "$mandatory_framing" 'config/worker-writing-style.md')" \
+    "worker writing style did not receive mandatory framing"
+  assert_not_contains "$instruction" "$(printf '%s\n\n%s' "$ordinary_framing" 'config/worker-writing-style.md')" \
+    "worker writing style received defaults-and-judgment framing"
   assert_contains "$(cat "$instr_a")" "config/crew-dispatch.json" "alpha missing dispatch path"
   assert_contains "$(cat "$instr_a")" "config/crew-harness" "alpha missing harness path"
   assert_contains "$(cat "$instr_a")" "config/worker-writing-style.md" "alpha missing writing-style path"
