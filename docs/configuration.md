@@ -297,9 +297,10 @@ The full cmux home label also includes a short hash of the resolved `FM_ROOT` pa
 ## Worker writing style
 
 `config/worker-writing-style.md` is an optional local, gitignored file that contains the writing rules for human-facing prose produced by workers.
-`bin/fm-brief.sh` injects its content verbatim under a `Worker writing style` heading in every ship, scout, and secondmate charter scaffold.
+`bin/fm-brief.sh` injects its content verbatim under a `Worker writing style` heading in each ship, scout, and secondmate charter scaffold that it generates.
+Secondmate homes provisioned before this support are excluded and take up the rules when next provisioned fresh.
 When the file is absent, the heading and content are both omitted, so generated briefs retain their existing content.
-Secondmate homes inherit the file from the primary through the declared local-material inheritance mechanism, so their own worker briefs use the same rules.
+Secondmate homes inherit the file from the primary through the declared local-material inheritance mechanism, so worker briefs generated in those homes use the same rules.
 Keep the file focused on writing style rather than general strategy or working preferences; `data/captain.md` remains the private owner of those broader preferences and is not injected into worker briefs.
 
 ## Harness support

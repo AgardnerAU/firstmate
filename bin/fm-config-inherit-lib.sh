@@ -5,7 +5,7 @@
 # (e.g. primary config/crew-dispatch.json makes a secondmate use the same dispatch
 # profile rules, primary config/crew-harness=codex makes a secondmate's crewmates
 # spawn on codex too, primary config/worker-writing-style.md supplies the same
-# human-facing prose rules to every worker brief, primary
+# human-facing prose rules to each newly generated worker brief, primary
 # config/backlog-backend=manual makes that home hand-edit backlog files too,
 # primary config/backend pins that home's local
 # runtime-backend default for future spawns, primary config/startup-memory-budget

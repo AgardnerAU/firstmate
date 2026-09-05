@@ -221,7 +221,7 @@ test_ship_modes_generate_clean_briefs() {
   pass "fm-brief.sh: no-mistakes/direct-PR/local-only briefs generate cleanly"
 }
 
-test_worker_writing_style_is_optional_and_reaches_every_scaffold() {
+test_worker_writing_style_is_optional_and_reaches_new_scaffolds() {
   local home style baseline styled kind id brief reread_instruction override override_style override_brief
   home="$TMP_ROOT/writing-style-home"
   mkdir -p "$home/data" "$home/config"
@@ -281,7 +281,7 @@ Keep this exact second line.'
         "$kind scaffold received the secondmate-only reread instruction"
     fi
   done
-  pass "fm-brief.sh: writing style reaches every scaffold and secondmates reread it at intake"
+  pass "fm-brief.sh: writing style reaches newly generated scaffolds and secondmates reread it at intake"
 }
 
 # A ship task's delivery mode is firstmate's per-task decision, so a missing or
@@ -913,7 +913,7 @@ test_script_parses
 test_no_heredoc_in_command_substitution
 test_help_includes_entire_header
 test_ship_modes_generate_clean_briefs
-test_worker_writing_style_is_optional_and_reaches_every_scaffold
+test_worker_writing_style_is_optional_and_reaches_new_scaffolds
 test_ship_mode_is_required_and_closed_set
 test_ship_mode_is_explicit_not_registry
 test_delivery_flags_are_refused_where_they_do_not_apply
