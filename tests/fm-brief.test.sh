@@ -250,6 +250,7 @@ Keep this exact second line.'
     "brief ignored FM_CONFIG_OVERRIDE in favour of the home config directory"
 
   printf '%s\n' "$style" > "$home/config/worker-writing-style.md"
+  # shellcheck disable=SC2016 # Preserve literal $FM_HOME in the expected output.
   reread_instruction='At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.'
   for kind in ship scout secondmate; do
     id="style-$kind"
