@@ -253,10 +253,10 @@ fi
 cat > "$BRIEF" <<EOF
 You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
 
-$WRITING_STYLE_SECTION${WRITING_STYLE_SECTION:+
+${WRITING_STYLE_SECTION:+$WRITING_STYLE_SECTION
 
-}
-# Charter
+
+}# Charter
 $SECONDMATE_CHARTER
 
 # Routing scope
@@ -377,10 +377,10 @@ if [ "$KIND" = scout ]; then
 cat > "$BRIEF" <<EOF
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
 
-$WRITING_STYLE_SECTION${WRITING_STYLE_SECTION:+
+${WRITING_STYLE_SECTION:+$WRITING_STYLE_SECTION
 
-}
-$TASK_SECTION
+
+}$TASK_SECTION
 
 $HERDR_SECTION
 
@@ -455,10 +455,10 @@ DOD=$(fm_dod_block "$MODE" "$ID") || exit 1
 cat > "$BRIEF" <<EOF
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
 
-$WRITING_STYLE_SECTION${WRITING_STYLE_SECTION:+
+${WRITING_STYLE_SECTION:+$WRITING_STYLE_SECTION
 
-}
-$TASK_SECTION
+
+}$TASK_SECTION
 
 $HERDR_SECTION
 
