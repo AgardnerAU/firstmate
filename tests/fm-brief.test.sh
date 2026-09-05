@@ -237,7 +237,7 @@ Keep this exact second line.'
     "absent worker-writing-style file changed brief content"
 
   printf '%s\n' "$style" > "$home/config/worker-writing-style.md"
-  reread_instruction="At every intake, read \`$home/config/worker-writing-style.md\` and apply its current contents. If the file is absent, use the embedded rules above as the fallback."
+  reread_instruction='At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.'
   for kind in ship scout secondmate; do
     id="style-$kind"
     case "$kind" in
@@ -261,6 +261,8 @@ Keep this exact second line.'
     if [ "$kind" = secondmate ]; then
       assert_contains "$(cat "$brief")" "$reread_instruction" \
         "secondmate charter did not require the current writing style at every intake"
+      assert_not_contains "$(cat "$brief")" "$home/config/worker-writing-style.md" \
+        "secondmate charter froze the scaffold home's writing-style path"
     else
       assert_not_contains "$(cat "$brief")" "At every intake, read" \
         "$kind scaffold received the secondmate-only reread instruction"
