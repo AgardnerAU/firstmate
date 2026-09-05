@@ -212,7 +212,7 @@ EOF
 INBOX_SECTION=${INBOX_SECTION%$'\n'}
 
 WRITING_STYLE_SECTION=
-WRITING_STYLE_FILE="$FM_HOME/config/worker-writing-style.md"
+WRITING_STYLE_FILE="${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/worker-writing-style.md"
 if [ -f "$WRITING_STYLE_FILE" ]; then
   WRITING_STYLE_CONTENT=$(cat "$WRITING_STYLE_FILE")
   IFS= read -r -d '' WRITING_STYLE_SECTION <<EOF || true

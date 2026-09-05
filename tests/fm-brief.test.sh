@@ -222,7 +222,7 @@ test_ship_modes_generate_clean_briefs() {
 }
 
 test_worker_writing_style_is_optional_and_reaches_every_scaffold() {
-  local home style baseline styled kind id brief reread_instruction
+  local home style baseline styled kind id brief reread_instruction override override_style override_brief
   home="$TMP_ROOT/writing-style-home"
   mkdir -p "$home/data" "$home/config"
   style='Use the configured prose convention.
@@ -235,6 +235,19 @@ Keep this exact second line.'
     "absent worker-writing-style file emitted a heading"
   assert_no_grep "Use the configured prose convention." "$baseline" \
     "absent worker-writing-style file changed brief content"
+
+  override="$TMP_ROOT/writing-style-override"
+  override_style='Use only the override writing style.'
+  mkdir -p "$override"
+  printf '%s\n' "$override_style" > "$override/worker-writing-style.md"
+  FM_HOME="$home" FM_CONFIG_OVERRIDE="$override" \
+    "$ROOT/bin/fm-brief.sh" style-override some-proj --mode direct-PR >/dev/null 2>&1 \
+    || fail "brief with overridden worker writing style should scaffold"
+  override_brief="$home/data/style-override/brief.md"
+  assert_contains "$(cat "$override_brief")" "$override_style" \
+    "FM_CONFIG_OVERRIDE worker writing style did not reach the brief"
+  assert_not_contains "$(cat "$override_brief")" "Use the configured prose convention." \
+    "brief ignored FM_CONFIG_OVERRIDE in favour of the home config directory"
 
   printf '%s\n' "$style" > "$home/config/worker-writing-style.md"
   reread_instruction='At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.'
