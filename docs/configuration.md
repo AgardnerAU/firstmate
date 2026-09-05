@@ -297,10 +297,13 @@ The full cmux home label also includes a short hash of the resolved `FM_ROOT` pa
 ## Worker writing style
 
 `config/worker-writing-style.md` is an optional local, gitignored file that contains the writing rules for human-facing prose produced by workers.
-`bin/fm-brief.sh` injects its content verbatim under a `Worker writing style` heading in each ship, scout, and secondmate charter scaffold that it generates.
+`bin/fm-brief.sh` injects its content under a `Worker writing style` heading in each ship, scout, and secondmate charter scaffold that it generates, independent of the selected harness or model.
+The rules cover chat, documentation, commit messages, pull request bodies, issue text, and code comments; code, identifiers, and test fixtures are outside this prose scope.
 Secondmate homes provisioned before this support are excluded and take up the rules when next provisioned fresh.
 When the file is absent, the heading and content are both omitted, so generated briefs retain their existing content.
-Secondmate homes inherit the file from the primary through the declared local-material inheritance mechanism, so worker briefs generated in those homes use the same rules.
+Ship and scout briefs retain the rules copied when generated; launch does not refresh them.
+When the file is present at generation, a secondmate charter also instructs the worker to read its own `$FM_HOME/config/worker-writing-style.md` at every intake and use the embedded rules only when that file is absent.
+Secondmate inheritance and mandatory reread framing are owned by [`secondmate-provisioning`](../.agents/skills/secondmate-provisioning/SKILL.md).
 Keep the file focused on writing style rather than general strategy or working preferences; `data/captain.md` remains the private owner of those broader preferences and is not injected into worker briefs.
 
 ## Harness support
@@ -425,7 +428,7 @@ When a running home advances and its loaded instruction surface (`AGENTS.md`, `b
 If that send fails, bootstrap keeps an idempotent retry marker and emits `NUDGE_SECONDMATES:` with the failure reason.
 The same bootstrap run emits `SECONDMATE_LIVENESS:` only when a registered secondmate is skipped or its relaunch fails; already-live and successfully relaunched secondmates are handled silently.
 For a mid-session inherited local-material edit where tracked-file sync is not needed, run `bin/fm-config-push.sh`.
-It uses the same live secondmate discovery and propagation helper as bootstrap, prints each live home's `crew-dispatch.json`, `crew-harness`, `worker-writing-style.md`, `backlog-backend`, `backend`, `herdr-presentation-spaces`, `startup-memory-budget`, `trace-context`, and `data/captain-shared.md` result as `pushed`, `unchanged`, `skipped`, or `error`, and exits non-zero for real propagation errors or config-reread send failures.
+It uses the same live secondmate discovery and propagation helper as bootstrap, prints each live home's result for each declared inherited item as `pushed`, `unchanged`, `skipped`, or `error`, and exits non-zero for real propagation errors or config-reread send failures.
 When an allowlisted config item changes for an already-running local home, it sends the literal-content reread pointer described in [`secondmate-provisioning`](../.agents/skills/secondmate-provisioning/SKILL.md); unchanged allowlisted config sends no pointer unless a previous delivery is pending.
 A changed remote home instead receives one durably recorded marked re-read instruction after the allowlisted bytes have transferred because primary-local generation paths are not meaningful on another host.
 The locked bootstrap inheritance pass uses the same placement-specific behavior; see `secondmate-provisioning` for the single contract owner.

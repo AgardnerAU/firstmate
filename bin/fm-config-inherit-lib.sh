@@ -35,7 +35,8 @@
 # primary; an item the primary does not set is mirrored as absence downstream.
 # After successful config/* changes under an already-running secondmate, callers
 # invoke fm_config_send_reread_nudge so the live agent re-reads exact post-write
-# bytes (spawn/respawn already re-reads at launch and needs no redundant nudge).
+# bytes. Launch supersedes pending nudges; writing-style brief coverage is
+# defined in docs/configuration.md "Worker writing style".
 #
 # Extensible by design: FM_INHERITABLE_CONFIG is the single declared list of
 # config-dir-relative items the primary propagates. Add an item there and every
@@ -561,8 +562,8 @@ FM_CONFIG_REREAD_MAX_PENDING=16
 FM_CONFIG_REREAD_MAX_QUARANTINE=16
 FM_CONFIG_INHERIT_LOCK_REL="state/.fm-inherited-config.lock"
 
-# Framing lines for the config-reread instruction. Defaults/rules only - never
-# an enforcement claim, and never a parsed summary of file contents.
+# Framing follows the mandatory-item set above; other items retain discretion.
+# Never substitute a parsed summary for file contents.
 FM_CONFIG_REREAD_FRAMING='These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.'
 FM_CONFIG_REREAD_MANDATORY_FRAMING='This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.'
 
