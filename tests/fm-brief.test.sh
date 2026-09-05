@@ -221,6 +221,46 @@ test_ship_modes_generate_clean_briefs() {
   pass "fm-brief.sh: no-mistakes/direct-PR/local-only briefs generate cleanly"
 }
 
+test_worker_writing_style_is_optional_and_reaches_every_scaffold() {
+  local home style baseline styled kind id brief
+  home="$TMP_ROOT/writing-style-home"
+  mkdir -p "$home/data" "$home/config"
+  style='Use the configured prose convention.
+Keep this exact second line.'
+
+  FM_HOME="$home" "$ROOT/bin/fm-brief.sh" style-absent some-proj --mode direct-PR >/dev/null 2>&1 \
+    || fail "brief without worker writing style should scaffold"
+  baseline="$home/data/style-absent/brief.md"
+  assert_no_grep "# Worker writing style" "$baseline" \
+    "absent worker-writing-style file emitted a heading"
+  assert_no_grep "Use the configured prose convention." "$baseline" \
+    "absent worker-writing-style file changed brief content"
+
+  printf '%s\n' "$style" > "$home/config/worker-writing-style.md"
+  for kind in ship scout secondmate; do
+    id="style-$kind"
+    case "$kind" in
+      ship)
+        FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode direct-PR >/dev/null 2>&1
+        ;;
+      scout)
+        FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --scout >/dev/null 2>&1
+        ;;
+      secondmate)
+        FM_HOME="$home" FM_SECONDMATE_CHARTER='writing-style charter' \
+          "$ROOT/bin/fm-brief.sh" "$id" --secondmate --no-projects >/dev/null 2>&1
+        ;;
+    esac
+    brief="$home/data/$id/brief.md"
+    styled=$(awk '/^# Worker writing style$/ { capture=1; next } capture && /^$/ { exit } capture { print }' "$brief")
+    [ "$styled" = "$style" ] \
+      || fail "$kind scaffold did not inject worker-writing-style content verbatim"
+    [ "$(grep -c '^# Worker writing style$' "$brief")" = 1 ] \
+      || fail "$kind scaffold did not emit exactly one worker-writing-style heading"
+  done
+  pass "fm-brief.sh: optional worker writing style reaches ship, scout, and secondmate scaffolds"
+}
+
 # A ship task's delivery mode is firstmate's per-task decision, so a missing or
 # unusable value must stop the scaffold instead of silently defaulting. The
 # no-mistakes-prod-only row is the conditional registry policy: it is never a task
@@ -850,6 +890,7 @@ test_script_parses
 test_no_heredoc_in_command_substitution
 test_help_includes_entire_header
 test_ship_modes_generate_clean_briefs
+test_worker_writing_style_is_optional_and_reaches_every_scaffold
 test_ship_mode_is_required_and_closed_set
 test_ship_mode_is_explicit_not_registry
 test_delivery_flags_are_refused_where_they_do_not_apply
