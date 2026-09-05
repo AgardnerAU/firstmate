@@ -1767,6 +1767,10 @@ test_config_reread_per_home_changed_sets_and_exact_bytes() {
   # (allowlisted config items were missing/stale and therefore pushed).
   assert_grep "These inherited config files changed" "$instr_a" "alpha framing missing"
   assert_grep "defaults/rules" "$instr_a" "alpha must preserve agent judgment framing"
+  assert_contains "$(cat "$instr_a")" "$FM_CONFIG_REREAD_MANDATORY_FRAMING" \
+    "worker writing style must receive mandatory reread framing"
+  assert_contains "$(cat "$instr_a")" "$FM_CONFIG_REREAD_FRAMING" \
+    "ordinary inherited config must retain defaults-and-judgment framing"
   assert_contains "$(cat "$instr_a")" "config/crew-dispatch.json" "alpha missing dispatch path"
   assert_contains "$(cat "$instr_a")" "config/crew-harness" "alpha missing harness path"
   assert_contains "$(cat "$instr_a")" "config/worker-writing-style.md" "alpha missing writing-style path"

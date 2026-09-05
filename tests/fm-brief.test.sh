@@ -222,7 +222,7 @@ test_ship_modes_generate_clean_briefs() {
 }
 
 test_worker_writing_style_is_optional_and_reaches_every_scaffold() {
-  local home style baseline styled kind id brief
+  local home style baseline styled kind id brief reread_instruction
   home="$TMP_ROOT/writing-style-home"
   mkdir -p "$home/data" "$home/config"
   style='Use the configured prose convention.
@@ -237,6 +237,7 @@ Keep this exact second line.'
     "absent worker-writing-style file changed brief content"
 
   printf '%s\n' "$style" > "$home/config/worker-writing-style.md"
+  reread_instruction="At every intake, read \`$home/config/worker-writing-style.md\` and apply its current contents. If the file is absent, use the embedded rules above as the fallback."
   for kind in ship scout secondmate; do
     id="style-$kind"
     case "$kind" in
@@ -257,8 +258,15 @@ Keep this exact second line.'
       || fail "$kind scaffold did not inject worker-writing-style content verbatim"
     [ "$(grep -c '^# Worker writing style$' "$brief")" = 1 ] \
       || fail "$kind scaffold did not emit exactly one worker-writing-style heading"
+    if [ "$kind" = secondmate ]; then
+      assert_contains "$(cat "$brief")" "$reread_instruction" \
+        "secondmate charter did not require the current writing style at every intake"
+    else
+      assert_not_contains "$(cat "$brief")" "At every intake, read" \
+        "$kind scaffold received the secondmate-only reread instruction"
+    fi
   done
-  pass "fm-brief.sh: optional worker writing style reaches ship, scout, and secondmate scaffolds"
+  pass "fm-brief.sh: writing style reaches every scaffold and secondmates reread it at intake"
 }
 
 # A ship task's delivery mode is firstmate's per-task decision, so a missing or

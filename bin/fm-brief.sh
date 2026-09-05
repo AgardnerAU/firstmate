@@ -219,6 +219,11 @@ if [ -f "$WRITING_STYLE_FILE" ]; then
 # Worker writing style
 $WRITING_STYLE_CONTENT
 EOF
+  if [ "$KIND" = secondmate ]; then
+    WRITING_STYLE_SECTION="$WRITING_STYLE_SECTION
+
+At every intake, read \`$WRITING_STYLE_FILE\` and apply its current contents. If the file is absent, use the embedded rules above as the fallback."
+  fi
   WRITING_STYLE_SECTION=${WRITING_STYLE_SECTION%$'\n'}
 fi
 
