@@ -1,0 +1,38 @@
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/crew-dispatch.json
+-----BEGIN config/crew-dispatch.json-----
+{
+  "default": {
+    "harness": "grok",
+    "model": "grok-4.5"
+  },
+  "rules": [
+    {"when": "news", "use": {"harness": "grok"}}
+  ]
+}-----END config/crew-dispatch.json-----
+
+config/crew-harness
+-----BEGIN config/crew-harness-----
+codex
+-----END config/crew-harness-----
+
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+Use the primary writing style.
+Preserve this exact second line.
+-----END config/worker-writing-style.md-----
+
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/backlog-backend
+-----BEGIN config/backlog-backend-----
+manual
+-----END config/backlog-backend-----
+
+config/backend
+-----BEGIN config/backend-----
+tmux
+-----END config/backend-----
