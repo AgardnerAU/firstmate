@@ -1,0 +1,50 @@
+Published-release CLI demonstration
+Real checker, registration and watcher; fixture installed commands and HTTP transport.
+No installed tools are updated.
+
+$ bin/fm-tool-update-check.sh arm
+armed: state/tool-updates.check.sh
+exit: 0
+
+$ bin/fm-watch-checkpoint.sh --seconds 10
+check: /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M1V653KMSHJHHNG16Z05HT41/.release-demo-np6f6mxs/state/tool-updates.check.sh: tool updates: herdr update available: installed 0.8.0, published 0.8.2 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.2.4, published 0.2.5 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.1.47, published 0.1.49 at https://registry.npmjs.org/gnhf/latest
+exit: 0
+
+Persisted report state:
+fm-tool-updates-v1
+epoch=1788693348
+reported=herdr update available: installed 0.8.0, published 0.8.2 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.2.4, published 0.2.5 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.1.47, published 0.1.49 at https://registry.npmjs.org/gnhf/latest
+
+
+$ bin/fm-tool-update-check.sh check
+(no stdout)
+exit: 0
+
+Installed-version fixtures now equal the published versions.
+
+$ bin/fm-tool-update-check.sh check
+(no stdout)
+exit: 0
+
+$ bin/fm-tool-update-check.sh disarm
+disarmed: state/tool-updates.check.sh
+exit: 0
+
+$ bin/fm-tool-update-check.sh arm
+(no stdout)
+fm-tool-update-check: tool tasks-axi published.package must be an npm package name (/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M1V653KMSHJHHNG16Z05HT41/.release-demo-np6f6mxs/config/watched-tools.json)
+exit: 1
+
+HTTP transport requests:
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://api.github.com/repos/herdrdev/herdr/releases/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/tasks-axi/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/gnhf/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://api.github.com/repos/herdrdev/herdr/releases/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/tasks-axi/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/gnhf/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://api.github.com/repos/herdrdev/herdr/releases/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/tasks-axi/latest
+-q --fail --silent --show-error --proto =https --connect-timeout 5 --max-time 5 --header Accept: application/json --url https://registry.npmjs.org/gnhf/latest
+
+
+Verified: all three releases reached a watcher wake; repeated reports and current versions were silent; malformed registry refused arming.
