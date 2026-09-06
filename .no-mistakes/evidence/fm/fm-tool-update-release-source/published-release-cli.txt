@@ -1,0 +1,38 @@
+Published-release CLI verification with live public endpoints.
+Installed commands are isolated fixtures at 0.0.0; each accepts only --version.
+No installed host tool is updated. HTTP transport and release parsing are real.
+
+$ bin/fm-tool-update-check.sh arm
+armed: state/tool-updates.check.sh
+
+(no stderr)
+exit: 0
+
+$ state/tool-updates.check.sh (registered poll shim)
+tool updates: herdr update available: installed 0.0.0, published 0.8.2 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.0.0, published 0.2.5 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.0.0, published 0.1.49 at https://registry.npmjs.org/gnhf/latest
+
+(no stderr)
+exit: 0
+
+Persisted report state/.tool-updates:
+fm-tool-updates-v1
+epoch=1788695590
+reported=herdr update available: installed 0.0.0, published 0.8.2 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.0.0, published 0.2.5 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.0.0, published 0.1.49 at https://registry.npmjs.org/gnhf/latest
+
+$ state/tool-updates.check.sh (repeat inside cadence)
+(no stdout)
+(no stderr)
+exit: 0
+
+Installed command calls:
+herdr --version
+tasks-axi --version
+gnhf --version
+
+$ bin/fm-tool-update-check.sh disarm
+disarmed: state/tool-updates.check.sh
+
+(no stderr)
+exit: 0
+
+Disarm removed the shim, trust binding and report. No update/install command was invoked.
