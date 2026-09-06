@@ -1320,7 +1320,7 @@ This section is the single owner of the canonical schema.
 
 **Entry fields and probe behavior**
 
-- Each entry needs a unique non-empty `name` and at least one probe: `command`, `git`, or `published`.
+- Each entry needs a unique non-empty `name` and at least one of `command` or `git`; an entry may carry both.
 - A `published` probe also requires `command` to supply the installed version; it can accompany `git` and an announcement on the same entry.
 - A `command` entry gives the `PATH` comparison above, and adding `announce_pattern` also reads the tool's own update announcement, which is how a tool that already reports its own updates is read rather than reimplemented.
 - The announcement counts as `update available` only when the version it names is newer than the newest installed copy found; a version already installed is reported only as `update not in effect`, so one completed install does not report both in the same sweep. An announcement naming no readable version is reported as an available update as before.
@@ -1347,7 +1347,7 @@ The HTTP reads ignore curl configuration and send no credentials, follow no redi
 
 All probe kinds are read-only and bounded, and a probe that cannot answer is reported as a check failure rather than assumed current.
 Malformed configuration stops `arm` with a diagnostic.
-During a sweep, a malformed tool entry is reported as that tool's check failure while the other entries are checked; an unreadable registry or invalid top-level structure is reported as a registry failure.
+During a sweep, malformed configuration is reported as a registry failure and no tools are checked.
 See [`docs/examples/watched-tools.json`](examples/watched-tools.json) for a starting point to copy into local `config/watched-tools.json`.
 
 **Arm, edit, and disarm**
