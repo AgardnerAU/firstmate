@@ -17,8 +17,8 @@
 #        fm-brief.sh <task-id> --secondmate {<project>...|--no-projects}
 #   --scout writes the scout contract instead: the deliverable is a report at
 #   data/<task-id>/report.md (no branch, no push, no PR) and the worktree is scratch.
-#   Like every ship mode's block in bin/fm-dod-lib.sh, its Definition of done opens
-#   with the one "Terminal condition:" line naming the single legal `done:` form.
+#   Its Definition of done opens with the "Terminal condition:" line;
+#   bin/fm-dod-lib.sh owns the ship modes' completion contracts.
 #   --secondmate writes a persistent secondmate charter. The project list
 #   is cloned into the secondmate home, while the natural-language scope
 #   tells the main firstmate when to route work there; routine churn stays in its own home;
