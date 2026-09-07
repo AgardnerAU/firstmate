@@ -19,8 +19,8 @@
 #   data/<task-id>/report.md (no branch, no push, no PR) and the worktree is scratch.
 #   It offers the Lavish review loop only when `fm-bootstrap.sh lavish-compatible`
 #   confirms the supported lavish-axi floor; otherwise it asks for a text report.
-#   Like every ship mode's block in bin/fm-dod-lib.sh, its Definition of done opens
-#   with the one "Terminal condition:" line naming the single legal `done:` form.
+#   Its Definition of done opens with the "Terminal condition:" line;
+#   bin/fm-dod-lib.sh owns the ship modes' completion contracts.
 #   --secondmate writes a persistent secondmate charter. The project list
 #   is cloned into the secondmate home, while the natural-language scope
 #   tells the main firstmate when to route work there; routine churn stays in its own home;

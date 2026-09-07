@@ -10,11 +10,10 @@
 # mode is refused rather than silently rendered as the pipeline contract.
 # The block opens with the fixed machine-readable "Delivery contract: mode=<mode>"
 # line that bin/fm-spawn.sh checks a ship brief against, then one "Terminal
-# condition:" line naming the single legal `done:` form for that mode. That line
-# leads the block because a worker that has finished coding reaches for "done":
-# three of three no-mistakes workers once reported done on a local commit with
-# nothing pushed, which the old opening ("complete only when committed", "append
-# `done: {summary}`") licensed. `done:` is terminal to every consumer -
+# condition:" line naming the single legal `done:` form for that mode.
+# Keep the terminal condition before the implementation handoff so a local
+# commit cannot be mistaken for delivery (tests/fm-brief.test.sh).
+# `done:` is terminal to status consumers -
 # bin/fm-inactive-reconcile.sh republishes it to a secondmate's parent channel as
 # a delivered outcome - so a no-mistakes implementation commit hands off with
 # nonterminal `working:` instead. That handoff still reaches firstmate:
