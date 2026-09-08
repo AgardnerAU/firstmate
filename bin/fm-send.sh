@@ -665,12 +665,7 @@ if [ -n "$RESOLVE_KEYS" ]; then
       fi
       resolve_quoted_message=$(fm_send_quoted_message "$@")
       printf '  resend, your message preserved:\n'
-      # One open key needs no choosing, so offer it filled in; several stay a
-      # placeholder rather than picking a decision on the operator's behalf.
-      if [ "$(printf '%s\n' "$resolve_open_keys" | grep -c .)" = 1 ]; then
-        printf '    %s %s --resolve-key %s %s\n' \
-          "$0" "$RESOLVE_TASK_ID" "$resolve_open_keys" "$resolve_quoted_message"
-      elif [ -n "$resolve_open_keys" ]; then
+      if [ -n "$resolve_open_keys" ]; then
         printf '    %s %s --resolve-key <key> %s\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
       fi
       printf '    %s %s %s   # deliver without closing anything\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"

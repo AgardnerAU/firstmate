@@ -273,6 +273,12 @@ test_not_open_key_refuses_before_send() {
   [ "$rc" -ne 0 ] || fail "a not-open key should refuse"
   assert_contains "$(cat "$err")" "--resolve-key 'mistyped'" "the refusal should name the bad key"
   assert_contains "$(cat "$err")" "nothing was sent" "the refusal should state nothing was sent"
+  assert_contains "$(cat "$err")" "open on t4: real-key" \
+    "the refusal should list the single open key"
+  assert_contains "$(cat "$err")" "t4 --resolve-key <key>" \
+    "a single open key must still require the operator to choose"
+  assert_not_contains "$(cat "$err")" "t4 --resolve-key real-key" \
+    "the resend must not select the unrelated open key"
   [ ! -s "$log" ] || fail "a refused answer still typed text: $(cat "$log")"
   [ ! -d "$home/state/t4.inbox" ] || fail "a refused answer still enqueued an inbox record"
   if grep -F 'resolved' "$home/state/t4.status" >/dev/null; then
@@ -791,6 +797,9 @@ second line"
     "the refusal should diagnose a key that is prose inside an open decision's note"
   assert_contains "$(cat "$err")" "open on t11:" \
     "the refusal should name the keys that ARE open, so the next attempt is right"
+
+  assert_contains "$(cat "$err")" "t11 --resolve-key <key>" \
+    "several open keys must require the operator to choose"
 
   # The message is preserved only if the printed resend command actually works.
   resend=$(grep -F 'deliver without closing anything' "$err" \
