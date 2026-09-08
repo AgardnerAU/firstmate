@@ -30,6 +30,10 @@
 #      (the operator path the OPEN DECISIONS hint names), while an unrelated
 #      writer's answered: note still cannot hijack or clear that key. A reserved
 #      key this send cannot close refuses before anything is sent.
+#   9. The listing and this flag agree: whatever key an OPEN DECISIONS entry
+#      shows closes that entry, including a blocked: line whose note trails a
+#      "[key=...]" token the key grammar reads as prose. A key nothing owns
+#      still refuses, and that refusal hands the operator's message back intact.
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -719,8 +723,97 @@ test_remote_reserved_pending_reply_key_closes_locally() {
   pass "fm-send --resolve-key: a remote secondmate reserved-key close is the same local ledger append"
 }
 
+# The reported failure this pair exists for: a worker trailed its key AFTER the
+# summary ("blocked: ... [key=no-mistakes-start]"), where the key grammar reads
+# it as prose, so the line opened "default". The listing then suppressed
+# "[key=default]" and printed the note verbatim, leaving the decoy token as the
+# only key a reader could see - and the command the listing itself advises
+# refused, discarding the steer with it. The invariant both halves restore: the
+# key an OPEN DECISIONS entry SHOWS is the key that closes it.
+test_listed_key_closes_a_trailing_token_blocker() {
+  local dir fb log home rc out entry key
+  dir="$TMP_ROOT/trailing-token"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"
+  home=$(setup_home trailing-token)
+  fm_write_meta "$home/state/t10.meta" "window=sess:fm-t10" "kind=ship"
+  printf 'blocked: axi run hung without registering a branch run [key=no-mistakes-start]\n' \
+    > "$home/state/t10.status"
+
+  out=$(drain_out "$home")
+  entry=$(printf '%s\n' "$out" | grep '^t10 ') \
+    || fail "the blocked line produced no OPEN DECISIONS entry: $out"
+
+  # Read the key exactly as an operator does: the first [key=...] on the entry.
+  key=${entry#*[key=}
+  key=${key%%]*}
+  [ "$key" != "$entry" ] \
+    || fail "the listed entry states no key at all, so the advised command cannot be composed: $entry"
+
+  run_send "$fb" "$home" "$log" t10 --resolve-key "$key" "restart the run"; rc=$?
+  expect_code 0 "$rc" \
+    "the key the listing showed ('$key') must close the entry the listing showed it for"
+  grep -qF "restart the run" "$home/state/t10.inbox/001.msg" \
+    || fail "the answer never reached the worker's durable inbox record"
+  grep -F "resolved [key=$key]: answered: restart the run" "$home/state/t10.status" >/dev/null \
+    || fail "the closing resolved line is missing:"$'\n'"$(cat "$home/state/t10.status")"
+
+  out=$(drain_out "$home")
+  if printf '%s' "$out" | grep -F 'OPEN DECISIONS' >/dev/null; then
+    fail "the answered blocker still lists as open: $out"
+  fi
+  pass "fm-send --resolve-key: the key an OPEN DECISIONS entry shows closes that entry"
+}
+
+# The compound failure: the refusal must stay a refusal (delivering an answer
+# this send cannot close would orphan the decision behind it), so the message
+# must survive the refusal instead. Proven by running the resend command the
+# refusal itself prints and asserting the original text arrives byte-intact -
+# quotes, dollars and newline included.
+test_unresolvable_key_refusal_preserves_the_message() {
+  local dir fb log home err rc msg resend
+  dir="$TMP_ROOT/preserved"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"; err="$dir/send.err"
+  home=$(setup_home preserved)
+  fm_write_meta "$home/state/t11.meta" "window=sess:fm-t11" "kind=ship"
+  printf 'blocked: axi run hung [key=decoy-token]\nneeds-decision [key=alpha]: A or B\n' \
+    > "$home/state/t11.status"
+  msg="don't restart it; \$RUN is still live
+second line"
+
+  : > "$log"
+  env PATH="$fb:$PATH" \
+    FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    "$SEND" t11 --resolve-key decoy-token "$msg" >/dev/null 2>"$err"; rc=$?
+  [ "$rc" -ne 0 ] || fail "a key that is only mentioned inside a note should refuse"
+  [ ! -d "$home/state/t11.inbox" ] || fail "a refused answer still enqueued an inbox record"
+  assert_contains "$(cat "$err")" "nothing was sent" "the refusal should state nothing was sent"
+  assert_contains "$(cat "$err")" "sits INSIDE the note" \
+    "the refusal should diagnose a key that is prose inside an open decision's note"
+  assert_contains "$(cat "$err")" "open on t11:" \
+    "the refusal should name the keys that ARE open, so the next attempt is right"
+
+  # The message is preserved only if the printed resend command actually works.
+  resend=$(grep -F 'deliver without closing anything' "$err" \
+    | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//') \
+    || fail "the refusal printed no resend command: $(cat "$err")"
+  env PATH="$fb:$PATH" \
+    FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    bash -c "$resend" >/dev/null 2>&1 \
+    || fail "the resend command the refusal printed does not run: $resend"
+  grep -qF "don't restart it; \$RUN is still live" "$home/state/t11.inbox/001.msg" \
+    || fail "the preserved message lost bytes on resend: $(cat "$home/state/t11.inbox/001.msg")"
+  grep -qF 'second line' "$home/state/t11.inbox/001.msg" \
+    || fail "the preserved message lost its second line: $(cat "$home/state/t11.inbox/001.msg")"
+  if grep -F 'resolved' "$home/state/t11.status" >/dev/null; then
+    fail "the plain resend closed a decision it was never asked to close: $(cat "$home/state/t11.status")"
+  fi
+  pass "fm-send --resolve-key: an unresolvable key refuses without swallowing the message"
+}
+
 test_answer_send_closes_open_decision
 test_answer_close_is_self_announced
+test_listed_key_closes_a_trailing_token_blocker
+test_unresolvable_key_refusal_preserves_the_message
 test_colon_first_key_position_is_answerable
 test_answer_starts_work_never_orphans
 test_routine_steer_never_closes

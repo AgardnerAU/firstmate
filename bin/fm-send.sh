@@ -160,7 +160,13 @@
 # transition and is never written for those keys. If this send cannot produce
 # a note the guard will accept, or the structural key would be lost to the
 # status-line cap, it refuses before sending and names the cause rather than
-# exiting 0 on a silent no-op. After a delivered close it also
+# exiting 0 on a silent no-op. A key nothing owns refuses the same way, for the
+# same reason: delivering an answer this send cannot close would leave the
+# decision open behind an answer the operator believes settled it. That refusal
+# never costs the message - it lists the keys actually open on the task, calls
+# out a requested key that is only MENTIONED inside an open decision's note
+# (prose under the key grammar, not a stated key), and prints the resend
+# commands with the message quoted back verbatim. After a delivered close it also
 # re-folds and fails loudly if the named key is still open. On the inbox plane
 # the close happens at ENQUEUE time, because enqueue is durable delivery to
 # the task's record; the worker reading the answer late is covered by the
@@ -556,6 +562,36 @@ fm_send_hold_resolved_id() {  # <task-id> <decision-key>
   return 1
 }
 
+# The still-open keys in a folded "<key>\t<verb>\t<note>" open set, one per line.
+fm_send_open_set_keys() {  # <open-set>
+  [ -n "$1" ] || return 0
+  printf '%s\n' "$1" | cut -f1
+}
+
+# The open decision whose NOTE merely MENTIONS <requested-key> as prose, if any.
+# The key grammar (bin/fm-classify-lib.sh) states a key before the colon or at
+# the head of the note; a token trailing a summary is prose. A worker that
+# trails "[key=X]" therefore opens a DIFFERENT key while leaving X as the only
+# bracket token a reader sees, so X is the key an operator types and the one
+# nothing owns. Prints the key that line actually opened.
+fm_send_decoy_key_owner() {  # <open-set> <requested-key>
+  local key rest
+  [ -n "$1" ] || return 1
+  while IFS=$'\t' read -r key rest; do
+    [ -n "$key" ] || continue
+    case "$rest" in *"[key=$2]"*) printf '%s' "$key"; return 0 ;; esac
+  done <<EOF
+$1
+EOF
+  return 1
+}
+
+# The message this send was carrying, quoted for a copy-paste resend, so a
+# refused key never costs the operator the text they typed.
+fm_send_quoted_message() {  # <text...>
+  printf '%q' "$*"
+}
+
 # Close-note body for --resolve-key. Ordinary keys keep answered: <excerpt>.
 # A pending-reply-* key uses the owning library's vocabulary so the reserved-key
 # fold actually closes it (fm_pending_reply_close_note_for_key).
@@ -607,7 +643,38 @@ if [ -n "$RESOLVE_KEYS" ]; then
       RESOLVE_HOLD_KEYS="${RESOLVE_HOLD_KEYS}${RESOLVE_HOLD_KEYS:+ }$resolved_hold_id"
       continue
     fi
-    echo "error: --resolve-key '$k': no open decision or blocker with that key in $RESOLVE_STATUS_FILE, and no captain-held task '$k' or '$RESOLVE_TASK_ID-decision-$k' still open (already closed or mistyped). Re-check the OPEN DECISIONS listing, then resend without that key or with the right one; nothing was sent." >&2
+    # Nothing owns this key, so refuse rather than deliver. Sending the answer
+    # anyway would leave the decision open behind an answer the operator
+    # believes settled it - the orphaned decision --resolve-key exists to
+    # prevent - so the send keeps ONE meaning: answered and closed, or neither.
+    # The cost of refusing is paid here instead of by the operator: name what is
+    # actually open, diagnose the note-token shape that most often fools a
+    # reader of the OPEN DECISIONS listing, and hand the message back quoted so
+    # a refused key never costs the text they typed.
+    {
+      echo "error: --resolve-key '$k': no open decision or blocker with that key in $RESOLVE_STATUS_FILE, and no captain-held task '$k' or '$RESOLVE_TASK_ID-decision-$k' still open (already closed or mistyped); nothing was sent."
+      if decoy_owner=$(fm_send_decoy_key_owner "$resolve_open_set" "$k"); then
+        printf "  '%s' sits INSIDE the note of the decision keyed '%s', where the key grammar reads it as prose. A key is stated before the colon or at the head of the note, so that line opened '%s'.\n" \
+          "$k" "$decoy_owner" "$decoy_owner"
+      fi
+      resolve_open_keys=$(fm_send_open_set_keys "$resolve_open_set")
+      if [ -n "$resolve_open_keys" ]; then
+        printf '  open on %s: %s\n' "$RESOLVE_TASK_ID" "$(printf '%s' "$resolve_open_keys" | tr '\n' ' ')"
+      else
+        printf '  no decision or blocker is open on %s.\n' "$RESOLVE_TASK_ID"
+      fi
+      resolve_quoted_message=$(fm_send_quoted_message "$@")
+      printf '  resend, your message preserved:\n'
+      # One open key needs no choosing, so offer it filled in; several stay a
+      # placeholder rather than picking a decision on the operator's behalf.
+      if [ "$(printf '%s\n' "$resolve_open_keys" | grep -c .)" = 1 ]; then
+        printf '    %s %s --resolve-key %s %s\n' \
+          "$0" "$RESOLVE_TASK_ID" "$resolve_open_keys" "$resolve_quoted_message"
+      elif [ -n "$resolve_open_keys" ]; then
+        printf '    %s %s --resolve-key <key> %s\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
+      fi
+      printf '    %s %s %s   # deliver without closing anything\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
+    } >&2
     exit 1
   done
   # Refuse before send when a named status-log key cannot actually close: a
