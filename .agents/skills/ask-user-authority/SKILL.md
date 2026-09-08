@@ -5,6 +5,7 @@ description: >-
   Use before deciding any ask-user finding.
   This skill is the single owner of finding-decision policy: firstmate always applies judgment, decides findings that are unambiguous toward accepted intent, and escalates only genuinely ambiguous, expanding, or destructive ones.
   Finding authority is this skill's criteria, not the project's yolo posture.
+  It also owns the rule that a finding reporting a configured check could not run is an environment fault, never answered by approval.
 user-invocable: false
 metadata:
   internal: true
@@ -19,6 +20,23 @@ Firstmate always applies this judgment, decides any finding that is unambiguous 
 
 The implementation worker never decides or answers its own ask-user finding.
 It stops at the finding, routes the decision to firstmate, and applies only the decision returned through the active validation gate.
+
+## A check that could not run is not a finding
+
+A finding reporting that a configured check COULD NOT RUN - the tool was missing, the command was not found, the worktree had no installed dependencies - is an environment fault, not a code finding.
+It means nothing was checked.
+Never accept, approve, waive, or defer it: doing so records a check that never ran as a check that passed, and the pipeline's own automatic fix commits then ship unexamined by the very check meant to cover them.
+On 2026-09-08 that exact warning was raised twice in one day, and running the checks for real on the first of them found the formatter rejecting three files the pipeline's own fix commits had rewritten.
+
+Expect it rather than treating it as exceptional: the pipeline validates in a worktree it creates for each run, from its own mirror of the repository, so no project dependency is ever installed there to begin with.
+
+Firstmate decides this itself and never escalates it, because nothing about it is a product or architecture call.
+The only correct answer is Fix, framed as environment repair: install the project's dependencies from its frozen lockfile, run the configured checks for real over the changed files, fix whatever they actually report, and answer the gate with that real result.
+An honest result may be that the checks ran and cover none of the changed paths; that is a valid answer and a silent could-not-run is not.
+Repair the copy the gate is actually validating; copying the changed files into some other copy that has the tools diagnoses the fault but leaves the gate's own copy unchecked.
+
+`bin/fm-crew-state.sh` names this case in its parked-gate detail, but that classifier reads agent-authored prose and can miss an unanticipated phrasing.
+Apply this rule whenever a finding says a check did not actually run, whether or not the state line flagged it.
 
 ## Decide
 

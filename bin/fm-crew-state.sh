@@ -45,7 +45,9 @@
 #      round never reads as an older failed run (rule owned by
 #      fm_nm_runs_status_for_worktree in bin/fm-nm-run-lib.sh).
 #      The run-step is AUTHORITATIVE: running/fixing -> working, ci -> working,
-#      awaiting_approval/fix_review -> parked (with gate findings), terminal
+#      awaiting_approval/fix_review -> parked (with gate findings, and with a
+#      finding that reports a configured check could not run named as the
+#      environment fault it is rather than an approvable decision), terminal
 #      passed/checks-passed -> done, failed/cancelled -> failed. EXCEPT: while
 #      the active step is ci, `axi status` alone cannot tell "still waiting on
 #      checks" from "checks green, waiting on merge" (see nm_ci_checks_state) -
@@ -661,6 +663,17 @@ if [ "$HAVE_RUN" = 1 ]; then
       [ -n "$fcount" ] && RUN_DETAIL="$RUN_DETAIL: $fcount finding(s)"
       if printf '%s\n' "$RUN_OUT" | grep -q 'ask-user'; then
         RUN_DETAIL="$RUN_DETAIL (ask-user: authority decision)"
+      fi
+      # A gate finding that reports a configured check COULD NOT RUN is not a
+      # decision at all - it is an environment fault, and it means nothing was
+      # checked. Left as a plain ask-user finding it reads exactly like a product
+      # call and gets approved, recording an unrun check as a pass. Name it here,
+      # in the one line firstmate reads every heartbeat, so the difference is not
+      # something a tired reader has to notice in the finding prose.
+      # fm_nm_unrunnable_check_finding is the ONE detector; decision policy is
+      # owned by .agents/skills/ask-user-authority/SKILL.md.
+      if fm_nm_unrunnable_check_finding "$RUN_OUT" >/dev/null; then
+        RUN_DETAIL="$RUN_DETAIL (environment fault: a configured check could not run - NOTHING WAS CHECKED; not approvable)"
       fi
     else
       case "$status" in
