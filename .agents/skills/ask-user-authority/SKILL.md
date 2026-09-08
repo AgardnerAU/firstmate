@@ -25,10 +25,11 @@ It stops at the finding, routes the decision to firstmate, and applies only the 
 
 A finding reporting that a configured check COULD NOT RUN - the tool was missing, the command was not found, the worktree had no installed dependencies - is an environment fault, not a code finding.
 A configured check did not run, so validation is incomplete.
-Never accept, approve, waive, or defer it: doing so records a check that never ran as a check that passed, and the pipeline's own automatic fix commits then ship unexamined by the very check meant to cover them.
-On 2026-09-08 that exact warning was raised twice in one day, and running the checks for real on the first of them found the formatter rejecting three files the pipeline's own fix commits had rewritten.
+Never accept, approve, waive, or defer it: doing so permits delivery without the configured check, including coverage of the pipeline's own automatic fix commits.
+Missing project dependencies can also disable a pre-commit formatting hook that needs those same dependencies, so that hook is not an independent safety net.
 
-Expect it rather than treating it as exceptional: the pipeline validates in a worktree it creates for each run, from its own mirror of the repository, so no project dependency is ever installed there to begin with.
+Do not assume that the gate's worktree has dependencies installed merely because the worker's copy does.
+The finding must report a failure to execute validation tooling or prepare its environment; a product failure such as "Administrators cannot run exports" does not establish that a check failed to run.
 
 Firstmate decides this itself and never escalates it, because nothing about it is a product or architecture call.
 The only correct answer is Fix, framed as environment repair: install the project's dependencies from its frozen lockfile, run the configured checks for real over the changed files, fix whatever they actually report, and answer the gate with that real result.
@@ -37,6 +38,7 @@ Repair the copy the gate is actually validating; copying the changed files into 
 
 `bin/fm-crew-state.sh` names this case in its parked-gate detail, but that classifier reads agent-authored prose and can miss an unanticipated phrasing.
 Apply this rule whenever a finding says a check did not actually run, whether or not the state line flagged it.
+[`tests/fm-crew-state.test.sh`](../../../tests/fm-crew-state.test.sh) covers the recorded missing-dependency findings, mixed findings, and product failures that must not be labelled as environment faults.
 
 ## Decide
 
