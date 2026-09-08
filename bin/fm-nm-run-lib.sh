@@ -102,25 +102,42 @@ fm_nm_branch_sync_state() {  # <toon-output>
   fm_nm_strip_quotes "$s"
 }
 
-# Rows of the gate's `findings[N]{...}:` table in captured `axi status` TOON $1,
-# one row per line and without the header. A row is a line indented deeper than
-# the header; the first line at or left of the header's indent ends the table.
-fm_nm_finding_rows() {  # <toon-output>
+# Descriptions from the gate findings table in captured `axi status` TOON $1.
+# Read the declared column order and respect quoted commas and escaped quotes,
+# so finding IDs and file paths cannot supply classification context.
+fm_nm_finding_descriptions() {  # <toon-output>
   printf '%s\n' "$1" | awk '
-    /^[[:space:]]*findings\[[0-9]+\]\{/ { hdr = match($0, /[^ \t]/) - 1; inblk = 1; next }
+    /^[[:space:]]*findings\[[0-9]+\]\{/ {
+      hdr = match($0, /[^ \t]/) - 1; inblk = 1; description = 0
+      fields = $0; sub(/^[^{]*\{/, "", fields); sub(/\}.*/, "", fields)
+      count = split(fields, names, ",")
+      for (i = 1; i <= count; i++) if (names[i] == "description") description = i
+      next
+    }
     inblk {
       if ($0 ~ /^[[:space:]]*$/) { inblk = 0; next }
       if (match($0, /[^ \t]/) - 1 <= hdr) { inblk = 0; next }
-      print
+      field = 1; quoted = 0; value = ""
+      for (i = 1; i <= length($0); i++) {
+        c = substr($0, i, 1)
+        if (quoted && c == "\\") { c = substr($0, ++i, 1) }
+        else if (c == "\"") { quoted = !quoted; continue }
+        else if (!quoted && c == ",") {
+          if (field == description) break
+          field++; continue
+        }
+        if (field == description) value = value c
+      }
+      if (description && field == description) print value
     }
   '
 }
 
-# The first finding row in captured `axi status` TOON $1 that reports a
+# The first finding description in captured `axi status` TOON $1 that reports a
 # configured check COULD NOT RUN, printed as evidence; 1 when there is none.
 fm_nm_unrunnable_check_finding() {  # <toon-output>
   local row
-  row=$(fm_nm_finding_rows "$1" |
+  row=$(fm_nm_finding_descriptions "$1" |
     grep -iE '(^|[^[:alnum:]_])(checks?|lint|linter|eslint|prettier|formatter|format|tests?|test runner|vitest|jest|command|tool|toolchain|binary|executable|dependencies|node_modules|install|installed)([^[:alnum:]_]|$)' |
     grep -iE 'could ?n[^ ]{0,3}t (be )?run|could not (be )?run|can ?n[^ ]{0,3}t (be )?run|cannot (be )?run|can not (be )?run|unable to run|did ?n[^ ]{0,3}t run|did not run|was not run|were not run|never ran|not runnable|command not found' | head -1)
   [ -n "$row" ] || return 1

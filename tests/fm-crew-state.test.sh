@@ -2442,6 +2442,48 @@ test_parked_ordinary_finding_is_not_an_environment_fault() {
   pass "an ordinary ask-user finding is not flagged as an environment fault"
 }
 
+test_finding_metadata_does_not_supply_tool_context() {
+  reset_fakes
+  local d; d=$(new_case parked-metadata-not-env)
+  make_repo_on_branch "$d/wt" fm/feat-metadata-env
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-metadata-env.meta" "window=fm:fm-feat-metadata-env" \
+    "worktree=$d/wt" "kind=ship"
+  local row out
+  for row in \
+    'format,warning,b.go,,ask-user,Administrators cannot run exports' \
+    'r1,warning,src/test/exports.go,,ask-user,Administrators cannot run exports' \
+    'install,warning,"src/exports,legacy.go",,ask-user,Administrators cannot run exports' \
+    '"r1,\"test\"",warning,b.go,,ask-user,Administrators cannot run exports' \
+    'r1,warning,b.go,,ask-user,"Administrators cannot run exports, including archived records"'; do
+    FM_FAKE_AXI_STATUS="$(run_parked fm/feat-metadata-env)"
+    FM_FAKE_AXI_STATUS=${FM_FAKE_AXI_STATUS/r2,error,b.go,,ask-user,changes product behavior/$row}
+    out=$(run_crew_state "$d" feat-metadata-env)
+    assert_contains "$out" "ask-user: authority decision" "metadata case lost its decision"
+    assert_not_contains "$out" "environment fault" \
+      "$row: metadata classified a product decision as an environment fault"
+  done
+  pass "finding metadata does not supply tool context"
+
+  # The description column is selected by its header, including when a quoted
+  # metadata field contains commas or escaped quotes before it.
+  local header
+  for header in 'id,severity,file,line,action,description' 'id,description,severity,file,line,action'; do
+    if [ "$header" = 'id,severity,file,line,action,description' ]; then
+      row='"r1,\"legacy\"",warning,"src/a,b.go",,ask-user,"Checks could not run, because dependencies are absent"'
+    else
+      row='"r1,\"legacy\"","Checks could not run, because dependencies are absent",warning,b.go,,ask-user'
+    fi
+    FM_FAKE_AXI_STATUS="$(run_parked fm/feat-metadata-env)"
+    FM_FAKE_AXI_STATUS=${FM_FAKE_AXI_STATUS/id,severity,file,line,action,description/$header}
+    FM_FAKE_AXI_STATUS=${FM_FAKE_AXI_STATUS/r2,error,b.go,,ask-user,changes product behavior/$row}
+    out=$(run_crew_state "$d" feat-metadata-env)
+    assert_contains "$out" "environment fault" "a quoted finding description lost its tool context"
+  done
+  pass "finding descriptions retain tool context with quoted fields and reordered columns"
+}
+
+test_finding_metadata_does_not_supply_tool_context
 test_parked_unrunnable_check_named_as_environment_fault
 test_parked_unrunnable_check_beside_real_finding_still_named
 test_parked_ordinary_finding_is_not_an_environment_fault
