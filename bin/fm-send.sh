@@ -166,7 +166,11 @@
 # never costs the message - it lists the keys actually open on the task, calls
 # out a requested key that is only MENTIONED inside an open decision's note
 # (prose under the key grammar, not a stated key), and prints the resend
-# commands with the message quoted back verbatim. After a delivered close it also
+# commands with the message quoted back verbatim. The keyed resend leaves an
+# explicit <key> placeholder for the operator to replace, even when only one
+# key is open, so an answer cannot be redirected to an unrelated decision.
+# The plain resend delivers the message without closing any decision.
+# After a delivered close it also
 # re-folds and fails loudly if the named key is still open. On the inbox plane
 # the close happens at ENQUEUE time, because enqueue is durable delivery to
 # the task's record; the worker reading the answer late is covered by the
