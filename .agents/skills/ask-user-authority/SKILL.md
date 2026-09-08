@@ -24,7 +24,7 @@ It stops at the finding, routes the decision to firstmate, and applies only the 
 ## A check that could not run is not a finding
 
 A finding reporting that a configured check COULD NOT RUN - the tool was missing, the command was not found, the worktree had no installed dependencies - is an environment fault, not a code finding.
-It means nothing was checked.
+A configured check did not run, so validation is incomplete.
 Never accept, approve, waive, or defer it: doing so records a check that never ran as a check that passed, and the pipeline's own automatic fix commits then ship unexamined by the very check meant to cover them.
 On 2026-09-08 that exact warning was raised twice in one day, and running the checks for real on the first of them found the formatter rejecting three files the pipeline's own fix commits had rewritten.
 

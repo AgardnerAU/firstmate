@@ -664,16 +664,10 @@ if [ "$HAVE_RUN" = 1 ]; then
       if printf '%s\n' "$RUN_OUT" | grep -q 'ask-user'; then
         RUN_DETAIL="$RUN_DETAIL (ask-user: authority decision)"
       fi
-      # A gate finding that reports a configured check COULD NOT RUN is not a
-      # decision at all - it is an environment fault, and it means nothing was
-      # checked. Left as a plain ask-user finding it reads exactly like a product
-      # call and gets approved, recording an unrun check as a pass. Name it here,
-      # in the one line firstmate reads every heartbeat, so the difference is not
-      # something a tired reader has to notice in the finding prose.
       # fm_nm_unrunnable_check_finding is the ONE detector; decision policy is
       # owned by .agents/skills/ask-user-authority/SKILL.md.
       if fm_nm_unrunnable_check_finding "$RUN_OUT" >/dev/null; then
-        RUN_DETAIL="$RUN_DETAIL (environment fault: a configured check could not run - NOTHING WAS CHECKED; not approvable)"
+        RUN_DETAIL="$RUN_DETAIL (environment fault: a configured check did not run - validation is incomplete; not approvable)"
       fi
     else
       case "$status" in

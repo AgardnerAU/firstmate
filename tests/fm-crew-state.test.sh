@@ -2365,14 +2365,10 @@ test_unanchored_unfetched_active_row_does_not_match
 test_unresolved_terminal_row_is_history_not_current
 test_runs_list_continuation_found_when_axi_answers_other_branch
 
-# (c2) An ask-user finding that reports a configured check COULD NOT RUN is an
-# environment fault, not a decision. These pin the deliverable: after a run in a
-# dependency-free worktree, the one line firstmate reads every heartbeat says
-# plainly that nothing was checked and that approval is not an answer. The
-# ordinary-finding case below is what keeps the pair from going vacuous - the
-# detector must stay silent on a real product decision.
 test_parked_unrunnable_check_named_as_environment_fault() {
   local fixture branch id
+  local FM_NM_UNRUNNABLE_CHECK_RE='^$'
+  export FM_NM_UNRUNNABLE_CHECK_RE
   for fixture in run_parked_unrunnable_checks_absent_deps run_parked_unrunnable_checks_command_not_found; do
     reset_fakes
     id="feat-${fixture#run_parked_unrunnable_checks_}"
@@ -2388,8 +2384,10 @@ test_parked_unrunnable_check_named_as_environment_fault() {
     assert_contains "$out" "state: parked" "$fixture: an unrunnable-check gate is still parked"
     assert_contains "$out" "environment fault" \
       "$fixture: a check that could not run was not named as an environment fault"
-    assert_contains "$out" "NOTHING WAS CHECKED" \
-      "$fixture: the state line did not say plainly that nothing was checked"
+    assert_contains "$out" "a configured check did not run - validation is incomplete" \
+      "$fixture: the state line did not report incomplete validation"
+    assert_not_contains "$out" "NOTHING WAS CHECKED" \
+      "$fixture: the state line denied checks that passed"
     assert_contains "$out" "not approvable" \
       "$fixture: the state line left the environment fault answerable by approval"
     if [ "${FM_TEST_EVIDENCE:-0}" = 1 ]; then
@@ -2424,11 +2422,21 @@ test_parked_ordinary_finding_is_not_an_environment_fault() {
   fm_write_meta "$d/state/feat-ordinary-env.meta" "window=fm:fm-feat-ordinary-env" \
     "worktree=$d/wt" "kind=ship"
   printf 'needs-decision: review gate\n' > "$d/state/feat-ordinary-env.status"
-  FM_FAKE_AXI_STATUS="$(run_parked fm/feat-ordinary-env)"
-  local out; out=$(run_crew_state "$d" feat-ordinary-env)
-  assert_contains "$out" "ask-user: authority decision" "an ordinary parked gate lost its decision"
-  assert_not_contains "$out" "environment fault" \
-    "an ordinary product decision was misread as an environment fault"
+  local description out
+  local FM_NM_UNRUNNABLE_CHECK_RE=
+  export FM_NM_UNRUNNABLE_CHECK_RE
+  for description in \
+    "Search is unavailable to administrators" \
+    "Search is not available to administrators" \
+    "The optional plugin is not installed" \
+    "The dependency view omits missing dependencies"; do
+    FM_FAKE_AXI_STATUS="$(run_parked fm/feat-ordinary-env)"
+    FM_FAKE_AXI_STATUS=${FM_FAKE_AXI_STATUS/changes product behavior/$description}
+    out=$(run_crew_state "$d" feat-ordinary-env)
+    assert_contains "$out" "ask-user: authority decision" "an ordinary parked gate lost its decision"
+    assert_not_contains "$out" "environment fault" \
+      "$description: an ordinary product decision was misread as an environment fault"
+  done
   pass "an ordinary ask-user finding is not flagged as an environment fault"
 }
 
