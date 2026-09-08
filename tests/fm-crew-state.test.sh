@@ -2426,6 +2426,8 @@ test_parked_ordinary_finding_is_not_an_environment_fault() {
   local FM_NM_UNRUNNABLE_CHECK_RE=
   export FM_NM_UNRUNNABLE_CHECK_RE
   for description in \
+    "Administrators cannot run exports" \
+    "Contestants cannot run exports" \
     "Search is unavailable to administrators" \
     "Search is not available to administrators" \
     "The optional plugin is not installed" \
