@@ -1,0 +1,136 @@
+INPUT:
+run:
+  id: "01M1Z60TC7SRFT0TQGH45ZPCNA"
+  branch: fm/feat-absent-deps
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "0000649b04c44672a76723626786f9bf4aa9b5b8"
+  pr: ""
+  findings[1]{id,severity,file,line,action,description}:
+    L1,warning,,,ask-user,"ESLint and Prettier checks could not run because worktree dependencies are absent. Install the project dependencies and rerun changed-file checks. Whitespace and generated agent-configuration drift checks passed."
+gate: document
+OUTPUT:
+state: parked · source: run-step · parked at document: 1 finding(s) (ask-user: authority decision) (environment fault: a configured check did not run - validation is incomplete; not approvable)
+
+ok - run_parked_unrunnable_checks_absent_deps: an unrunnable check reads as an environment fault, not a decision
+INPUT:
+run:
+  id: "01M201A5K6A9QMZDBBGJDF6QF3"
+  branch: fm/feat-command-not-found
+  status: awaiting_approval
+  awaiting_agent: parked 1m4s
+  head: "0000649b04c44672a76723626786f9bf4aa9b5b8"
+  pr: ""
+  findings[1]{id,severity,file,line,action,description}:
+    lint-tools-unavailable,warning,,,ask-user,"ESLint and Prettier checks could not run because worktree dependencies are absent; both commands returned Command not found. Restore dependencies and rerun these checks. Syntax, whitespace and configured secret checks passed."
+gate: document
+OUTPUT:
+state: parked · source: run-step · parked at document: 1 finding(s) (ask-user: authority decision) (environment fault: a configured check did not run - validation is incomplete; not approvable)
+
+ok - run_parked_unrunnable_checks_command_not_found: an unrunnable check reads as an environment fault, not a decision
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-mixed-env
+  status: awaiting_approval
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,error,b.go,,ask-user,changes product behavior
+    r2,warning,,,ask-user,"Vitest could not run: this worktree has no node_modules."
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision) (environment fault: a configured check did not run - validation is incomplete; not approvable)
+
+ok - an unrunnable check beside a real finding is still named
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,Administrators cannot run exports
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,Contestants cannot run exports
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,Search is unavailable to administrators
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,Search is not available to administrators
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,The optional plugin is not installed
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+INPUT:
+run:
+  id: "01RUN"
+  branch: fm/feat-ordinary-env
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "cff6e3522b2db4391b263d9a46261be668393e26"
+  pr: ""
+  findings[2]{id,severity,file,line,action,description}:
+    r1,warning,a.go,,auto-fix,ignored error
+    r2,error,b.go,,ask-user,The dependency view omits missing dependencies
+gate: review
+OUTPUT:
+state: parked · source: run-step · parked at review: 2 finding(s) (ask-user: authority decision)
+
+ok - an ordinary ask-user finding is not flagged as an environment fault

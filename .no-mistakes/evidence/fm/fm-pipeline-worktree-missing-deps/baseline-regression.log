@@ -1,0 +1,17 @@
+INPUT:
+run:
+  id: "01M1Z60TC7SRFT0TQGH45ZPCNA"
+  branch: fm/feat-absent-deps
+  status: awaiting_approval
+  awaiting_agent: parked 2m10s
+  head: "0e1ecd3465e09de0593a7094e0854ea1f192f5dc"
+  pr: ""
+  findings[1]{id,severity,file,line,action,description}:
+    L1,warning,,,ask-user,"ESLint and Prettier checks could not run because worktree dependencies are absent. Install the project dependencies and rerun changed-file checks. Whitespace and generated agent-configuration drift checks passed."
+gate: document
+OUTPUT:
+state: parked · source: run-step · parked at document: 1 finding(s) (ask-user: authority decision)
+
+not ok - run_parked_unrunnable_checks_absent_deps: a check that could not run was not named as an environment fault (missing: 'environment fault')
+--- output ---
+state: parked · source: run-step · parked at document: 1 finding(s) (ask-user: authority decision)
