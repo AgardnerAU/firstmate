@@ -2428,6 +2428,10 @@ test_parked_ordinary_finding_is_not_an_environment_fault() {
   for description in \
     "Administrators cannot run exports" \
     "Contestants cannot run exports" \
+    "Administrators cannot run the export command" \
+    "Users cannot run the optional plugin install" \
+    "The export format cannot be run by administrators" \
+    "The customer test did not run after submitting the form" \
     "Search is unavailable to administrators" \
     "Search is not available to administrators" \
     "The optional plugin is not installed" \
@@ -2480,6 +2484,10 @@ test_finding_metadata_does_not_supply_tool_context() {
     out=$(run_crew_state "$d" feat-metadata-env)
     assert_contains "$out" "environment fault" "a quoted finding description lost its tool context"
   done
+  FM_FAKE_AXI_STATUS="$(run_parked fm/feat-metadata-env)"
+  FM_FAKE_AXI_STATUS=${FM_FAKE_AXI_STATUS/changes product behavior/command not found}
+  out=$(run_crew_state "$d" feat-metadata-env)
+  assert_contains "$out" "environment fault" "a bare command-not-found diagnostic was missed"
   pass "finding descriptions retain tool context with quoted fields and reordered columns"
 }
 

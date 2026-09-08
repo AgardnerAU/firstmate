@@ -138,7 +138,7 @@ fm_nm_finding_descriptions() {  # <toon-output>
 fm_nm_unrunnable_check_finding() {  # <toon-output>
   local row
   row=$(fm_nm_finding_descriptions "$1" |
-    grep -iE '(^|[^[:alnum:]_])(checks?|lint|linter|eslint|prettier|formatter|format|tests?|test runner|vitest|jest|command|tool|toolchain|binary|executable|dependencies|node_modules|install|installed)([^[:alnum:]_]|$)' |
+    grep -iE '(^|[^[:alnum:]_])(checks?|lint|linter|eslint|prettier|formatter|test runner|vitest|jest|command not found)([^[:alnum:]_]|$)' |
     grep -iE 'could ?n[^ ]{0,3}t (be )?run|could not (be )?run|can ?n[^ ]{0,3}t (be )?run|cannot (be )?run|can not (be )?run|unable to run|did ?n[^ ]{0,3}t run|did not run|was not run|were not run|never ran|not runnable|command not found' | head -1)
   [ -n "$row" ] || return 1
   printf '%s' "$(fm_nm_trim "$row")"
