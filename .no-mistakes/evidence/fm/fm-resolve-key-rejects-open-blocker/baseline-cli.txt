@@ -1,0 +1,11 @@
+Scenario: baseline; real CLI and durable inbox, stubbed tmux doorbell.
+
+$ fm-wake-drain.sh (OPEN DECISIONS output)
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+
+$ fm-send.sh t1 --resolve-key no-mistakes-start "restart the run"
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'no-mistakes-start': no open decision or blocker with that key in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-resolve-key.TtDhX0/evidence-25176/state/t1.status, and no captain-held task 'no-mistakes-start' or 't1-decision-no-mistakes-start' still open (already closed or mistyped). Re-check the OPEN DECISIONS listing, then resend without that key or with the right one; nothing was sent.
+Exit: 1

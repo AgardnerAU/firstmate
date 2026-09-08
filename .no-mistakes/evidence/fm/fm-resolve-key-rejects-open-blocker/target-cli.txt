@@ -1,0 +1,45 @@
+Scenario: target; real CLI and durable inbox, stubbed tmux doorbell.
+
+$ fm-wake-drain.sh (OPEN DECISIONS output)
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+
+$ fm-send.sh t1 --resolve-key default "restart the run"
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+Exit: 0
+
+Persisted status:
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+resolved [key=default]: answered: restart the run
+
+Worker inbox record:
+schema=fm-task-inbox.v1
+at=2026-09-08T08:52:59Z
+--
+restart the run
+Next drain: no OPEN DECISIONS section.
+
+$ fm-send.sh t1 --resolve-key default <two-line answer>
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'default': no open decision or blocker with that key in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-resolve-key.8ebFvH/evidence-1736/state/t1.status, and no captain-held task 'default' or 't1-decision-default' still open (already closed or mistyped); nothing was sent.
+  open on t1: unrelated
+  resend, your message preserved:
+    /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2032DM4W23M9VJ91FJSC78M/bin/fm-send.sh t1 --resolve-key <key> $'don\'t restart it; $RUN is still live\nsecond line'
+    /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2032DM4W23M9VJ91FJSC78M/bin/fm-send.sh t1 $'don\'t restart it; $RUN is still live\nsecond line'   # deliver without closing anything
+
+$ Execute printed plain resend with FM_HOME still exported
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+
+Worker inbox record:
+schema=fm-task-inbox.v1
+at=2026-09-08T08:53:00Z
+--
+don't restart it; $RUN is still live
+second line
+Remaining OPEN DECISIONS:
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 [key=unrelated] needs-decision: another choice
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
