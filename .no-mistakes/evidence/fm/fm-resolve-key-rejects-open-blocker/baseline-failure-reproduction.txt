@@ -1,0 +1,15 @@
+BASE COMMIT 269f8fe - reported operator path
+
+1. OPEN DECISIONS listing:
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+
+2. Operator follows the only visible key token:
+bin/fm-send.sh t1 --resolve-key no-mistakes-start "restart the run"
+exit=1
+error: --resolve-key 'no-mistakes-start': no open decision or blocker with that key in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-resolve-key-baseline.IoDor5/baseline-23422/state/t1.status, and no captain-held task 'no-mistakes-start' or 't1-decision-no-mistakes-start' still open (already closed or mistyped). Re-check the OPEN DECISIONS listing, then resend without that key or with the right one; nothing was sent.
+Inbox: (none - the steer was not delivered)
+
+3. Decision record remains open:
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]

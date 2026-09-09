@@ -1,0 +1,51 @@
+USER FLOW 1 - follow the OPEN DECISIONS advice for the reported blocker shape
+
+1. Operator runs fm-wake-drain.sh and sees:
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+
+2. Operator uses the key printed before the verb:
+bin/fm-send.sh t1 --resolve-key default "restart the run"
+exit=0
+
+3. Durable inbox record received by the worker:
+schema=fm-task-inbox.v1
+at=2026-09-09T22:56:01Z
+--
+restart the run
+4. Durable decision record after delivery:
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+resolved [key=default]: answered: restart the run
+
+5. OPEN DECISIONS after delivery:
+(none - the listed blocker is closed)
+
+USER FLOW 2 - decoy key refusal preserves the exact message and offers an explicit key placeholder
+
+1. Refused command exit=1 and diagnostic:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: --resolve-key 'decoy-token': no open decision or blocker with that key in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-resolve-key-evidence.2zzmfB/evidence-refusal-3705/state/t2.status, and no captain-held task 'decoy-token' or 't2-decision-decoy-token' still open (already closed or mistyped); nothing was sent.
+  'decoy-token' sits INSIDE the note of the decision keyed 'default', where the key grammar reads it as prose. A key is stated before the colon or at the head of the note, so that line opened 'default'.
+  open on t2: default alpha
+  resend, your message preserved:
+    FM_HOME=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-resolve-key-evidence.2zzmfB/evidence-refusal-3705 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M245GKKDSDAGEP7RZY9MA68M/bin/fm-send.sh t2 --resolve-key <key> $'don\'t restart it; $RUN is still live\nsecond line'
+    FM_HOME=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-send-resolve-key-evidence.2zzmfB/evidence-refusal-3705 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M245GKKDSDAGEP7RZY9MA68M/bin/fm-send.sh t2 $'don\'t restart it; $RUN is still live\nsecond line'   # deliver without closing anything
+Inbox after refusal: (none - nothing was sent)
+
+2. Operator runs the printed plain resend; durable inbox body becomes:
+schema=fm-task-inbox.v1
+at=2026-09-09T22:56:03Z
+--
+don't restart it; $RUN is still live
+second line
+3. Decision record remains unchanged because the plain resend closed nothing:
+blocked: axi run hung [key=decoy-token]
+needs-decision [key=alpha]: A or B
