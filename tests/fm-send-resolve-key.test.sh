@@ -819,10 +819,68 @@ second line"
   pass "fm-send --resolve-key: an unresolvable key refuses without swallowing the message"
 }
 
+# Preserving the message is only half of not losing it - the printed resend has
+# to actually reach the same home and the same script. Neither survives the
+# command line on its own: a one-shot "FM_HOME=<home> bin/fm-send.sh ..." exports
+# nothing to the next command, and a relative path is valid only from the
+# directory that invocation ran in. So this drives the refusal exactly that way
+# and then runs what it printed from a DIFFERENT directory with nothing supplied
+# - no FM_HOME, no FM_STATE_OVERRIDE - which is what an operator copying the
+# line into a fresh prompt actually does.
+test_refusal_resend_carries_its_own_routing_context() {
+  local dir fb log home err msg resend state
+  dir="$TMP_ROOT/routing"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"; err="$dir/send.err"
+  home=$(setup_home routing)
+  fm_write_meta "$home/state/t12.meta" "window=sess:fm-t12" "kind=ship"
+  printf 'needs-decision [key=alpha]: A or B\n' > "$home/state/t12.status"
+  msg="hold the deploy until the migration lands"
+
+  # A one-shot FM_HOME and a RELATIVE script path, invoked from the repo root.
+  : > "$log"
+  ( cd "$ROOT" && env PATH="$fb:$PATH" \
+      FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+      bin/fm-send.sh t12 --resolve-key mistyped "$msg" ) >/dev/null 2>"$err" \
+    && fail "a mistyped key should refuse"
+  resend=$(grep -F 'deliver without closing anything' "$err" \
+    | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//')
+  [ -n "$resend" ] || fail "the refusal printed no resend command: $(cat "$err")"
+
+  # Run it the way an operator would: another directory, nothing exported.
+  ( cd / && env -u FM_HOME -u FM_STATE_OVERRIDE PATH="$fb:$PATH" \
+      FM_SEND_LOG="$log" FM_SEND_SETTLE=0 bash -c "$resend" ) >/dev/null 2>"$dir/resend.err" \
+    || fail "the printed resend does not run outside its original context: $resend"$'\n'"$(cat "$dir/resend.err")"
+  grep -qF "$msg" "$home/state/t12.inbox/001.msg" \
+    || fail "the resend did not deliver the preserved message to the intended home"
+
+  # An explicit FM_STATE_OVERRIDE is part of that routing too: without it the
+  # resend silently resolves to <home>/state and answers a different ledger.
+  state="$dir/elsewhere-state"; mkdir -p "$state"
+  fm_write_meta "$state/t13.meta" "window=sess:fm-t13" "kind=ship"
+  printf 'needs-decision [key=beta]: C or D\n' > "$state/t13.status"
+  : > "$log"
+  ( cd "$ROOT" && env PATH="$fb:$PATH" \
+      FM_HOME="$home" FM_STATE_OVERRIDE="$state" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+      bin/fm-send.sh t13 --resolve-key mistyped "$msg" ) >/dev/null 2>"$err" \
+    && fail "a mistyped key should refuse under an explicit state override"
+  resend=$(grep -F 'deliver without closing anything' "$err" \
+    | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//')
+  [ -n "$resend" ] || fail "the override refusal printed no resend command: $(cat "$err")"
+  ( cd / && env -u FM_HOME -u FM_STATE_OVERRIDE PATH="$fb:$PATH" \
+      FM_SEND_LOG="$log" FM_SEND_SETTLE=0 bash -c "$resend" ) >/dev/null 2>&1 \
+    || fail "the printed resend dropped the state override: $resend"
+  grep -qF "$msg" "$state/t13.inbox/001.msg" \
+    || fail "the resend delivered outside the state directory the caller was using"
+  [ ! -d "$home/state/t13.inbox" ] \
+    || fail "the resend answered the wrong ledger: it fell back to <home>/state"
+  pass "fm-send --resolve-key: a printed resend carries the home, state override, and script path it needs"
+}
+
 test_answer_send_closes_open_decision
 test_answer_close_is_self_announced
 test_listed_key_closes_a_trailing_token_blocker
 test_unresolvable_key_refusal_preserves_the_message
+test_refusal_resend_carries_its_own_routing_context
 test_colon_first_key_position_is_answerable
 test_answer_starts_work_never_orphans
 test_routine_steer_never_closes
