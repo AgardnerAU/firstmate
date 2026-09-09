@@ -596,6 +596,38 @@ fm_send_quoted_message() {  # <text...>
   printf '%q' "$*"
 }
 
+# --- printed resend commands ------------------------------------------------
+#
+# Every command this script prints for the operator to run must reach the SAME
+# home and the SAME script this invocation used. Neither is recoverable from the
+# command line alone: a one-shot "FM_HOME=<home> bin/fm-send.sh ..." leaves
+# nothing exported for the next command, and a relative invocation cannot be
+# re-run from any other directory. A printed command missing either resolves
+# somewhere else - another home's state dir, or no script at all - so the
+# operator's preserved message is still never delivered.
+# These two are the ONE statement of that context; both printed resend paths
+# (the unconfirmed remote retry and the refused --resolve-key) call them rather
+# than restating the quoting and fallback rules.
+
+# The environment prefix a printed resend must carry: the absolute home always,
+# and FM_STATE_OVERRIDE only when this invocation was actually given one, so the
+# printed command never invents a state dir the caller was not using.
+fm_send_resend_env() {  # -> "FM_HOME=<q> [FM_STATE_OVERRIDE=<q> ]"
+  local home state
+  home=$(cd "$FM_HOME" 2>/dev/null && pwd) || home=$FM_HOME
+  printf 'FM_HOME=%q ' "$home"
+  if [ "${FM_STATE_OVERRIDE+x}" = x ]; then
+    state=$(cd "$STATE" 2>/dev/null && pwd) || state=$STATE
+    printf 'FM_STATE_OVERRIDE=%q ' "$state"
+  fi
+}
+
+# This script's absolute path, quoted. Deliberately not "$0": a relative "$0" is
+# only valid from the directory this invocation happened to run in.
+fm_send_resend_exe() {
+  printf '%q' "$SCRIPT_DIR/fm-send.sh"
+}
+
 # Close-note body for --resolve-key. Ordinary keys keep answered: <excerpt>.
 # A pending-reply-* key uses the owning library's vocabulary so the reserved-key
 # fold actually closes it (fm_pending_reply_close_note_for_key).
@@ -668,11 +700,17 @@ if [ -n "$RESOLVE_KEYS" ]; then
         printf '  no decision or blocker is open on %s.\n' "$RESOLVE_TASK_ID"
       fi
       resolve_quoted_message=$(fm_send_quoted_message "$@")
+      # Carry this invocation's own routing context into both printed commands:
+      # a resend that resolves to another home, or to no script at all, delivers
+      # the preserved message nowhere.
+      resolve_resend_prefix="$(fm_send_resend_env)$(fm_send_resend_exe)"
       printf '  resend, your message preserved:\n'
       if [ -n "$resolve_open_keys" ]; then
-        printf '    %s %s --resolve-key <key> %s\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
+        printf '    %s %s --resolve-key <key> %s\n' \
+          "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
       fi
-      printf '    %s %s %s   # deliver without closing anything\n' "$0" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
+      printf '    %s %s %s   # deliver without closing anything\n' \
+        "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
     } >&2
     exit 1
   done
@@ -956,13 +994,9 @@ else
       else
         echo "error: steer to remote secondmate $TARGET_REMOTE_ID is unconfirmed (the first transport attempt had unknown completion and the retry failed). Only the correlation-reusing resend below is idempotent and lands on the same remote inbox record:" >&2
       fi
-      resend_home=$(cd "$FM_HOME" 2>/dev/null && pwd) || resend_home=$FM_HOME
-      printf 'FM_HOME=%q ' "$resend_home" >&2
-      if [ "${FM_STATE_OVERRIDE+x}" = x ]; then
-        resend_state=$(cd "$STATE" 2>/dev/null && pwd) || resend_state=$STATE
-        printf 'FM_STATE_OVERRIDE=%q ' "$resend_state" >&2
-      fi
-      printf 'FM_PENDING_REPLY_EXISTING_CORR=%q %q' "$PENDING_REPLY_CORR" "$SCRIPT_DIR/fm-send.sh" >&2
+      printf '%s' "$(fm_send_resend_env)" >&2
+      printf 'FM_PENDING_REPLY_EXISTING_CORR=%q %s' \
+        "$PENDING_REPLY_CORR" "$(fm_send_resend_exe)" >&2
       for resend_arg in "${FM_SEND_ORIGINAL_ARGS[@]}"; do
         printf ' %q' "$resend_arg" >&2
       done
