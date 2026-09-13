@@ -164,12 +164,11 @@
 # exiting 0 on a silent no-op. A key nothing owns refuses the same way, for the
 # same reason: delivering an answer this send cannot close would leave the
 # decision open behind an answer the operator believes settled it. That refusal
-# never costs the message - it lists the keys actually open on the task, calls
-# out a requested key that is only MENTIONED inside an open decision's note
-# (prose under the key grammar, not a stated key), and prints the resend
-# commands with the message quoted back verbatim. The keyed resend leaves an
-# explicit <key> placeholder for the operator to replace, even when only one
-# key is open, so an answer cannot be redirected to an unrelated decision.
+# never costs the message - it lists the keys actually open on the task and
+# prints the resend commands with the message quoted back verbatim. The keyed
+# resend leaves an explicit <key> placeholder for the operator to replace, even
+# when only one key is open, so an answer cannot be redirected to an unrelated
+# decision.
 # The plain resend delivers the message without closing any decision.
 # After a delivered close it also
 # re-folds and fails loudly if the named key is still open. On the inbox plane
@@ -573,24 +572,6 @@ fm_send_open_set_keys() {  # <open-set>
   printf '%s\n' "$1" | cut -f1
 }
 
-# The open decision whose NOTE merely MENTIONS <requested-key> as prose, if any.
-# The key grammar (bin/fm-classify-lib.sh) states a key before the colon or at
-# the head of the note; a token trailing a summary is prose. A worker that
-# trails "[key=X]" therefore opens a DIFFERENT key while leaving X as the only
-# bracket token a reader sees, so X is the key an operator types and the one
-# nothing owns. Prints the key that line actually opened.
-fm_send_decoy_key_owner() {  # <open-set> <requested-key>
-  local key rest
-  [ -n "$1" ] || return 1
-  while IFS=$'\t' read -r key rest; do
-    [ -n "$key" ] || continue
-    case "$rest" in *"[key=$2]"*) printf '%s' "$key"; return 0 ;; esac
-  done <<EOF
-$1
-EOF
-  return 1
-}
-
 # The message this send was carrying, quoted for a copy-paste resend, so a
 # refused key never costs the operator the text they typed.
 fm_send_quoted_message() {  # <text...>
@@ -685,15 +666,10 @@ if [ -n "$RESOLVE_KEYS" ]; then
     # believes settled it - the orphaned decision --resolve-key exists to
     # prevent - so the send keeps ONE meaning: answered and closed, or neither.
     # The cost of refusing is paid here instead of by the operator: name what is
-    # actually open, diagnose the note-token shape that most often fools a
-    # reader of the OPEN DECISIONS listing, and hand the message back quoted so
-    # a refused key never costs the text they typed.
+    # actually open and hand the message back quoted so a refused key never
+    # costs the text they typed.
     {
       echo "error: --resolve-key '$k': no open decision or blocker with that key in $RESOLVE_STATUS_FILE, and no captain-held task '$k' or '$RESOLVE_TASK_ID-decision-$k' still open (already closed or mistyped); nothing was sent."
-      if decoy_owner=$(fm_send_decoy_key_owner "$resolve_open_set" "$k"); then
-        printf "  '%s' sits INSIDE the note of the decision keyed '%s', where the key grammar reads it as prose. A key is stated before the colon or at the head of the note, so that line opened '%s'.\n" \
-          "$k" "$decoy_owner" "$decoy_owner"
-      fi
       resolve_open_keys=$(fm_send_open_set_keys "$resolve_open_set")
       if [ -n "$resolve_open_keys" ]; then
         printf '  open on %s: %s\n' "$RESOLVE_TASK_ID" "$(printf '%s' "$resolve_open_keys" | tr '\n' ' ')"
@@ -707,7 +683,7 @@ if [ -n "$RESOLVE_KEYS" ]; then
       resolve_resend_prefix="$(fm_send_resend_env)$(fm_send_resend_exe)"
       printf '  resend, your message preserved:\n'
       if [ -n "$resolve_open_keys" ]; then
-        printf '    %s %s --resolve-key <key> %s\n' \
+        printf "    %s %s --resolve-key '<key>' %s\n" \
           "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
       fi
       printf '    %s %s %s   # deliver without closing anything\n' \
