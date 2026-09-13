@@ -1,0 +1,55 @@
+===============================================================
+  AFTER the fix (2adee1e): the operator path, end to end
+===============================================================
+
+The observed status log, verbatim from the 2026-09-01 report:
+    blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+
+--- ACT 1: what the drain shows the operator now ---
+$ bin/fm-wake-drain.sh
+  OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+  agfp-2827-mirror-drift-on-save [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+  OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+  OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+
+The operator takes the key the listing states before the verb:  'default'
+(before the fix that segment was suppressed, leaving the decoy
+ token 'no-mistakes-start' inside the note as the only key on show)
+
+--- ACT 2: the command the listing advises, run with that key ---
+$ bin/fm-send.sh agfp-2827-mirror-drift-on-save --resolve-key default 'restart the run and report'
+  [exit 0]
+
+  steer delivered to the worker's durable inbox record?
+    YES - state/agfp-2827-mirror-drift-on-save.inbox/001.msg:
+      schema=fm-task-inbox.v1
+      at=2026-09-13T07:52:14Z
+      --
+      restart the run and report  blocker closed in the durable status log?
+      blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+      resolved [key=default]: answered: restart the run and report
+  does the drain still list it as open?
+      no - OPEN DECISIONS is gone. One command: answered AND closed.
+
+--- ACT 3: the old mistake still refuses, but no longer costs the steer ---
+$ bin/fm-send.sh t-mistake --resolve-key typoed "$MSG"
+  error: --resolve-key 'typoed': no open decision or blocker with that key in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-after.DsMYkr/home/state/t-mistake.status, and no captain-held task 'typoed' or 't-mistake-decision-typoed' still open (already closed or mistyped); nothing was sent.
+    open on t-mistake: alpha
+    resend, your message preserved:
+      FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-after.DsMYkr/home /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2CSVD4C2FJ26Y632WZQ7DV8/bin/fm-send.sh t-mistake --resolve-key '<key>' don\'t\ restart\ it\;\ \$RUN\ is\ still\ live
+      FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-after.DsMYkr/home /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2CSVD4C2FJ26Y632WZQ7DV8/bin/fm-send.sh t-mistake don\'t\ restart\ it\;\ \$RUN\ is\ still\ live   # deliver without closing anything
+  [exit 1]
+
+  The operator now copies the second printed line verbatim, from a
+  different directory, with nothing exported - which is what actually
+  happens in a fresh prompt:
+  [exit 0]
+  did the preserved message arrive byte-intact?
+    state/t-mistake.inbox/001.msg:
+      schema=fm-task-inbox.v1
+      at=2026-09-13T07:52:16Z
+      --
+      don't restart it; $RUN is still live    -> matches the original text exactly (quote and $RUN intact)
+  and it closed nothing it was not asked to close:
+      needs-decision [key=alpha]: cut over now or after the freeze
+

@@ -1,0 +1,37 @@
+================================================================
+  AFTER the fix (2adee1e) - the listed key closes the blocker
+================================================================
+
+$ cat state/agfp-2827-mirror-drift-on-save.status
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+
+$ bin/fm-wake-drain.sh        # what the operator is shown
+  OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+  agfp-2827-mirror-drift-on-save [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+  OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+  OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+
+The operator reads the key off that listing, exactly as printed, and runs
+the command the listing itself advises:
+
+$ FM_HOME=<home> bin/fm-send.sh agfp-2827-mirror-drift-on-save --resolve-key no-mistakes-start 'restart the run and report'
+  WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+  error: --resolve-key 'no-mistakes-start': no open decision or blocker with that key in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-repro.0AMv15/home/state/agfp-2827-mirror-drift-on-save.status, and no captain-held task 'no-mistakes-start' or 'agfp-2827-mirror-drift-on-save-decision-no-mistakes-start' still open (already closed or mistyped); nothing was sent.
+    open on agfp-2827-mirror-drift-on-save: default
+    resend, your message preserved:
+      FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-repro.0AMv15/home /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2CSVD4C2FJ26Y632WZQ7DV8/bin/fm-send.sh agfp-2827-mirror-drift-on-save --resolve-key '<key>' restart\ the\ run\ and\ report
+      FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-repro.0AMv15/home /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M2CSVD4C2FJ26Y632WZQ7DV8/bin/fm-send.sh agfp-2827-mirror-drift-on-save restart\ the\ run\ and\ report   # deliver without closing anything
+  [exit 1]
+
+--- was the steer delivered to the worker? ---
+  NOT DELIVERED: no inbox record exists. The steer text is lost.
+
+--- was the blocker closed in the durable status log? ---
+    blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+
+--- does the drain still list it as open? ---
+    OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+    agfp-2827-mirror-drift-on-save [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+    OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+    OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+
