@@ -817,6 +817,57 @@ second line"
   pass "fm-send --resolve-key: an unresolvable key refuses without swallowing the message"
 }
 
+# An empty status open set is not an empty task. fm-captain-hold's `complete`
+# transfers a decision to a durable captain-held task and writes the
+# "captain-held [key=k]" line that the fold drops, so the status log folds to
+# nothing while `--resolve-key k` still closes through the other ledger
+# fm_send_hold_resolved_id reads. A mistype in that state must therefore not
+# claim nothing is open on the task, and must still offer the keyed resend - the
+# one command that would have worked.
+test_empty_status_open_set_still_offers_the_keyed_resend() {
+  local dir fb log home err msg keyed
+  dir="$TMP_ROOT/held-only"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"; err="$dir/send.err"
+  home=$(setup_home held-only)
+  fm_write_meta "$home/state/t14.meta" "window=sess:fm-t14" "kind=ship"
+  printf 'needs-decision [key=migration]: cut over now or after the freeze\ncaptain-held [key=migration]: transferred to the captain-held task\n' \
+    > "$home/state/t14.status"
+  msg="cut over after the freeze"
+
+  # Precondition: the status log really does fold to an empty open set.
+  if drain_out "$home" | grep -F 'OPEN DECISIONS' >/dev/null; then
+    fail "the captain-held transfer left the decision in the status open set: $(drain_out "$home")"
+  fi
+
+  : > "$log"
+  env PATH="$fb:$PATH" \
+    FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    "$SEND" t14 --resolve-key migratoin "$msg" >/dev/null 2>"$err" \
+    && fail "a mistyped key should refuse"
+  [ ! -d "$home/state/t14.inbox" ] || fail "a refused answer still enqueued an inbox record"
+
+  assert_not_contains "$(cat "$err")" "is open on t14" \
+    "an empty status open set must not be reported as nothing being open on the task"
+  assert_contains "$(cat "$err")" "no decision or blocker is open in $home/state/t14.status" \
+    "the emptiness claim must name the ledger it actually read"
+  assert_contains "$(cat "$err")" "t14 --resolve-key '<key>'" \
+    "an empty status open set must still offer the keyed resend"
+
+  # The offered line has to be a runnable command, not just printed text: run it
+  # with the placeholder still in place and it must reach fm-send's own key
+  # grammar refusal rather than a shell error, delivering nothing.
+  keyed=$(grep -F -- "--resolve-key '<key>'" "$err" | sed 's/^[[:space:]]*//')
+  [ -n "$keyed" ] || fail "the refusal printed no keyed resend command: $(cat "$err")"
+  ( cd / && env -u FM_HOME -u FM_STATE_OVERRIDE PATH="$fb:$PATH" \
+      FM_SEND_LOG="$log" FM_SEND_SETTLE=0 bash -c "$keyed" ) >/dev/null 2>"$dir/keyed.err" \
+    && fail "the keyed resend ran the placeholder as a real key: $keyed"
+  assert_contains "$(cat "$dir/keyed.err")" "not a valid decision key" \
+    "a verbatim paste of the keyed resend must fail through fm-send, not the shell"
+  [ ! -d "$home/state/t14.inbox" ] \
+    || fail "the placeholder paste delivered a message it could not close"
+  pass "fm-send --resolve-key: an empty status open set stays scoped to that ledger and keeps the keyed resend"
+}
+
 # Preserving the message is only half of not losing it - the printed resend has
 # to actually reach the same home and the same script. Neither survives the
 # command line on its own: a one-shot "FM_HOME=<home> bin/fm-send.sh ..." exports
@@ -879,6 +930,7 @@ test_answer_close_is_self_announced
 test_listed_key_closes_a_trailing_token_blocker
 test_unresolvable_key_refusal_preserves_the_message
 test_refusal_resend_carries_its_own_routing_context
+test_empty_status_open_set_still_offers_the_keyed_resend
 test_colon_first_key_position_is_answerable
 test_answer_starts_work_never_orphans
 test_routine_steer_never_closes
