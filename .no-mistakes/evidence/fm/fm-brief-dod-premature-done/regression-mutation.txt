@@ -1,0 +1,11 @@
+=== Regression mutation: bin/fm-dod-lib.sh reverted to the pre-fix (premature-done) wording ===
+not ok - explicit no-mistakes brief did not render the pipeline definition of done
+=== Pre-fix wording (base 0962d4a fm-dod-lib.sh) vs new position test ===
+ok - fm-brief: scaffolds leave the worker role scope to the launch boundary and keep the secondmate contract
+ok - fm-brief.sh: bash -n succeeds
+not ok - no-mistakes: terminal condition must be the line after the delivery contract, got: The task is complete only when committed on your branch.
+
+=== Pre-fix wording vs new handoff test ===
+ok - fm-brief: scaffolds leave the worker role scope to the launch boundary and keep the secondmate contract
+ok - fm-brief.sh: bash -n succeeds
+not ok - no-mistakes DOD must commit, then hand off with the nonterminal working verb

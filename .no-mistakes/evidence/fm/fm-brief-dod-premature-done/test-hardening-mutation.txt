@@ -1,0 +1,4 @@
+=== Mutation A: hardened loops are non-vacuous ===
+Mutation: bin/fm-brief.sh silently produces no brief for the brief-nohandoff-* ids.
+pre-hardening loop  -> ok - fm-brief.sh: no-mistakes reserves done: for the delivered PR and hands off with working:   (GREEN on files that do not exist)
+hardened loop       -> not ok - direct-PR: scaffold should exit 0

@@ -1,0 +1,23 @@
+### Rule 4 (status protocol) as rendered, all three ship modes + scout
+--- no-mistakes ---
+39:   A mid-task `working:` line (including setup complete) is nonterminal: do not end the
+40-   turn after it; continue the same stage until a stop gate the Definition of done names.
+41-   The one exception: where the Definition of done names a `working:` line as its stop gate,
+42-   end the turn on that line.
+--- direct-PR ---
+38:   A mid-task `working:` line (including setup complete) is nonterminal: do not end the
+39-   turn after it; continue the same stage until a stop gate the Definition of done names.
+40-   The one exception: where the Definition of done names a `working:` line as its stop gate,
+41-   end the turn on that line.
+--- local-only ---
+38:   A mid-task `working:` line (including setup complete) is nonterminal: do not end the
+39-   turn after it; continue the same stage until a stop gate the Definition of done names.
+40-   The one exception: where the Definition of done names a `working:` line as its stop gate,
+41-   end the turn on that line.
+--- scout ---
+
+### Old premature-done wording (must be absent everywhere)
+The task is complete only when committed on your branch       absent   OK
+Firstmate will then instruct you to run /no-mistakes          absent   OK
+done: {summary}                                               absent   OK
+until a defined `done:` gate                                  absent   OK

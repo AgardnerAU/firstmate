@@ -1,0 +1,6 @@
+=== The nonterminal handoff still wakes firstmate (tests/fm-watch-triage.test.sh, two turn-end cases driven) ===
+ok - a bare turn-end whose crew is not provably working is surfaced (the swallowed-finish fix)
+ok - a bare turn-end whose crew is provably working (busy pane) is absorbed
+
+A no-mistakes worker that commits, appends `working: implemented, ready for the pipeline` and stops the turn is
+not provably working, so fm-watch surfaces it: firstmate is woken to send the pipeline invocation.

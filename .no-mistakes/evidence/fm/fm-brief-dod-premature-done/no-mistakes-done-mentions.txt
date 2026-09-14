@@ -1,0 +1,4 @@
+### Every `done:` mention in the live no-mistakes brief (adversarial: is any earlier done: gate still reachable?)
+53:   A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
+82:Terminal condition: `done: PR {url} checks green`. That is this task's ONLY legal `done:` line: a commit with no PR is not done.
+108:Only now is the terminal condition reachable: after /no-mistakes reports CI green (the CI-ready return point - do not wait for it to keep monitoring in the background until merge), append `done: PR {url} checks green` to the status file and stop. You are finished.
