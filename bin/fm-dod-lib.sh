@@ -208,7 +208,7 @@ fm_dod_block() {  # <mode> <task-id>
 Delivery contract: mode=direct-PR
 Terminal condition: \`done: PR {url}\`. That is this task's ONLY legal \`done:\` line: a commit with no PR is not done.
 This task ships **direct-PR**: you raise the PR yourself. Do NOT run /no-mistakes.
-When the implementation is committed, push your branch and open a PR with \`gh-axi\`, then append that terminal line to the status file and stop.
+When the implementation is committed, push your branch and open a PR with \`gh-axi\`, then append \`done: PR {url}\` to the status file and stop.
 The configured merge authority decides whether to merge the PR; firstmate relays the outcome.
 EOF
       ;;
@@ -219,7 +219,7 @@ Delivery contract: mode=local-only
 Terminal condition: \`done: ready in branch fm/$id\`. That is this task's ONLY legal \`done:\` line.
 This task ships **local-only**: no remote, no PR, no pipeline. Do NOT push, do NOT open a PR, do NOT merge.
 Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
-When the work is implemented and committed on \`fm/$id\`, append that terminal line to the status file and stop.
+When the work is implemented and committed on \`fm/$id\`, append \`done: ready in branch fm/$id\` to the status file and stop.
 The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
 EOF
       ;;
@@ -228,7 +228,7 @@ EOF
 # Definition of done
 Delivery contract: mode=no-mistakes
 Terminal condition: \`done: PR {url} checks green\`. That is this task's ONLY legal \`done:\` line: a commit with no PR is not done.
-Report the finished implementation with \`working: implemented, ready for the pipeline\` and stop the turn; firstmate then sends the pipeline invocation for your runtime.
+Commit the finished implementation, then report \`working: implemented, ready for the pipeline\` and stop the turn. Do not start the pipeline yourself; firstmate owns that runtime-specific invocation and sends it to you.
 
 You drive no-mistakes by responding to its gates, not by implementing fixes.
 Follow the guidance no-mistakes itself provides for the mechanics: it loads when you invoke /no-mistakes, and \`no-mistakes axi run --help\` plus the \`help\` lines in each \`axi\` response are authoritative and version-matched to the installed binary.
