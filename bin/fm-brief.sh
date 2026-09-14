@@ -416,7 +416,7 @@ The report is the only thing that survives, so anything worth keeping must be in
 $INBOX_SECTION
 
 # Definition of done
-Terminal condition: \`done: {one-line conclusion}\`. That is this task's ONLY legal \`done:\` line, and it is legal only once the report below exists and the completion gate passes; then stop.
+Terminal condition: \`done: {one-line conclusion}\`. That is this task's ONLY legal \`done:\` line, and it is legal only once the report below exists and the completion gate passes; then append it to the status file and stop.
 Write your findings to \`$DATA/$ID/report.md\`.
 The report must stand alone: what you did, what you found, the evidence (commands run, output, file:line references), and what you recommend.
 $LAVISH_LINE

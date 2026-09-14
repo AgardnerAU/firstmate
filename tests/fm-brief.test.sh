@@ -416,7 +416,7 @@ test_definition_of_done_leads_with_its_terminal_condition() {
 no-mistakes|--mode no-mistakes|Terminal condition: \`done: PR {url} checks green\`. That is this task's ONLY legal \`done:\` line: a commit with no PR is not done.
 direct-PR|--mode direct-PR|Terminal condition: \`done: PR {url}\`. That is this task's ONLY legal \`done:\` line: a commit with no PR is not done.
 local-only|--mode local-only|Terminal condition: \`done: ready in branch fm/brief-terminal-local-only\`. That is this task's ONLY legal \`done:\` line.
-scout|--scout|Terminal condition: \`done: {one-line conclusion}\`. That is this task's ONLY legal \`done:\` line, and it is legal only once the report below exists and the completion gate passes; then stop.
+scout|--scout|Terminal condition: \`done: {one-line conclusion}\`. That is this task's ONLY legal \`done:\` line, and it is legal only once the report below exists and the completion gate passes; then append it to the status file and stop.
 ROWS
   pass "fm-brief.sh: every scaffold's Definition of done leads with its mode-specific terminal condition"
 }
@@ -444,7 +444,9 @@ test_no_mistakes_hands_off_the_implementation_commit_without_done() {
   # deliberately: its terminal condition really is the committed branch.
   for mode in no-mistakes direct-PR; do
     id="brief-premature-$mode"
-    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1
+    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1 \
+      || fail "$mode: scaffold should exit 0"
+    assert_present "$home/data/$id/brief.md" "$mode: brief was not scaffolded"
     assert_no_grep "The task is complete only when committed on your branch" "$home/data/$id/brief.md" \
       "$mode: brief still calls a commit with no PR complete"
   done
@@ -453,7 +455,9 @@ test_no_mistakes_hands_off_the_implementation_commit_without_done() {
   # one stage and must not learn to stop halfway.
   for mode in direct-PR local-only; do
     id="brief-nohandoff-$mode"
-    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1
+    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1 \
+      || fail "$mode: scaffold should exit 0"
+    assert_present "$home/data/$id/brief.md" "$mode: brief was not scaffolded"
     assert_no_grep "ready for the pipeline" "$home/data/$id/brief.md" \
       "$mode: brief must not carry the no-mistakes implementation handoff"
   done
