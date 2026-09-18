@@ -1,0 +1,76 @@
+
+========== S1 stale-failed-run-does-not-mask-a-declared-pause ==========
+crew's own last word : paused: polling the CI run myself
+axi status           : terminal run, outcome failed, head 31c6b2c3ea04e91aa9231793cbe370df3b7e5d6a
+ledger row           : failed fm/feat-pause f0f0f0f0 (a head this worktree does not carry)
+fm-crew-state.sh feat: state: paused · source: status-log · polling the CI run myself · later than the run (run failed)
+
+========== S1b same fixture against the pre-fix reader (base commit 9bc051f) ==========
+pre-fix reader       : state: failed · source: run-step · run failed
+
+========== S2 a-real-current-run-failure-still-reports-failed (adversarial) ==========
+crew's own last word : paused (written 40 min ago, DURING the run)
+ledger row           : failed fm/feat-midrun bed88d4c started 60 min ago - this IS the attributed run
+fm-crew-state.sh feat: state: failed · source: run-step · run failed
+
+========== S3 unbindable-live-replacement-reads-unknown-not-working ==========
+axi status           : terminal run, outcome failed
+ledger row           : running fm/feat-rerun bed88d4c - a rerun that started between the two CLI reads
+fm-crew-state.sh feat: state: unknown · source: run-step · replacement run identity unavailable; run ids: 01RUN, replacement unavailable
+
+========== S4 failed-run-names-no-pull-request-it-never-opened ==========
+meta records         : pr=https://example.test/owner/repo/pull/1 (an OLDER record)
+axi status           : terminal run, outcome failed, pr: "" - this run opened none
+fm-crew-state.sh feat: state: failed · source: run-step · run failed
+
+========== S5 supervisor end-to-end: what the captain is actually told ==========
+-- 5a: stale failed run (foreign head) + the crew's later declared pause
+crew's last word     : paused: polling the CI run myself  (written 1 min ago)
+ledger row           :  failed     fm/feat-e2e f0f0f0f0  2026-09-18 23:40
+meta records         : pr=https://example.test/owner/repo/pull/1
+reader says          : state: paused · source: status-log · polling the CI run myself · later than the run (run failed)
+queued wake payload  : 
+forge/PR API calls   : 0
+
+-- 5b: the current run genuinely failed after a mid-run pause; crew silent
+crew's last word     : paused: polling the CI run myself  (written 40 min ago)
+ledger row           :  failed     fm/feat-e2e b7aea623  2026-09-18 23:40
+meta records         : pr=https://example.test/owner/repo/pull/1
+reader says          : state: failed · source: run-step · run failed
+queued wake payload  : 
+forge/PR API calls   : 0
+
+-- 5c: routine ship shape: done written BEFORE the run, run then failed
+crew's last word     : done: implementation complete  (written 120 min ago)
+ledger row           :  failed     fm/feat-e2e 9d747019  2026-09-18 23:40
+meta records         : pr=https://example.test/owner/repo/pull/1
+reader says          : state: failed · source: run-step · run failed
+queued wake payload  : 
+forge/PR API calls   : 0
+
+-- 5d: the same failure with the crew still mid-sentence (no contradicting word)
+crew's last word     : working: still validating  (written 2 min ago)
+ledger row           :  failed     fm/feat-e2e 64f5d46b  2026-09-18 23:40
+meta records         : pr=https://example.test/owner/repo/pull/1
+reader says          : state: failed · source: run-step · run failed
+captain is told   : actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed
+queued wake payload  : inactive-outcome:d13838893ceb79e5962d5ca576235211	inactive terminal outcome awaiting captain presentation: child=child state=failed
+forge/PR API calls   : 0
+
+-- 5e: a passed run that DID open a pull request
+crew's last word     : working: still validating  (written 2 min ago)
+ledger row           :  completed  fm/feat-e2e 6ee2519c  2026-09-18 23:40  https://github.com/o/r/pull/3701
+meta records         : pr=https://example.test/owner/repo/pull/1
+reader says          : state: done · source: run-step · run passed: PR state unknown (forge read skipped) · pr=https://github.com/o/r/pull/3701
+captain is told   : actionable: inactive terminal outcome awaiting captain presentation: child=child state=done pr=https://github.com/o/r/pull/3701
+queued wake payload  : inactive-outcome:610c3ac99bdcca50750d5e5a956dff13	inactive terminal outcome awaiting captain presentation: child=child state=done pr=https://github.com/o/r/pull/3701
+forge/PR API calls   : 0
+
+
+========== S6 the same 5a fixture driven through the PRE-FIX supervisor (base 9bc051f) ==========
+crew's last word     : paused: polling the CI run myself (1 min ago)
+ledger row           :  failed     fm/feat-e2e f0f0f0f0  2026-09-18 23:40
+meta records         : pr=https://example.test/owner/repo/pull/1
+pre-fix reader says  : state: failed · source: run-step · run failed
+captain WAS told  : actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1
+queued wake payload  : inactive-outcome:067004de4674a105b76f0e0becac2c6a	inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1

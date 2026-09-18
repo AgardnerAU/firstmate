@@ -1,0 +1,42 @@
+===== control: unmutated, targeted tests only =====
+ok - a mid-run pause does not mask the current run's failure
+ok - a mid-run done line does not mask the current run's failure
+ok - a pre-run done line does not mask a failed run
+ok - a same-minute done line does not mask a failed run
+ok - a same-minute line is not newer than an unbindable run
+all fm-crew-state tests passed
+exit=0
+
+===== M1: NEWEST_ROW_AGREES gate removed from the status-log block =====
+1052:    if [ -n "$NEWEST_EPOCH" ] && snapshot_ordered_log; then
+ok - a status append during snapshot never supersedes the run
+not ok - a mid-run pause cannot mask the current run's failure (missing: 'state: failed')
+--- output ---
+state: paused · source: status-log · polling the CI run myself · later than the run (run failed)
+exit=1
+
+===== M2: minute-truncation margin (+ 60) dropped =====
+1053:      if [ "$ORDERED_LOG_MTIME" -ge "$NEWEST_EPOCH" ]; then
+ok - a mid-run done line does not mask the current run's failure
+ok - a pre-run done line does not mask a failed run
+ok - a same-minute done line does not mask a failed run
+not ok - a same-minute line is never taken as newer than the run (unexpected: 'state: done')
+--- output ---
+state: done · source: status-log · implementation complete · later than the run (run failed)
+exit=1
+
+===== M3: snapshot_ordered_log consistency check removed =====
+  case "$before_mtime:$after_mtime:$before_size:$after_size" in
+    *[!0-9:]*) return 1 ;;
+  esac
+  :
+  ORDERED_LOG_LINE=$line
+  ORDERED_LOG_MTIME=$before_mtime
+}
+
+# --- remote secondmate: the true source is the remote endpoint ---------------
+# A remote mate's recorded worktree and backend target live on its own host, so
+not ok - a partial snapshot cannot override the failure (unexpected: 'state: paused')
+--- output ---
+state: paused · source: status-log · appended during snapshot · later than the run (run failed)
+exit=1
