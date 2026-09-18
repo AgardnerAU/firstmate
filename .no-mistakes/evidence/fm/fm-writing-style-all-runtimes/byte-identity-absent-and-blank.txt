@@ -1,0 +1,6 @@
+PASS byte-identical vs pre-change (absent file): t-ship
+PASS byte-identical vs pre-change (blank file):  t-ship
+PASS byte-identical vs pre-change (absent file): t-scout
+PASS byte-identical vs pre-change (blank file):  t-scout
+PASS byte-identical vs pre-change (absent file): t-sm
+PASS byte-identical vs pre-change (blank file):  t-sm

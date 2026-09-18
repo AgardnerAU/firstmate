@@ -1,0 +1,36 @@
+config-push: /tmp/wstest.IOrcnM/live3/primary -> live secondmate homes
+secondmate sm1 (/private/tmp/wstest.IOrcnM/live3/sm-home):
+  crew-dispatch.json: pushed
+  crew-harness: unchanged
+  worker-writing-style.md: pushed
+  backlog-backend: unchanged
+  backend: unchanged
+  herdr-presentation-spaces: unchanged
+  startup-memory-budget: unchanged
+  trace-context: unchanged - session-scoped
+  launch-env-allowlist: unchanged
+  claude-permission-mode: unchanged
+  data/captain-shared.md: unchanged
+CONFIG_REREAD: secondmate sm1: send failed: error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+=== inherited file in the secondmate home ===
+Use plain hyphens rather than typographic dashes.
+Use British English.
+=== generated config-reread instruction ===
+/tmp/wstest.IOrcnM/live3/sm-home/state/.fm-inherited-config-reread.20260918T153120.00000001.FwQWnW.pending
+/tmp/wstest.IOrcnM/live3/sm-home/state/.fm-inherited-config-reread.20260918T153120.00000001.FwQWnW
+
+=== full generated instruction file delivered by the CONFIG_REREAD pointer ===
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/crew-dispatch.json
+-----BEGIN config/crew-dispatch.json-----
+{"default":{"harness":"codex"}}
+-----END config/crew-dispatch.json-----
+
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+Use plain hyphens rather than typographic dashes.
+Use British English.
+-----END config/worker-writing-style.md-----

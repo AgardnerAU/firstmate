@@ -1,0 +1,59 @@
+### ship brief (config/worker-writing-style.md present)
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use plain hyphens rather than typographic dashes.
+Use ASD-STE100 except for spelling - use British English.
+
+
+# Task
+
+### scout brief (present)
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use plain hyphens rather than typographic dashes.
+Use ASD-STE100 except for spelling - use British English.
+
+
+# Task
+
+### secondmate charter (present)
+You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use plain hyphens rather than typographic dashes.
+Use ASD-STE100 except for spelling - use British English.
+
+
+At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+
+
+# Charter
+Own the docs domain.
+
+# Routing scope
+
+### ship brief with FM_CONFIG_OVERRIDE set (home config ignored)
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Override rules only: use British English.
+
+
+
+### ship brief head when the file is absent
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Task
+## Captain's intent
+{TASK}
+
+
+### ship brief head when the file is blank
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Task
+## Captain's intent
+{TASK}
+
