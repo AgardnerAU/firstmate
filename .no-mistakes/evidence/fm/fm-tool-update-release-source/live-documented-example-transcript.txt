@@ -1,0 +1,49 @@
+home=/tmp/fm-live-iNQ7Em
+
+--- registry under test:
+{
+  "tools": [
+    {
+      "name": "herdr",
+      "command": "herdr",
+      "version_args": [
+        "--version"
+      ],
+      "published": {
+        "source": "github",
+        "repo": "herdrdev/herdr"
+      }
+    },
+    {
+      "name": "tasks-axi",
+      "command": "tasks-axi",
+      "published": {
+        "source": "npm",
+        "package": "tasks-axi"
+      }
+    },
+    {
+      "name": "gnhf",
+      "command": "gnhf",
+      "published": {
+        "source": "npm",
+        "package": "gnhf"
+      }
+    }
+  ]
+}
+
+=== S12: arm the documented example ===
+armed: state/tool-updates.check.sh
+[arm exit 0]
+
+=== S12: sweep it against the real release sources ===
+tool updates: herdr update available: installed 0.8.2, published 0.9.1 at https://api.github.com/repos/herdrdev/herdr/releases/latest
+[check exit 0]
+
+--- installed versions this host actually reports, for comparison:
+herdr: herdr 0.8.2
+tasks-axi: 0.2.5
+gnhf: 0.1.49
+disarmed: state/tool-updates.check.sh
+[disarm exit 0]

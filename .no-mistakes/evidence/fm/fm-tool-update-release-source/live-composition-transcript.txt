@@ -1,0 +1,5 @@
+home=/tmp/fm-live-QOjl8W
+
+=== S11: all four sources report together for one watched tool ===
+tool updates: sweep budget 30s cut to 27s to stay inside the watcher check timeout of 30s; gnhf update available: update to 0.1.49; gnhf update not in effect: PATH resolves 0.1.1 at /tmp/fm-live-QOjl8W/bin/gnhf-live-fixture but 0.1.2 is installed at /tmp/fm-live-QOjl8W/fresh/gnhf-live-fixture; gnhf update available: installed 0.1.1, published 0.1.49 at https://registry.npmjs.org/gnhf/latest; gnhf update available: origin/main is at b74e5b13d773 which this copy does not have
+[exit 0]

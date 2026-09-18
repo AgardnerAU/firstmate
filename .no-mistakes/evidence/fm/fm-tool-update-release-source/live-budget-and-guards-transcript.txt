@@ -1,0 +1,31 @@
+home=/tmp/fm-live-gTNS7U
+
+=== S9: the slow tool eats the whole 3s budget, so the later tool is never reached ===
+tool updates: slow check failed: /tmp/fm-live-gTNS7U/bin/slow-live-fixture did not report a version; check incomplete: the time budget ran out before later
+[exit 0]
+--- record left by the incomplete sweep:
+fm-tool-updates-v1
+epoch=<an epoch, i.e. the cadence advanced>
+reported=slow check failed: /tmp/fm-live-gTNS7U/bin/slow-live-fixture did not report a version; check incomplete: the time budget ran out before later
+--- immediate second poll inside the 900s interval (expect silence: the cadence advanced):
+[exit 0]
+
+=== S8d: published on an entry with no version command is refused by name ===
+tool updates: watched tool registry: tool bad published needs command to report the installed version
+[exit 0]
+
+=== S8e: a package name that tries to escape its URL path is refused ===
+tool updates: watched tool registry: tool bad published.package must be an npm package name
+[exit 0]
+
+=== S8f: a GitHub repo given as a URL is refused ===
+tool updates: watched tool registry: tool bad published.repo must be a GitHub owner/repo
+[exit 0]
+
+=== S8g: an unsupported extra published field is refused ===
+tool updates: watched tool registry: tool bad published has unsupported fields
+[exit 0]
+
+=== S10: a watched command missing from PATH is still reported, with no published comparison ===
+tool updates: absent check failed: fm-absent-live-fixture is not on PATH
+[exit 0]
