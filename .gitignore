@@ -3,6 +3,7 @@ state/
 data/
 scratchpad*
 .no-mistakes/
+.tmp-ax/
 .lavish/
 .fm-secondmate-home
 .fm-secondmate-parent
@@ -11,3 +12,5 @@ __pycache__/
 *.pyc
 .env
 config/
+
+.tools/
