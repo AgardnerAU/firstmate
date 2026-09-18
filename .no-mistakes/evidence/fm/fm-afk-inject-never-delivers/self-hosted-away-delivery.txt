@@ -1,18 +1,49 @@
-SELF-HOSTED AWAY-DAEMON ACCEPTANCE TRANSCRIPT
-=============================================
+Away-mode self-hosted escalation delivery - the real daemon driven over the real herdr adapter.
+The only substitute is the external herdr 0.8.0 CLI, replaced by a herdr-shaped fake pane
+(driver/fake-herdr): a composer buffer, a transcript, a native agent-state pinned 'working' by
+the daemon's own background job, and an optional swallowed Enter. No firstmate code is mocked.
 
-Scenario 1 - actionable wait delivered despite reflected native busy
-self-hosted target: default:w1:p2
-native backend state: busy (daemon reflection)
-delivered digest contains blocker: yes
-declared-wait pause marker retained: yes
-escalation buffer cleared after proven delivery: yes
-delivered digest:
-⁣FIRSTMATE_OP: v1 away-supervisor: Supervisor escalate (       1 event(s)): stale + actionable status: blocked [key=release]: need captain approval (pre-read; re-arm not needed — watcher daemon-managed)
+--- native agent-state reader (bin/backends/herdr.sh) ---
+### tree: BASE 9bc051f (before the fix)
+agent_status_raw(own pane)      = working
+busy_state(own pane)            = busy
+busy_state(a worker pane w4:p1) = busy
+composer_state(own pane)        = empty
+### tree: BRANCH 0752911
+agent_status_raw(own pane)      = 
+busy_state(own pane)            = unknown
+busy_state(a worker pane w4:p1) = busy
+composer_state(own pane)        = empty
 
-Scenario 2 - swallowed Enter is not reported as delivery
-submit verdict: pending
-buffer still contains escalation: yes
-wedge marker remains raised: yes
-preserved buffer:
-event A: worker died
+--- away-mode daemon (bin/fm-supervise-daemon.sh) ---
+S3 = escalation raised while away, self-hosted, harness turn finished (must DELIVER)
+S4 = same, but the harness really is mid-turn                         (must DEFER)
+S5 = same, every Enter swallowed                                      (must keep buffer + wedge marker)
+
+================ BASE 9bc051f (before the fix) ================
+  inject_msg: DEFERRED (not delivered)
+  captain pane received: 
+  inject_msg: DEFERRED (not delivered)
+  captain pane received: 
+  escalate_flush: reported NOT flushed
+  buffer: PRESERVED (event A: worker died )
+  wedge marker: RAISED
+  captain pane received: 
+================ INTERMEDIATE 83c4296 (busy-guard fix only) ================
+  inject_msg: DELIVERED
+  captain pane received: >> ⁣FIRSTMATE_OP: v1 away-supervisor: three jobs parked awaiting decisions|
+  inject_msg: DEFERRED (not delivered)
+  captain pane received: 
+  escalate_flush: reported FLUSHED
+  buffer: TRUNCATED (escalation discarded)
+  wedge marker: CLEARED
+  captain pane received: 
+================ BRANCH 0752911 (both fixes) ================
+  inject_msg: DELIVERED
+  captain pane received: >> ⁣FIRSTMATE_OP: v1 away-supervisor: three jobs parked awaiting decisions|
+  inject_msg: DEFERRED (not delivered)
+  captain pane received: 
+  escalate_flush: reported NOT flushed
+  buffer: PRESERVED (event A: worker died )
+  wedge marker: RAISED
+  captain pane received: 

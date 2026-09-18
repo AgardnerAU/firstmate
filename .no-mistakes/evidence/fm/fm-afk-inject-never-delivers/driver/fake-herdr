@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# A herdr-CLI-shaped fake pane, standing in for the herdr 0.8.0 CLI so the real
+# firstmate away-mode daemon can be driven end to end. It models ONE captain
+# pane: a composer buffer, a transcript, a native agent-state, and an optional
+# swallowed Enter.
+set -u
+P=${FAKE_HERDR_STATE:?}
+log() { { printf '%s' "$1"; for a in "$@"; do :; done; } >/dev/null; }
+printf '%s\n' "$*" >> "$P/cli.log"
+sub="${1:-} ${2:-}"
+case "$sub" in
+  "status --json")
+    printf '{"client":{"version":"0.8.0","protocol":14},"server":{"running":true}}\n'; exit 0 ;;
+  "terminal title")
+    printf '{"result":{"reason":"no_foreground_client"}}\n'; exit 0 ;;
+  "agent get")
+    printf '{"result":{"agent":{"agent_status":"%s"}}}\n' "$(cat "$P/agent_status")"; exit 0 ;;
+  "pane process-info")
+    # Deliberately not a shell: a real captain pane runs a harness.
+    printf '{"result":{"type":"pane_process_info","process_info":{"pane_id":"w1:p2","shell_pid":%s,"foreground_processes":[{"pid":%s,"name":"claude","argv0":"claude","args":"claude"}]}}}\n' "$$" "$$"
+    exit 0 ;;
+  "pane send-text")
+    printf '%s' "$4" >> "$P/buffer"; exit 0 ;;
+  "pane send-keys")
+    if [ "${4:-}" = enter ]; then
+      if [ -f "$P/swallow-enter" ]; then rm -f "$P/swallow-enter"; exit 0; fi
+      if [ -f "$P/swallow-all" ]; then exit 0; fi
+      if [ -s "$P/buffer" ]; then
+        printf '%s\n' "$(cat "$P/buffer")" >> "$P/submitted.log"
+        : > "$P/buffer"
+      fi
+    fi
+    exit 0 ;;
+  "pane read")
+    # Render the pane the way the harness draws it: transcript, then footer,
+    # then the composer row.
+    cat "$P/transcript" 2>/dev/null
+    cat "$P/footer" 2>/dev/null
+    printf '\xe2\x9d\xaf %s\n' "$(cat "$P/buffer" 2>/dev/null)"
+    exit 0 ;;
+esac
+exit 0
