@@ -1,0 +1,59 @@
+
+================================================================
+SCENARIO: S1 stale failed run, newer live run in flight on the branch
+----------------------------------------------------------------
+no-mistakes axi status  -> failed run at this head, pr https://github.com/o/r/pull/1
+no-mistakes runs        ->
+  running    fm/feat-s1 f0f0f0f0  2026-09-19 07:07
+  failed     fm/feat-s1 48c43237  2026-09-19 05:47
+
+fm-crew-state.sh feat-s1 ->
+  state: unknown · source: run-step · replacement run identity unavailable; run ids: 01RUN, replacement unavailable
+
+================================================================
+SCENARIO: S2 genuine failure, nothing newer on the branch (adversarial: guard must not hide it)
+----------------------------------------------------------------
+no-mistakes runs        ->
+  failed     fm/feat-s2 3fd5dd1d  2026-09-19 05:47
+
+fm-crew-state.sh feat-s2 ->
+  state: failed · source: run-step · run failed
+
+================================================================
+SCENARIO: S3 rerun at the same head: the newest row's PR is published, not the stale one
+----------------------------------------------------------------
+attributed run pr: pull/1111 ; newest ledger row pr: pull/2222
+
+fm-crew-state.sh feat-s3 ->
+  state: failed · source: run-step · run failed from the ledger's row for this worktree; the run failed reading could not be bound to it · pr=https://github.com/o/r/pull/2222
+
+================================================================
+SCENARIO: S4 delivered PR with NO ledger row at all (long-inactive crew, run outside the listing window)
+----------------------------------------------------------------
+no-mistakes runs        -> <empty: branch has no row in the window>
+
+fm-crew-state.sh feat-s4 ->
+  state: done · source: run-step · run passed: PR state unknown (forge read skipped) · pr=https://github.com/o/r/pull/4444
+
+================================================================
+SCENARIO: S5 line shape: the run id is the last FIELD, the verdict is one sentence
+----------------------------------------------------------------
+fm-crew-state.sh feat-s5 ->
+  state: unknown · source: run-step · the newest failed ledger row on this branch cannot be bound to the run failed; current state not provable here · run: 01RUN
+
+================================================================
+SCENARIO: S6 coarse ledger path: one row must not be reported as superseding itself
+----------------------------------------------------------------
+axi status answers ANOTHER crew, so this crew falls to the coarse ledger read
+
+fm-crew-state.sh feat-s6 ->
+  state: failed · source: run-step · run cancelled · pr=https://github.com/o/r/pull/3333
+
+================================================================
+SCENARIO: S7 adversarial: daemon socket refused in the log outranks the ledger's terminal row
+----------------------------------------------------------------
+crew says (state/<id>.status): blocked: cannot reach the no-mistakes daemon: connection refused on the control socket
+
+fm-crew-state.sh feat-s7 ->
+  state: blocked · source: status-log · cannot reach the no-mistakes daemon: connection refused on the control socket · daemon socket down despite attributed run record
+

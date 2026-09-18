@@ -1,0 +1,59 @@
+
+================================================================
+CASE: E1 stale failed run at this head while a newer run is in flight
+----------------------------------------------------------------
+ledger:
+  running    fm/feat-e1 f0f0f0f0  2026-09-19 07:08
+  failed     fm/feat-e1 63edb65a  2026-09-19 05:48
+
+reader line  -> state: unknown · source: run-step · replacement run identity unavailable; run ids: 01RUN, replacement unavailable
+captain wake -> 
+outcome record ->
+  <none: nothing promoted to the captain>
+
+================================================================
+CASE: E2 genuine failure, nothing newer on the branch (must still reach the captain)
+----------------------------------------------------------------
+ledger:
+  failed     fm/feat-e2 ea43ccad  2026-09-19 05:48
+
+reader line  -> state: failed · source: run-step · run failed
+captain wake -> 1789773515	1	check	inactive-outcome:d13838893ceb79e5962d5ca576235211	inactive terminal outcome awaiting captain presentation: child=child state=failed
+outcome record ->
+  [d13838893ceb79e5962d5ca576235211.pending]
+    schema=fm-terminal-outcome.v1
+    fingerprint=d13838893ceb79e5962d5ca576235211
+    task_id=child
+    incarnation=s1.1
+    state=failed
+    outcome_key=inactive-outcome-main-child-failed
+    origin=direct
+    pr=
+    created_epoch=1789773515
+    notice_emitted=0
+    status_head=f7e871ce3cca4b98b96b3051e2da7ce7
+    phase=presentation
+
+================================================================
+CASE: E3 delivered work: the captain is told the run's OWN pull request, not the task meta's old one
+----------------------------------------------------------------
+ledger: <no row for this branch in the window>
+task meta records pr=https://example.test/owner/repo/pull/1
+
+reader line  -> state: done · source: run-step · run passed: PR state unknown (no PR identity) · pr=https://example.test/owner/repo/pull/2222
+captain wake -> 1789773516	1	check	inactive-outcome:b85239c4153bbc31a2f7b49ef159f52d	inactive terminal outcome awaiting captain presentation: child=child state=done pr=https://example.test/owner/repo/pull/2222
+outcome record ->
+  [b85239c4153bbc31a2f7b49ef159f52d.pending]
+    schema=fm-terminal-outcome.v1
+    fingerprint=b85239c4153bbc31a2f7b49ef159f52d
+    task_id=child
+    incarnation=s1.1
+    state=done
+    outcome_key=inactive-outcome-main-child-done
+    origin=direct
+    pr=https://example.test/owner/repo/pull/2222
+    created_epoch=1789773516
+    notice_emitted=0
+    status_head=f7e871ce3cca4b98b96b3051e2da7ce7
+    phase=presentation
+
