@@ -1,0 +1,91 @@
+# Live fleet-home isolation transcript (bin/fm-test-run.sh)
+
+Sandbox repo: /tmp/fmlive.JjT050/repo    Sentinel 'live' home: /tmp/fmlive.JjT050/live
+
+## 1. BASELINE - the probe run directly, inheriting a worker's environment
+$ env FM_HOME=$LIVE FM_ROOT=$LIVE FM_STATE_OVERRIDE=... FM_SESSION_START_STAGE_FILE=... FM_SUPERVISION_MODEL=autoarm FM_TRACE_CONTEXT=on FM_BACKEND=herdr bash tests/fm-live-probe.test.sh
+PROBE_HOME=/tmp/fmlive.JjT050/live
+PROBE_STATE=/tmp/fmlive.JjT050/live/state
+PROBE_STAGE_FILE=/tmp/fmlive.JjT050/live/stage
+PROBE_SUPERVISION_MODEL=autoarm
+PROBE_TRACE_CONTEXT=on
+PROBE_BACKEND=herdr
+ok - probe
+--- the live home was written to ---
+/tmp/fmlive.JjT050/live
+/tmp/fmlive.JjT050/live/data
+/tmp/fmlive.JjT050/live/state
+/tmp/fmlive.JjT050/live/state/.wake-queue
+/tmp/fmlive.JjT050/live/state/.wake-queue.seq
+/tmp/fmlive.JjT050/live/state/.watcher-down
+--- durable queue ---
+sentinel
+1789742280	1	check	live-home-probe	probe
+
+## 2. SERIAL - same environment, run through bin/fm-test-run.sh
+FM_TEST_BEGIN 2026-09-18T14:38:00Z tests/fm-live-probe.test.sh family=unclassified expected_gate_skip=none
+PROBE_HOME=/tmp/fmlive.JjT050/repo
+PROBE_STATE=/tmp/fmlive.JjT050/repo/state
+PROBE_STAGE_FILE=none
+PROBE_SUPERVISION_MODEL=none
+PROBE_TRACE_CONTEXT=none
+PROBE_BACKEND=none
+ok - probe
+FM_TEST_END 2026-09-18T14:38:02Z tests/fm-live-probe.test.sh exit=0 duration_ms=936 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=1316
+FM_TEST_SUMMARY_FAMILY family=unclassified count=1 duration_ms=936 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-live-probe.test.sh duration_ms=936
+rc=0
+--- live home untouched ---
+/tmp/fmlive.JjT050/live
+/tmp/fmlive.JjT050/live/data
+/tmp/fmlive.JjT050/live/state
+/tmp/fmlive.JjT050/live/state/.wake-queue
+sentinel
+
+## 3. PARALLEL (--jobs 2) - same environment
+FM_TEST_BEGIN 2026-09-18T14:38:02Z tests/fm-brief.test.sh family=pure-contract-unit expected_gate_skip=none
+FM_TEST_BEGIN 2026-09-18T14:38:02Z tests/fm-crew-state.test.sh family=pure-contract-unit expected_gate_skip=none
+PROBE_HOME=/tmp/fmlive.JjT050/repo
+PROBE_STATE=/tmp/fmlive.JjT050/repo/state
+PROBE_STAGE_FILE=none
+PROBE_SUPERVISION_MODEL=none
+PROBE_TRACE_CONTEXT=none
+PROBE_BACKEND=none
+ok - probe
+FM_TEST_END 2026-09-18T14:38:04Z tests/fm-brief.test.sh exit=0 duration_ms=1199 gate_skip=false
+PROBE_HOME=/tmp/fmlive.JjT050/repo
+PROBE_STATE=/tmp/fmlive.JjT050/repo/state
+PROBE_STAGE_FILE=none
+PROBE_SUPERVISION_MODEL=none
+PROBE_TRACE_CONTEXT=none
+PROBE_BACKEND=none
+ok - probe
+FM_TEST_END 2026-09-18T14:38:04Z tests/fm-crew-state.test.sh exit=0 duration_ms=1612 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=2311
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=2 duration_ms=2811 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-crew-state.test.sh duration_ms=1612
+FM_TEST_SLOWEST rank=2 script=tests/fm-brief.test.sh duration_ms=1199
+rc=0
+/tmp/fmlive.JjT050/live
+/tmp/fmlive.JjT050/live/data
+/tmp/fmlive.JjT050/live/state
+/tmp/fmlive.JjT050/live/state/.wake-queue
+sentinel
+
+## 4. ISOLATION-PROOF HARNESS (--jobs 4, 24 candidates) - same environment
+   1 FM_ISOLATION_SUMMARY total=24 failed=0 concurrency=4 duration_ms=17445
+--- live home untouched ---
+/tmp/fmlive.JjT050/live
+/tmp/fmlive.JjT050/live/data
+/tmp/fmlive.JjT050/live/state
+/tmp/fmlive.JjT050/live/state/.wake-queue
+sentinel
+
+## 5. ADVERSARIAL - a pointer that cannot be cleared (readonly FM_HOME via BASH_ENV)
+fm-test-env: could not clear FM_HOME from the environment
+fm-test-run: refusing to run: the live fleet home is still reachable
+fm-test-run rc=2
+fm-test-env: could not clear FM_HOME from the environment
+fm-isolation-proof: refusing to run: the live fleet home is still reachable
+fm-test-isolation-proof rc=2
