@@ -64,9 +64,10 @@
 # process state/<id>.inbox/*.msg in order and acknowledge each by moving it to
 # handled/ (record, doorbell, and ladder owned by bin/fm-task-inbox-lib.sh).
 # Read worker-writing-style.md from ${FM_CONFIG_OVERRIDE:-$FM_HOME/config}.
-# When present, each new scaffold includes its content under one Worker writing
-# style heading; see docs/configuration.md "Worker writing style" for scope.
-# Absence stays silent.
+# With non-blank content, each new scaffold includes that content under one
+# Worker writing style heading; see docs/configuration.md "Worker writing style"
+# for scope. An absent file and one with no non-blank content both stay silent,
+# so the scaffold keeps its pre-writing-style bytes.
 # Ship tasks include a project-memory section so durable project-intrinsic
 # learnings can be committed to AGENTS.md through the project's delivery path;
 # it carries the AGENTS.md authoring bar (widely useful knowledge only, pointers
