@@ -24,7 +24,8 @@
 #
 #   state: <working|parked|done|blocked|paused|failed|unknown> · source: <run-step|pane|status-log|remote-endpoint|none> · <detail>
 #
-# Logic, in order:
+# Logic, numbered for reference; rules 2b and 3 each record that rule 3's
+# status-log reconciliation is applied before rule 2b:
 #   1. Resolve worktree + backend target + kind from state/<id>.meta. A meta
 #      recording remote_host= is a remote secondmate: its worktree and endpoint
 #      live on that host, so the local worktree and pane reads are skipped and
@@ -98,6 +99,13 @@
 #      Independently of outcome, a terminal reading publishes a PR only when the
 #      current-run evidence still attributes that reading; otherwise it
 #      publishes none.
+#      Every answer here is reached only AFTER rule 3 below has reconciled the
+#      status log, so rule 3's daemon-socket-down override outranks all of them,
+#      not merely a plainly attributed run record: an instrument failure must not
+#      read as work failure. A verdict taken from the ledger row also names that
+#      row's status and PR together and reports the attributed run only as the
+#      earlier one, so a single line never labels one run's outcome with
+#      another run's identity.
 #   3. Reconcile the status log through fm-classify-lib.sh's status_current_line:
 #      open decisions survive unrelated events and continuation prose cannot
 #      hide a declaration. Ship/scout terminal declarations supersede stale log
@@ -107,7 +115,8 @@
 #      agree, and are reported as parked. A `blocked:` line that reports a
 #      refused or missing daemon socket remains blocked even if an attributed
 #      run record is stale or terminal, for as long as that blocker is still the
-#      log's latest event. Other daemon, timeout, or unreachability
+#      log's latest event; this reconciliation runs BEFORE rule 2b, so that
+#      blocker also outranks rule 2b's supersession and unknown answers. Other daemon, timeout, or unreachability
 #      claims are superseded BECAUSE THE RUN IS ALIVE when the run is
 #      running/fixing with recent reported activity: a killed or timed-out drive
 #      call is not daemon death, so that claim is answered by steering the crew
@@ -1063,7 +1072,7 @@ if [ "$HAVE_RUN" = 1 ]; then
         if [ "$NEWEST_ROW_AGREES" != 1 ]; then
           LEDGER_DETAIL="run $LEDGER_STATUS"
           [ "$LEDGER_STATUS" = failed ] || LEDGER_DETAIL="run cancelled"
-          [ -z "$SELECTED_RUN_ID" ] || LEDGER_DETAIL="$LEDGER_DETAIL${SEP}run: $SELECTED_RUN_ID"
+          LEDGER_DETAIL="$LEDGER_DETAIL (earlier $RUN_DETAIL)"
           TERMINAL_PR=$NEWEST_PR
           emit_run failed "$LEDGER_DETAIL" "$TERMINAL_PR"
         fi
