@@ -1,0 +1,49 @@
+End-to-end chain: the REAL fm-crew-state.sh reader feeding the REAL
+fm-inactive-reconcile.sh, which mints captain-facing terminal outcomes.
+No crew-state stub in this chain.
+
+======== CHAIN: stale failed run, newer live run, quiet crew [BASE-9bc051f] ========
+$ no-mistakes runs --limit 20
+  running    fm/feat-chain f0f0f0f0  2026-09-19 01:49
+$ fm-crew-state.sh child
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1
+--- captain wake queue ---
+1789757343	1	check	inactive-outcome:16f69199966024f7fda2b12d847ce8af	inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1
+--- durable terminal outcome records ---
+16f69199966024f7fda2b12d847ce8af.pending
+
+======== CHAIN: stale failed run, newer live run, quiet crew [FIXED] ========
+$ no-mistakes runs --limit 20
+  running    fm/feat-chain f0f0f0f0  2026-09-19 01:49
+$ fm-crew-state.sh child
+state: unknown · source: run-step · a newer running run on this branch supersedes the earlier run failed; current state not provable here
+$ fm-inactive-reconcile.sh scan --startup
+--- captain wake queue ---
+(no wake queued)
+--- durable terminal outcome records ---
+
+======== CHAIN-GUARD: genuine current-run failure, quiet crew [BASE-9bc051f] ========
+$ no-mistakes runs --limit 20
+  failed     fm/feat-chain ec373585  2026-09-19 01:49
+$ fm-crew-state.sh child
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1
+--- captain wake queue ---
+1789757345	1	check	inactive-outcome:16f69199966024f7fda2b12d847ce8af	inactive terminal outcome awaiting captain presentation: child=child state=failed pr=https://example.test/owner/repo/pull/1
+--- durable terminal outcome records ---
+16f69199966024f7fda2b12d847ce8af.pending
+
+======== CHAIN-GUARD: genuine current-run failure, quiet crew [FIXED] ========
+$ no-mistakes runs --limit 20
+  failed     fm/feat-chain a836b2f2  2026-09-19 01:49
+$ fm-crew-state.sh child
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed
+--- captain wake queue ---
+1789757346	1	check	inactive-outcome:e5f76c57219e8b7463d6f99b60c1b995	inactive terminal outcome awaiting captain presentation: child=child state=failed
+--- durable terminal outcome records ---
+e5f76c57219e8b7463d6f99b60c1b995.pending

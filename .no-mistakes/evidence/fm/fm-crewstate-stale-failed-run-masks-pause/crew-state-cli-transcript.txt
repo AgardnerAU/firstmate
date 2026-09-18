@@ -1,0 +1,81 @@
+Driving bin/fm-crew-state.sh, the supervisor-facing crew-state reader, over a real
+git worktree + real state/ dir, with the no-mistakes CLI served from a fakebin.
+Same scenarios run twice: BASE-9bc051f (before the fix) and FIXED (400eb31).
+
+================ S1 stale failed run + newer live run on branch [BASE-9bc051f] ================
+$ no-mistakes runs --limit 20
+  running    fm/feat-a f0f0f0f0  2026-09-19 01:48
+$ fm-crew-state.sh s1
+state: failed · source: run-step · run failed
+
+================ S2 stale failed run + later completed run (crew's own done line) [BASE-9bc051f] ================
+$ no-mistakes runs --limit 20
+  completed  fm/feat-b f0f0f0f0  2026-09-19 02:18  https://github.com/o/r/pull/2890
+  failed     fm/feat-b 999bcf30  2026-09-19 01:48
+$ fm-crew-state.sh s2
+state: failed · source: run-step · run failed
+
+================ S3 ADVERSARIAL current run really failed, crew wrote an older done line [BASE-9bc051f] ================
+$ cat state/s3.status
+done: implementation complete
+$ no-mistakes runs --limit 20
+  failed     fm/feat-c 999bcf30  2026-09-19 01:48
+$ fm-crew-state.sh s3
+state: failed · source: run-step · run failed
+
+================ S4 ADVERSARIAL crew done line while a replacement run is still validating [BASE-9bc051f] ================
+$ no-mistakes runs --limit 20
+  running    fm/feat-d f0f0f0f0  2026-09-19 01:48
+$ fm-crew-state.sh s4
+state: failed · source: run-step · run failed
+
+================ S5 ADVERSARIAL genuine failure, no contradicting evidence [BASE-9bc051f] ================
+$ no-mistakes runs --limit 20
+  failed     fm/feat-e 5dfb4641  2026-09-19 01:49  https://github.com/o/r/pull/77
+$ fm-crew-state.sh s5
+state: failed · source: run-step · run failed
+
+================ S6 ADVERSARIAL malformed ledger row must not unbind the run [BASE-9bc051f] ================
+$ no-mistakes runs --limit 20
+  failed     fm/feat-f 5dfb4641  2026-09-19 01:49  https://github.com/o/r/pull/3 stray
+$ fm-crew-state.sh s6
+state: failed · source: run-step · run failed
+
+================ S1 stale failed run + newer live run on branch [FIXED] ================
+$ no-mistakes runs --limit 20
+  running    fm/feat-a f0f0f0f0  2026-09-19 01:49
+$ fm-crew-state.sh s1
+state: unknown · source: run-step · a newer running run on this branch supersedes the earlier run failed; current state not provable here
+
+================ S2 stale failed run + later completed run (crew's own done line) [FIXED] ================
+$ no-mistakes runs --limit 20
+  completed  fm/feat-b f0f0f0f0  2026-09-19 02:19  https://github.com/o/r/pull/2890
+  failed     fm/feat-b 15245cec  2026-09-19 01:49
+$ fm-crew-state.sh s2
+state: done · source: status-log · PR https://github.com/o/r/pull/2890 merged · later than the run (run failed)
+
+================ S3 ADVERSARIAL current run really failed, crew wrote an older done line [FIXED] ================
+$ cat state/s3.status
+done: implementation complete
+$ no-mistakes runs --limit 20
+  failed     fm/feat-c 15245cec  2026-09-19 01:49
+$ fm-crew-state.sh s3
+state: failed · source: run-step · run failed
+
+================ S4 ADVERSARIAL crew done line while a replacement run is still validating [FIXED] ================
+$ no-mistakes runs --limit 20
+  running    fm/feat-d f0f0f0f0  2026-09-19 01:49
+$ fm-crew-state.sh s4
+state: unknown · source: run-step · a newer running run on this branch supersedes the earlier run failed; current state not provable here
+
+================ S5 ADVERSARIAL genuine failure, no contradicting evidence [FIXED] ================
+$ no-mistakes runs --limit 20
+  failed     fm/feat-e ab79d1e6  2026-09-19 01:49  https://github.com/o/r/pull/77
+$ fm-crew-state.sh s5
+state: failed · source: run-step · run failed · pr=https://github.com/o/r/pull/77
+
+================ S6 ADVERSARIAL malformed ledger row must not unbind the run [FIXED] ================
+$ no-mistakes runs --limit 20
+  failed     fm/feat-f ab79d1e6  2026-09-19 01:49  https://github.com/o/r/pull/3 stray
+$ fm-crew-state.sh s6
+state: failed · source: run-step · run failed
