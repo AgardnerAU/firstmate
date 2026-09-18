@@ -1,0 +1,216 @@
+=== firstmate live lab: real tmux (private socket), real process in the recorded
+    window, real git worktree, real installed no-mistakes CLI on PATH ===
+(FM_GATE_REFUSE_BYPASS=1 is the documented exemption firstmate's own validation uses)
+
+--- S1 stand-down: a live worker on a held task ---
+$ tmux list-windows -t fmses -F '#{window_name}' ; agent-state before
+fm-t1
+agent_state=alive
+
+$ fm-control.sh t1 stand-down
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+
+$ tmux capture-pane -p -t fmses:fm-t1   # the real agent consumed /exit
+1:claude agent ready
+2:/exit
+3:claude: session ended
+4:bash-5.3$
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+$ ls -l state/t1.worker-state
+-rw-------@
+$ endpoint + worktree preserved:
+fm-t1 bash
+README.md
+
+--- S1b stand-down is idempotent, and issues no second exit ---
+$ fm-control.sh t1 stand-down
+already-stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+
+--- S2 fm-crew-state reports a proven hold as parked with a worker-state source ---
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down
+
+--- S3 fm-send refuses to enqueue for a proven worker-free task ---
+$ fm-send.sh t1 'please rebase onto main'
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task t1 deliberately has no worker; relaunch it before sending an instruction
+exit=1
+$ ls state/ (no steering-inbox record was created)
+t1.meta
+t1.worker-state
+
+--- S4 adversarial: a LIVE worker behind a stale stood-down record still wedges ---
+(the agent was restarted in the same endpoint while the record still said stood-down)
+$ grep state= state/t1.worker-state
+state=stood-down
+$ real fm-watch.sh output:
+stale: fmses:fm-t1
+$ pane-hash marker for the window:
+.hash-fmses_fm-t1
+
+--- S4b the same held task, worker really gone: no false wedge alarm ---
+agent_state=dead
+$ real fm-watch.sh ran 15s (running); output:
+(empty above = no stale/wedge wake)
+$ pane-hash markers:
+(none - the held window was never pane-hashed)
+$ wake queue stale rows:
+0
+0
+
+--- S5 repair-worker-state: reality wins, and only toward supervision ---
+$ fm-control.sh t1 repair-worker-state   # endpoint proven worker-free: the hold stands
+intact agent-state=dead t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+$ grep state= state/t1.worker-state
+state=stood-down
+
+# now a live agent comes back in that endpoint, contradicting the record
+$ fm-control.sh t1 repair-worker-state
+warning: task t1 declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+$ ls state/ (record cleared, task back under ordinary supervision)
+home-summary.json
+t1.meta
+t1.status
+terminal-outcomes
+$ fm-crew-state.sh t1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+$ fm-send.sh t1 'ping' (ordinary supervision restored)
+exit=1
+$ fm-send.sh t1 'ping from the mate'   # after repair, ordinary supervision restored
+exit=0
+$ tmux capture-pane -p -t fmses:fm-t1  # the live agent really received it
+: Firstmate instruction waiting: list '/tmp/fm-live-lab-29064/home/state/t1.inbo
+x'/*.msg and, in numeric order, read and act on each, then mv each handled file
+to '/tmp/fm-live-lab-29064/home/state/t1.inbox'/handled/.
+❯
+
+--- S6 adversarial: stand-down refuses while an unacknowledged steer is waiting ---
+$ ls state/t1.inbox
+001.msg
+002.msg
+handled
+$ fm-control.sh t1 stand-down
+error: task t1 has an unacknowledged instruction waiting at /tmp/fm-live-lab-29064/home/state/t1.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /tmp/fm-live-lab-29064/home/state/t1.inbox/001.msg /tmp/fm-live-lab-29064/home/state/t1.inbox/handled/', before standing the worker down
+exit=1
+$ ls state/t1.worker-state
+ls: /tmp/fm-live-lab-29064/home/state/t1.worker-state: No such file or directory
+# operator withdraws the instruction, then retries:
+$ fm-control.sh t1 stand-down
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+
+--- S7 relaunch restores a worker in the SAME endpoint and worktree, clearing the hold ---
+$ fm-control.sh t1 relaunch --note 'resuming the held task'
+error: /tmp/fm-live-lab-29064/home/data/t1/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for t1 could not be launched on claude
+error: t1's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-live-lab-29064/wt-t1
+# the relaunch aborted before publishing a replacement; the declaration it started
+# from was restored rather than left cleared:
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+
+# with a valid brief on disk, the transactional relaunch runs for real:
+$ fm-control.sh t1 relaunch --note 'resuming the held task'
+relaunched t1 harness=claude from=claude model=default effort=default backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+$ ls state/t1.worker-state  (the hold is cleared by the replacement)
+ls: /tmp/fm-live-lab-29064/home/state/t1.worker-state: No such file or directory
+$ tmux list-windows -t fmses -F '#{window_name}'  (same endpoint)
+fm-t1
+$ grep worktree= state/t1.meta  (same worktree)
+worktree=/tmp/fm-live-lab-29064/wt-t1
+$ fm-crew-state.sh t1
+state: working · source: pane · harness busy (fm-spawn)
+
+--- S8: the replacement really is a live agent; stand it down again ---
+$ tmux capture-pane -p -t fmses:fm-t1 | tail -4
+────────────────────────────────────────────────────────────────────────────────
+  Ctx: 35.9k | Ctx(u) Used: 4.5% | In: ...
+  𖠰 wt-t1 | ⎇ task-t1 | Model: Opus 5 |...
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← 1 agent
+$ fm-control.sh t1 stand-down
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-live-lab-29064/wt-t1
+$ grep state= state/t1.worker-state
+state=stood-down
+
+--- S9 adversarial: a VANISHED endpoint is not a healthy hold ---
+$ tmux kill-window -t fmses:fm-t1   # e.g. a reboot or a session prune
+agent_state=missing
+$ fm-crew-state.sh t1
+state: unknown · source: worker-state · stood down but its endpoint is gone: fmses:fm-t1 (relaunch cannot restore it in place)
+$ fm-send.sh t1 'are you there?'   # a missing endpoint stays on ordinary supervision
+fm-send: doorbell not typed because the agent in fmses:fm-t1 has exited; the steer is durably recorded at /tmp/fm-live-lab-29064/home/state/t1.inbox/003.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+
+--- S10 adversarial: the branch-run question must be ANSWERABLE before a hold ---
+# same live task, but the no-mistakes CLI is not installed on this operator's PATH:
+$ env PATH=<without no-mistakes> fm-control.sh t2 stand-down
+stood-down t2 harness=claude backend=tmux endpoint=fmses:fm-t2 worktree=/tmp/fm-live-lab-29064/wt-t2
+$ ls state/t2.worker-state
+/tmp/fm-live-lab-29064/home/state/t2.worker-state
+$ agent still alive?
+agent_state=dead
+
+--- S11 the new worker-state verbs are tmux-only; ordinary Herdr relaunch is untouched ---
+$ fm-control.sh t4 stand-down            (backend=herdr)
+error: task t4 runs on the herdr backend, where 'stand-down' worker-lifecycle control is not supported; use the backend's authorised lifecycle path instead
+$ fm-control.sh t4 repair-worker-state   (backend=herdr)
+error: task t4 runs on the herdr backend, where 'repair-worker-state' worker-lifecycle control is not supported; use the backend's authorised lifecycle path instead
+$ fm-control.sh t4 relaunch              (backend=herdr - reaches ordinary validation, not a lifecycle refusal)
+error: relaunch of a ship task requires --note (or --note-file): the replacement worker inherits the local copy but none of the conversation, so it must be told what happened
+$ ls state/t4.worker-state
+ls: /tmp/fm-live-lab-29064/home/state/t4.worker-state: No such file or directory
+
+--- S12 a home with no no-mistakes CLI installed still permits a hold (documented) ---
+(driven above as S10: fm-control t2 stand-down with the CLI off PATH -> stood-down t2)
+
+--- S13 the branch-run question must be answerable: an unreadable worktree refuses ---
+$ fm-control.sh t3 stand-down   (t3's git link was made unreadable)
+error: task t3's worktree /tmp/fm-live-lab-29064/wt-t3 is not a readable git worktree, so whether it owns an active no-mistakes run cannot be checked; repair it before declaring a hold
+exit=1 ; no worker-state record was written and the live agent was left alone
+
+--- S14 adversarial: an unexplained dead agent is NOT relabelled as a deliberate hold ---
+agent_state=dead (the worker died on its own)
+$ fm-control.sh t3 stand-down
+error: task t3's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /tmp/fm-live-lab-29064/home/state/t3.status, then re-run stand-down
+$ ls state/t3.worker-state
+ls: /tmp/fm-live-lab-29064/home/state/t3.worker-state: No such file or directory
+
+--- S15 adversarial: an unprovable record never presents itself as a healthy hold ---
+# (a corrupted record: a duplicated key)
+$ fm-crew-state.sh t3
+state: unknown · source: worker-state · invalid worker-state record; reconcile it with 'fm-control t3 repair-worker-state'
+$ fm-send.sh t3 'still there?'  # an unprovable record never suppresses a steer
+fm-send: doorbell not typed because the agent in fmses:fm-t3 has exited; the steer is durably recorded at /tmp/fm-live-lab-29064/home/state/t3.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+$ fm-control.sh t3 repair-worker-state
+warning: task t3 had a worker-state record that no longer describes this task and endpoint; it was cleared and the task is back under ordinary supervision
+cleared-invalid agent-state=dead t3 harness=claude backend=tmux endpoint=fmses:fm-t3 worktree=/tmp/fm-live-lab-29064/wt-t3
+$ ls state/t3.worker-state
+ls: /tmp/fm-live-lab-29064/home/state/t3.worker-state: No such file or directory
+
+--- S16 adversarial: a hold is refused while the task owns an in-flight run ---
+(the no-mistakes CLI here is a stand-in reporting an active run on the task's branch)
+$ fm-control.sh t5 stand-down
+error: task t5 owns an active no-mistakes run (01ACTIVE) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run 01ACTIVE', before standing the worker down
+$ ls state/t5.worker-state
+ls: /tmp/fm-live-lab-29064/home/state/t5.worker-state: No such file or directory
+agent_state=alive (the worker the run needs was left running)
+
+--- S17 adversarial: a live run on the held branch outranks the hold in reporting ---
+# first the hold is taken with the real CLI (no run registered): 
+stood-down t5 harness=claude backend=tmux endpoint=fmses:fm-t5 worktree=/tmp/fm-live-lab-29064/wt-t5
+$ fm-crew-state.sh t5   (with a CLI reporting an active run on task-t5)
+state: unknown · source: run-step · run inventory unavailable; run id: 01ACTIVE
+$ fm-crew-state.sh t5   (with the real CLI: no run anywhere)
+state: parked · source: worker-state · worker deliberately stood down

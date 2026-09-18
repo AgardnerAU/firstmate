@@ -1,0 +1,13 @@
+The real fm-watch.sh supervising the held task t1 for 15s, with a valid
+stood-down record and a recovery-grade classifier reporting the endpoint
+worker-free. Watcher stdout was EMPTY for the whole run - no stale wake, no
+wedge escalation - and the held window was never pane-hashed:
+
+  $ ls -a state | grep hash
+  (none - the held window was never pane-hashed)
+  $ grep -c stale state/.wake-queue
+  0
+
+The counterfactual is in watcher-live-worker-wedge.txt: with a LIVE agent behind
+the same record, the same watcher emitted "stale: fmses:fm-t1" and did hash the
+window, so the record never hides a genuine wedge.
