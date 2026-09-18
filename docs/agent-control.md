@@ -45,6 +45,8 @@ An interrupt is not complete until the composer is empty.
 muse is the one verified adapter that restores the cancelled prompt back into its composer as real text, so its interrupt key is followed by a Ctrl+U clear; without it the next submitted line - including this plane's own exit command - would concatenate onto the restored prompt and submit both as one line.
 The clear is refused before anything is sent when the recorded backend cannot deliver it.
 
+`exit` reads the composer's state before typing the exit command and requires the exact `empty` verdict; a `pending` verdict refuses by naming the pending text, and any other verdict (`unknown`, `pending-unproven`, or an unreadable read) refuses as not proven empty, matching the fail-safe contract every other consumer that can overwrite composer input follows.
+
 **Teardown and discard are not verbs and will not become verbs.**
 `exit` stops an agent and preserves everything else.
 Removing a worktree, closing an endpoint, or discarding work stays with [`bin/fm-teardown.sh`](../bin/fm-teardown.sh), which owns the landed-work test.
@@ -58,7 +60,7 @@ Its short `standing-down` transition never suppresses monitoring, and the comple
 
 Three things a stand-down deliberately cannot do.
 It cannot run while the task owns an in-flight no-mistakes run: that run owns the branch and needs a worker at its gates, so finish it or abort it yourself (`no-mistakes axi abort --run <id>`) first - stand-down never cancels a run for you.
-The shared branch-run verdict is the one owner of that question for both stand-down and current-state reporting, and it always asks the same thing: does THIS branch have a run in flight?
+The branch-run verdict in [`bin/fm-nm-run-lib.sh`](../bin/fm-nm-run-lib.sh) is the one owner of that question, and it always asks the same thing: does THIS branch have a run in flight?
 The branch read - `no-mistakes axi status`, which reports the repository's active run and falls back to the most recent one only when nothing is in flight - answers it: a non-terminal run on this branch is `active`, and a readable answer that puts no non-terminal run on this branch is `quiet`.
 Only a branch read that could not be interpreted leaves the question open: the CLI failed or timed out, returned a non-empty malformed status, named an active run without a placeable branch identity, or named a live run on this branch whose head cannot be placed against the local HEAD (the head rule exists to reject a historical run on a reused branch, and a run that is still going owns the branch however far local work has advanced past the commit it started on).
 An open question is refused, and the refusal names what could not be read - as is an absent or unreadable worktree.
@@ -75,13 +77,13 @@ Reality wins, and any change moves only toward supervision: a record that no lon
 A valid declaration is preserved while its exact endpoint is proven dead, but a dead endpoint alone never lets repair create a declaration.
 Repair can therefore retain an established hold or return a task to ordinary monitoring, but never infer a new hold from worker absence.
 
-`fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an active verdict keeps run-step authority even when its uncorroborated details are withheld, so it reports `working` rather than falling through to the hold.
-Terminal run details are reported only when the branch read agrees in state and head with the newest same-branch terminal row in the repo-wide listing; [`bin/fm-nm-run-lib.sh`](../bin/fm-nm-run-lib.sh) owns the exact attribution rule.
+`fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an attributed run that is still live keeps run-step authority, so a run parked at a gate reports its own step and findings rather than falling through to the hold.
+A terminal run is history, so the record outranks it; [`bin/fm-nm-run-lib.sh`](../bin/fm-nm-run-lib.sh) owns which run is attributed in the first place.
 It is also only ever a park while the recorded endpoint is still there and merely has no agent.
 An endpoint that has vanished reports `unknown` and names the lost endpoint, because the declared hold - worktree, work, and an in-place relaunch - can no longer be resumed where it was declared.
 
 **`resume` is not a verb.**
-It is not deterministic across the verified adapters: codex and grok resume only from a session id printed at exit, opencode continues the most recent session for the cwd, and claude, pi, pi-signed, and kimi have no verified pane-resume contract.
+It is not deterministic across the verified adapters: codex, grok, and gemini resume only from a session id printed at exit, opencode continues the most recent session for the cwd, and claude, pi, pi-signed, omp, kimi, and agy have no verified pane-resume contract.
 `relaunch` covers the same need on every adapter, because the brief on disk - not a harness-private session - is the durable instruction.
 
 ## Transactional relaunch
@@ -121,6 +123,7 @@ Switching harness is therefore one ordinary relaunch rather than a separate mech
 - A remotely placed secondmate is refused by name.
   Its agent runs on another host, so none of the postconditions this plane verifies could be read for it here; local endpoint validation would refuse the record regardless, because `window=remote:<id>` can never match a local backend's required shape.
   Drive that lifecycle on its own host and reconcile it through the secondmate recovery path.
+  For `relaunch` that host-side drive is `bin/fm-on.sh <id> fm-remote-secondmate-control.sh relaunch ...`, whose host-local leg runs this same plane against a record that is ordinary and local there, so every checkpoint, journal, rollback, and postcondition below applies unchanged ([`docs/remote-secondmates.md`](remote-secondmates.md)); `interrupt` and `exit` have no such route.
 - An unverified harness is refused rather than guessed at.
 - An implicit relaunch from a prefixed raw-command basename is refused before the agent or durable state is touched because its original launch command cannot be reconstructed.
 - An adapter that is not verified for this task's kind is refused **before** the running agent is stopped, not after.
@@ -133,7 +136,9 @@ Switching harness is therefore one ordinary relaunch rather than a separate mech
   They do not drive Herdr lifecycle behaviour.
 - An ambiguous or unreadable endpoint state refuses.
   Only a positively classified state acts.
-- `fm-spawn --relaunch` independently refuses unless the recorded endpoint is positively agent-free and its shell is sitting in the recorded worktree, so a replacement can never join a live agent or start outside the copy holding the work.
+- `exit`'s composer-empty check, above, is itself a fail-closed boundary that `relaunch` inherits by stopping the old agent through `exit`.
+- `fm-spawn --relaunch` independently refuses unless the recorded endpoint is positively agent-free, so a replacement can never join a live agent.
+  It also requires the shell to be in the recorded worktree: tmux refuses immediately when it is not, while Herdr sends one `cd` to the recorded path and refuses unless a subsequent path read confirms the move.
 
 ## Capability matrix
 
@@ -147,12 +152,12 @@ Backend capability comes from each adapter's real surface, not from a policy cho
 | cmux | yes | yes | yes | yes | no |
 | orca | no | yes | yes | no | no |
 
-Per-harness interrupt keys, repeat counts, composer clears, exit commands, and supported task kinds live in `bin/fm-control-lib.sh` and are exercised for every verified harness by `tests/fm-control.test.sh`.
+Per-harness interrupt keys, repeat counts, composer clears, exit commands, and supported task kinds live in `bin/fm-control-lib.sh` and are exercised for every verified harness by `tests/fm-control.test.sh`, with adapters outside its lane pinning their control mechanics in their own harness suites.
 The empirical basis for each adapter's value is the `harness-adapters` skill's verification record for that adapter.
 
 ## Verification
 
-- `tests/fm-control.test.sh` - the adapter contract for every verified harness, the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, idempotent, and deliberate stand-down lifecycle cases, every stand-down refusal that carries the burden of proof (active run, unplaceable run, unanswerable check, unreadable worktree, pending instruction), and marker non-regression, all against a stubbed session provider.
+- `tests/fm-control.test.sh` - the adapter contract for its verified-harness lane (adapters outside the lane pin their control mechanics in their own harness suites), the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, idempotent, and deliberate stand-down lifecycle cases, every stand-down refusal that carries the burden of proof (active run, unplaceable run, unanswerable check, unreadable worktree, pending instruction), and marker non-regression, all against a stubbed session provider.
 - `tests/fm-crew-state.test.sh` - includes the absence-as-healthy counterfactual: a stood-down record whose endpoint has vanished must report `unknown` and name the lost endpoint, so the test fails the moment absence is presented as a healthy hold, and an absent worker with no declaration at all is still reported as a problem.
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, a restart from a deliberately stood-down worker, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
-- `tests/fm-control-herdr-smoke.test.sh` - interrupt and exit on the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
+- `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
