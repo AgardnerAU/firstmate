@@ -1,0 +1,6 @@
+ok - a lock creation the environment refuses ends with a definite outcome and no reclaim marker
+ok - a lock released mid-acquire ends in an acquisition
+ok - losing the retried creation reports the peer that holds the lock
+ok - the reclaim-marker chain terminates at its published depth bound
+ok - a lock age that reaches the comparison as a non-number makes the freshness comparison decide 'still fresh' rather than error
+ok - a failed arm's dead owner is reclaimed despite a ledger frozen at arming
