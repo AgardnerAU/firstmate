@@ -79,6 +79,7 @@ Repair can therefore retain an established hold or return a task to ordinary mon
 
 `fm-crew-state` reports a proven stand-down as `state: parked · source: worker-state`, but only where nothing more current exists: an attributed run that is still live keeps run-step authority, so a run parked at a gate reports its own step and findings rather than falling through to the hold.
 A terminal run is history, so the record outranks it; [`bin/fm-nm-run-lib.sh`](../bin/fm-nm-run-lib.sh) owns which run is attributed in the first place.
+Where no run was attributed but the preserved branch still provably owns a live one, the hold is reported as `working` with `active run (details withheld)` rather than as a healthy park, because the record describes the absence of a worker and never the absence of work.
 It is also only ever a park while the recorded endpoint is still there and merely has no agent.
 An endpoint that has vanished reports `unknown` and names the lost endpoint, because the declared hold - worktree, work, and an in-place relaunch - can no longer be resumed where it was declared.
 
