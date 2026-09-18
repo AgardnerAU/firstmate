@@ -225,9 +225,8 @@ test_ship_modes_generate_clean_briefs() {
 # worker-writing-style change. Normalise only the test checkout and temporary
 # roots, then compare every remaining byte so optional rendering cannot change
 # any scaffold when the local file is absent.
-test_absent_worker_writing_style_preserves_pre_change_bytes() {
-  local home kind id brief actual expected
-  home="$TMP_ROOT/home"
+assert_scaffolds_match_absent_fixtures() {
+  local home="$1" reason="$2" kind id brief actual expected
   mkdir -p "$home/data" "$home/config"
 
   for kind in ship scout secondmate; do
@@ -247,15 +246,35 @@ test_absent_worker_writing_style_preserves_pre_change_bytes() {
         ;;
     esac
     brief="$home/data/$id/brief.md"
-    actual="$TMP_ROOT/absent-$kind.normalised.md"
+    actual="$home/absent-$kind.normalised.md"
     expected="$ROOT/tests/fixtures/fm-brief/absent-$kind.md"
-    TMP_NORM="$TMP_ROOT" ROOT_NORM="$ROOT" perl -pe \
-      's/\Q$ENV{TMP_NORM}\E/__TMP_ROOT__/g; s/\Q$ENV{ROOT_NORM}\E/__ROOT__/g' \
+    HOME_NORM="$home" ROOT_NORM="$ROOT" perl -pe \
+      's/\Q$ENV{HOME_NORM}\E/__TMP_ROOT__\/home/g; s/\Q$ENV{ROOT_NORM}\E/__ROOT__/g' \
       "$brief" > "$actual"
     cmp -s "$expected" "$actual" \
-      || fail "$kind scaffold changed from its pre-writing-style bytes while the local file was absent"
+      || fail "$kind scaffold changed from its pre-writing-style bytes $reason"
   done
+}
+
+test_absent_worker_writing_style_preserves_pre_change_bytes() {
+  assert_scaffolds_match_absent_fixtures "$TMP_ROOT/home" "while the local file was absent"
   pass "fm-brief.sh: absent writing style preserves pre-change bytes for every scaffold"
+}
+
+# A captain who blanks the file switches the rules off; an empty rule set must
+# render exactly like a missing file, with no heading and no fallback pointer.
+test_blank_worker_writing_style_is_treated_as_absent() {
+  local home
+  home="$TMP_ROOT/blank-style-home"
+  mkdir -p "$home/config"
+  printf '\n   \n\t\n' > "$home/config/worker-writing-style.md"
+
+  assert_scaffolds_match_absent_fixtures "$home" "while the local file was blank"
+  assert_no_grep "# Worker writing style" "$home/data/absent-secondmate/brief.md" \
+    "blank worker-writing-style file emitted a heading"
+  assert_no_grep "the embedded rules above" "$home/data/absent-secondmate/brief.md" \
+    "blank worker-writing-style file emitted the embedded-rules fallback pointer"
+  pass "fm-brief.sh: blank writing style renders identically to an absent file"
 }
 
 test_worker_writing_style_is_optional_and_reaches_new_scaffolds() {
@@ -1031,6 +1050,7 @@ test_no_heredoc_in_command_substitution
 test_help_includes_entire_header
 test_ship_modes_generate_clean_briefs
 test_absent_worker_writing_style_preserves_pre_change_bytes
+test_blank_worker_writing_style_is_treated_as_absent
 test_worker_writing_style_is_optional_and_reaches_new_scaffolds
 test_ship_mode_is_required_and_closed_set
 test_ship_mode_is_explicit_not_registry

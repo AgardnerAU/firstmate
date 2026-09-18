@@ -312,8 +312,8 @@ The full cmux home label also includes a short hash of the resolved `FM_ROOT` pa
 `config/worker-writing-style.md` is an optional local, gitignored file that contains the writing rules for human-facing prose produced by workers.
 `bin/fm-brief.sh` injects its content under a `Worker writing style` heading in each ship, scout, and secondmate charter scaffold that it generates, independent of the selected harness or model.
 The rules cover chat, documentation, commit messages, pull request bodies, issue text, and code comments; code, identifiers, and test fixtures are outside this prose scope.
-Secondmate homes provisioned before this support are excluded and take up the rules when next provisioned fresh.
-When the file is absent, the heading and content are both omitted, so generated briefs retain their existing content.
+Any secondmate home provisioned while `config/worker-writing-style.md` was absent - including one provisioned after this support landed - is excluded, because its existing `data/charter.md` never mentions the file and launch relaunches that charter; such a home takes up the rules when it is next provisioned fresh.
+When the file is absent, or present with no non-blank content, the heading and content are both omitted, so generated briefs retain their existing content.
 Ship and scout briefs retain the rules copied when generated; launch does not refresh them.
 When the file is present at generation, a secondmate charter also instructs the worker to read its own `$FM_HOME/config/worker-writing-style.md` at every intake and use the embedded rules only when that file is absent.
 Secondmate inheritance and mandatory reread framing are owned by [`secondmate-provisioning`](../.agents/skills/secondmate-provisioning/SKILL.md).
