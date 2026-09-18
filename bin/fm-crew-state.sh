@@ -273,7 +273,17 @@ emit_worker_state_if_current() {  # <proven-only|full>
   case "$WORKER_LIFECYCLE" in
     stood-down)
       case "$(fm_backend_agent_state "$TASK_BACKEND" "$BACKEND_TARGET" 2>/dev/null || true)" in
-        dead) emit parked worker-state "worker deliberately stood down" ;;
+        dead)
+          # A hold is only healthy while there is no work in flight. A worker-
+          # state record describes the absence of a worker, never the absence
+          # of work, so a live run on the preserved branch is reported with its
+          # details withheld rather than as a healthy park. The other arms below
+          # are not healthy holds and keep reporting on their own evidence.
+          if [ "$mode" = full ] && branch_run_verdict_is_active; then
+            emit working run-step "active run (details withheld)${FM_NM_BRANCH_RUN_ID:+${SEP}run: $FM_NM_BRANCH_RUN_ID}"
+          fi
+          emit parked worker-state "worker deliberately stood down"
+          ;;
         # A VANISHED endpoint is not the hold the operator declared. `dead` is
         # the declared state: the endpoint is still there, still holds the
         # worktree and the uncommitted work, and a relaunch restores the worker
@@ -305,14 +315,10 @@ emit_worker_state_if_current() {  # <proven-only|full>
 }
 
 # 0 when this branch provably owns a live no-mistakes run. Consulted only where
-# a worker-state record would otherwise answer, so ordinary run attribution
-# below remains the single owner of run reporting.
+# a proven hold would otherwise answer, so ordinary run attribution below
+# remains the single owner of run reporting.
 branch_run_verdict_is_active() {
   FM_NM_BRANCH_RUN_ID=
-  case "$WORKER_LIFECYCLE" in
-    stood-down|standing-down|invalid) ;;
-    *) return 1 ;;
-  esac
   [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ] || return 1
   fm_nm_branch_run_verdict "$WT" "$CREW_BRANCH" "$NM_TIMEOUT"
   [ "$FM_NM_BRANCH_RUN_VERDICT" = active ]
@@ -1040,15 +1046,7 @@ fi
 # the current state.
 # With no run to consult, a worker-state record is the most current statement
 # there is about this task - including the discrepancies, whose only remaining
-# alternative is a guess from the pane or a stale status log. Except while the
-# branch still owns a live run: a worker-state record describes the absence of
-# a worker, never the absence of work, so an established active verdict keeps
-# its own authority here even when attribution above could place no detail to
-# report. Reporting it with details withheld is the honest answer; letting the
-# record answer instead would render a live run as a healthy hold.
-if branch_run_verdict_is_active; then
-  emit working run-step "active run (details withheld)${FM_NM_BRANCH_RUN_ID:+${SEP}run: $FM_NM_BRANCH_RUN_ID}"
-fi
+# alternative is a guess from the pane or a stale status log.
 emit_worker_state_if_current full || true
 
 [ -n "$BACKEND_TARGET" ] || emit unknown none "no backend target recorded"

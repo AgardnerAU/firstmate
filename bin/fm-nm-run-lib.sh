@@ -477,26 +477,19 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 # quiet branch read into a refusal. That is why widening FM_NM_RUNS_LIMIT is a
 # reporting nicety rather than a safety setting.
 #
-# The optional display and TOON fields are reporting projections, never a
-# second safety decision, and they are assigned in exactly one place below.
-# Terminal detail is projected only when the branch read agrees in state and
-# head with the newest same-branch terminal listing row; older terminal rows
-# can never corroborate it. Active evidence remains authoritative without
-# projecting details, and a direct active answer skips the optional listing
-# entirely.
+# The verdict carries no run detail: it answers the safety question and names
+# the active run's id when the branch read placed one. Callers that need run
+# detail read it through their own attribution. A direct active answer skips
+# the optional listing entirely.
 fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
   local wt=$1 branch=$2 timeout=$3 limit=${4:-}
   local status_out='' status_rc status_stderr='' status_body='' direct_status=''
   local run_branch_raw='' run_branch='' run_head=''
-  local branch_state=unknown branch_reason='' active_id='' terminal_toon=''
-  local terminal_status='' terminal_outcome='' terminal_head='' terminal_corroborated=0
-  local inventory row st rest br sha render_locked=0
-  local listing_live='' direct_full='' listing_full=''
+  local branch_state=unknown branch_reason='' active_id=''
+  local inventory row st rest br sha listing_live=''
   FM_NM_BRANCH_RUN_VERDICT=unknown
   FM_NM_BRANCH_RUN_REASON=
   FM_NM_BRANCH_RUN_ID=
-  FM_NM_BRANCH_RUN_DISPLAY=
-  FM_NM_BRANCH_RUN_TOON=
   case "$limit" in ''|*[!0-9]*|0) limit=$(fm_nm_runs_limit) ;; esac
   [ -d "$wt" ] || {
     FM_NM_BRANCH_RUN_REASON="worktree '$wt' is not readable, so whether branch '$branch' has a run in flight could not be read"
@@ -541,17 +534,6 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
             branch_reason="the run 'no-mistakes axi status' reports on branch $branch (head ${run_head:-unknown}) cannot be placed against this worktree's HEAD"
           fi
         fi
-      elif [ "$run_branch" = "$branch" ] \
-        && fm_nm_head_matches_worktree "$wt" "$run_head"; then
-        terminal_toon=$status_out
-        terminal_status=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" status)")
-        terminal_outcome=$(fm_nm_strip_quotes "$(fm_nm_field "$status_out" outcome)")
-        case "$terminal_outcome" in
-          failed) terminal_status=failed ;;
-          cancelled) terminal_status=cancelled ;;
-          passed|checks-passed) terminal_status=completed ;;
-        esac
-        terminal_head=$run_head
       fi
     fi
   elif [ "$status_rc" != 0 ] \
@@ -575,23 +557,8 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       { [ -n "$br" ] && [ -n "$sha" ]; } || continue
       [ "$br" = "$branch" ] || continue
       case "$st" in
-        completed|failed|cancelled)
-          if [ "$render_locked" = 0 ]; then
-            render_locked=1
-            if fm_nm_head_matches_worktree "$wt" "$sha" \
-              && [ -n "$terminal_toon" ] \
-              && [ "$st" = "$terminal_status" ]; then
-              direct_full=$(git -C "$wt" rev-parse --verify "${terminal_head}^{commit}" 2>/dev/null || true)
-              listing_full=$(git -C "$wt" rev-parse --verify "${sha}^{commit}" 2>/dev/null || true)
-              if [ -n "$direct_full" ] && [ "$direct_full" = "$listing_full" ]; then
-                terminal_corroborated=1
-              fi
-            fi
-          fi
-          ;;
-        *)
-          [ -n "$listing_live" ] || listing_live="$st $sha"
-          ;;
+        completed|failed|cancelled) ;;
+        *) [ -n "$listing_live" ] || listing_live="$st $sha" ;;
       esac
     done <<< "$inventory"
   fi
@@ -604,9 +571,5 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
     FM_NM_BRANCH_RUN_VERDICT=quiet
   else
     FM_NM_BRANCH_RUN_REASON=$branch_reason
-  fi
-  if [ "$FM_NM_BRANCH_RUN_VERDICT" = quiet ] \
-    && [ "$terminal_corroborated" = 1 ]; then
-    FM_NM_BRANCH_RUN_TOON=$terminal_toon
   fi
 }

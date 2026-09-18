@@ -1431,6 +1431,38 @@ EOF
   pass "a live branch run outranks a stood-down record even without projectable detail"
 }
 
+# The counterfactual for the arm above: a live run outranks a healthy HOLD, and
+# nothing else. A vanished endpoint is not a hold - it is the one report that
+# tells the operator the declared hold can no longer be resumed in place - so it
+# keeps its own authority even while the branch owns a run.
+test_a_live_run_does_not_hide_a_vanished_stood_down_endpoint() {
+  reset_fakes
+  local d out
+  d=$(new_case stood-down-gone-with-live-run)
+  make_repo_on_branch "$d/wt" fm/feat-gone-live
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-gone-live.meta" \
+    "window=fm:fm-feat-gone-live" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-gone-live.worker-state" <<'EOF'
+schema=1
+task_id=feat-gone-live
+endpoint=fm:fm-feat-gone-live
+state=stood-down
+EOF
+  printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-gone-live.status"
+  FM_FAKE_TMUX_MISSING=1
+  FM_FAKE_AXI_STATUS="$(run_running fm/other-crew)"
+  FM_FAKE_RUNS_LIST="  running    fm/feat-gone-live f0f0f0f0  2026-08-29 13:00"
+  out=$(run_crew_state "$d" feat-gone-live)
+  assert_contains "$out" "state: unknown" \
+    "a hold whose endpoint has vanished cannot be reported as healthy or as work"
+  assert_contains "$out" "fm:fm-feat-gone-live" \
+    "the report must still name the endpoint that can no longer be relaunched"
+  assert_not_contains "$out" "state: working" \
+    "a live run must not hide the lost endpoint"
+  pass "a live run does not suppress the vanished-endpoint report"
+}
+
 # An unprovable record is a repair prompt, not a mask: it must never hide a
 # real run outcome the reader can still act on.
 test_invalid_worker_state_record_does_not_mask_a_failed_run() {
@@ -3763,6 +3795,7 @@ test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
 test_an_absent_worker_without_a_declaration_is_still_reported
 test_active_run_outranks_a_stood_down_record
 test_live_branch_run_outranks_a_stood_down_record_without_detail
+test_a_live_run_does_not_hide_a_vanished_stood_down_endpoint
 test_invalid_worker_state_record_does_not_mask_a_failed_run
 test_terminal_failed
 test_terminal_failed_ci_orphan_after_green_reads_done
