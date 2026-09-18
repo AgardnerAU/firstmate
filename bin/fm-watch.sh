@@ -725,17 +725,18 @@ recorded_windows() {
 # endpoint has no agent. A live replacement behind a stale record is never
 # exempt - it re-enters stale and wedge detection on the same poll.
 #
-# The exemption is deliberately scoped to the pane-stale and wedge work at the
-# two call sites, NOT to every per-window check. The steering-inbox re-ring
+# The exemption is deliberately scoped to the pane-stale and wedge work at its
+# one call site, NOT to every per-window check. The fast push-event path needs
+# no exemption of its own: it only ever sees push-capable windows, and a hold is
+# tmux-only, so a stood-down window never reaches it. The steering-inbox re-ring
 # ladder keeps running for a held task, because the two guards that keep an
 # inbox empty at stand-down time (fm-control's pending-instruction refusal and
 # fm-send's refusal to enqueue for a proven worker-free task) take different
 # locks and so cannot exclude a steer that lands on the record's other side.
 # Supervising that message costs one ladder check and is the only thing that
 # surfaces it before a relaunch.
-window_is_stood_down() {  # <window>
-  local w=$1 task
-  task=$(window_to_task "$w" "$STATE")
+window_is_stood_down() {  # <window> <task>
+  local w=$1 task=$2
   [ -n "$task" ] || return 1
   [ "$(fm_worker_state_status "$STATE" "$task" "$w")" = stood-down ] || return 1
   [ "$(fm_backend_agent_state "$(window_backend "$w")" "$w" 2>/dev/null || true)" = dead ]
@@ -2505,7 +2506,7 @@ EOF
     # Steering-inbox loss detection runs before the secondmate stale
     # exemption below, because a mate's steers land in an inbox too.
     [ -z "$task" ] || inbox_steer_check "$w" "$task"
-    window_is_stood_down "$w" && continue
+    window_is_stood_down "$w" "$task" && continue
     key=$(window_key "$w")
     last=$(last_status_line "$STATE/$task.status")
     if ! status_is_paused_or_captain_held "$last" && [ -e "$STATE/.paused-$key" ]; then
