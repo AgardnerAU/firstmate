@@ -38,8 +38,8 @@ If the top-level path is the primary checkout or not the worktree you were launc
    A mid-task `working:` line (including setup complete) is nonterminal: do not end the
    turn after it; continue the same stage until a defined `done:` gate under Definition of done.
    Use `paused: {why}` - distinct from `blocked:` - ONLY when you are deliberately idling on a
-   known external wait you expect to clear on its own (an upstream release, a rate-limit reset,
-   a scheduled window): firstmate then leaves your idle pane alone and rechecks it on a long
+   known external wait you expect to clear on its own (an upstream release, a rate-limit reset, a scheduled window, or your own validation round):
+   firstmate then leaves your idle pane alone and rechecks it on a long
    cadence instead of treating it as a possible wedge. Use `blocked:` when you are stuck and need help.
 5. If you hit the same obstacle twice, append `blocked: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
@@ -48,8 +48,17 @@ If the top-level path is the primary checkout or not the worktree you were launc
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
    Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
 7. Never stop, restart, or update the shared `no-mistakes` daemon - it is one instance serving
-   every lane/home, so restarting it kills other lanes' in-flight pipeline runs. On ANY no-mistakes
-   daemon error, append `blocked: {the daemon error}` and stop; only firstmate manages the daemon.
+   every lane/home, so restarting it kills other lanes' in-flight pipeline runs; only firstmate
+   manages the daemon.
+   Before you append `blocked:` about the pipeline, run `no-mistakes daemon status` and
+   `no-mistakes axi status`. If the daemon socket refuses connections or is missing, append
+   `blocked: {the daemon error}` and stop even when the local run record still says running or
+   fixing, because that record can be stale after the daemon exits. A run record failed with a
+   daemon error is also a real block.
+   Only after ruling out socket refusal, if the run is still running or fixing, reattach and keep
+   going. A drive-call error, timeout, slow read, or generic unreachability is NOT a daemon error:
+   the daemon accepts `respond` immediately and runs the round in the background, so a killed or
+   timed-out call was only waiting for a read while the run kept working.
 
 # Firstmate instruction inbox
 Firstmate steers you through durable message files in '__TMP_ROOT__/home/state/absent-ship.inbox'.
@@ -60,7 +69,7 @@ The move IS the acknowledgement: without it firstmate rings again and eventually
 If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `__ROOT__/bin/fm-ensure-agents-md.sh .` in the worktree.
 Record only project knowledge useful to almost every future session.
 For anything the codebase already shows, prefer a pointer to the authoritative file, command, or doc over copying the detail.
-If you touch a project `AGENTS.md` that lacks `## Maintaining this file`, add that short self-governance section from `__ROOT__/bin/fm-ensure-agents-md.sh` in the same pass.
+If you touch a project `AGENTS.md`, follow `__ROOT__/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
 Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no durable project knowledge.
 
 # Definition of done
