@@ -1,0 +1,5 @@
+ok - archived captain calls resolve, unanswered and unreadable ones still refuse
+ok - the configured archive is read for every TOML form tasks-axi honours
+ok - the archive setting is read from the [markdown] table only
+ok - a reused archived id resolves to its newest row, not a stale answered one
+ok - a wedged archive read stops the gate by name instead of hanging

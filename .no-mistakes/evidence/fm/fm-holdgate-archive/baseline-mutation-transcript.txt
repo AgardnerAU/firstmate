@@ -1,0 +1,45 @@
+##### BASELINE A: pre-fix tree 9bc051f - scenario 1 (answered+archived call) must FAIL
+========== SCENARIO 1: verify + complete + teardown on the answered, archived call ==========
+$ fm-captain-hold.sh verify sample-answered-review
+fm-captain-hold: no captain-held task sample-answered-call and no migrated hold for it in this home's configured backlog (data directory /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//holdgate.fyAMZJ/scenario/data); the nearest legacy identity sample-answered-review-decision-sample-answered-call also resolves to nothing
+exit=1
+$ fm-captain-hold.sh complete sample-answered-review sample-answered-call
+fm-captain-hold: no captain-held task sample-answered-call and no migrated hold for it in this home's configured backlog (data directory /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//holdgate.fyAMZJ/scenario/data); the nearest legacy identity sample-answered-review-decision-sample-answered-call also resolves to nothing
+exit=1
+$ fm-teardown.sh sample-answered-review
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+fm-captain-hold: no captain-held task sample-answered-call and no migrated hold for it in this home's configured backlog (data directory /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//holdgate.fyAMZJ/scenario/data); the nearest legacy identity sample-answered-review-decision-sample-answered-call also resolves to nothing
+REFUSED: scout task sample-answered-review has not passed the captain-call completion gate.
+Inventory its report and any visual review through bin/fm-captain-hold.sh before teardown.
+exit=1
+
+========== SCENARIO 2: unanswered call, closed bare and archived - gate must still refuse ==========
+
+##### BASELINE B: 6fee418^ (archive lookup, oldest-first) - scenario 3 reused id must WAVE THROUGH
+========== SCENARIO 3: reused id - old answered archived row must not wave through a new unanswered one ==========
+archive sections:
+2:## Archived 2026-09-19
+11:## Archived 2026-09-19
+$ tasks-axi show sample-reused-call --file data/done-archive.md  # backend returns the FIRST (stale, answered) row
+error: Archive path must not be the active backlog path
+code: VALIDATION_ERROR
+$ fm-captain-hold.sh verify sample-second-review   # must refuse - this call was never answered
+verified: sample-second-review captain-call inventory
+exit=0
+(both reviews inventory the SAME reused id, so the newest row governs both - the first review now refuses too, which is the conservative direction)
+
+========== SCENARIO 4: unreadable archive must refuse by name, absent archive must not ==========
+
+##### BASELINE C: e985602^ (unbounded archive read) - scenario 6 must HANG past its bound
+========== SCENARIO 6: a wedged archive read stops the gate by name instead of hanging ==========
+$ FM_BACKLOG_ROW_TIMEOUT_SECS=2 fm-captain-hold.sh verify sample-wedged-review
+verified: sample-wedged-review captain-call inventory
+exit=0 after 241s
+
+fixture root: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//holdgate.8vKgKu

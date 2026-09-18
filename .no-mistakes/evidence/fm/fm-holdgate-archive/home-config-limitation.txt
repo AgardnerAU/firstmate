@@ -1,0 +1,12 @@
+$ HOME=<fixture> tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+files written under data/:
+backlog.md
+home-closed.md
+note-archive.md
+sample-homecfg-review
+$ fm-captain-hold.sh verify sample-homecfg-review
+fm-captain-hold: no captain-held task sample-homecfg-call and no migrated hold for it in this home's configured backlog (data directory /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//homecfg.75XH6O/home/data); the nearest legacy identity sample-homecfg-review-decision-sample-homecfg-call also resolves to nothing
+exit=1

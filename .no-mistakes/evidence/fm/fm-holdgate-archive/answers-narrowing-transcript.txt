@@ -1,0 +1,23 @@
+##### HEAD 7e082f9 (answers narrowed back to the live backlog)
+live backlog still carries the id? no
+archived? 1
+\$ printf "sample-answers-call\tNorthern route.\n" | fm-captain-hold.sh answers --any-origin --source chat
+skipped: sample-answers-call (absent)
+answers: closed=0 skipped=1
+exit=1
+
+##### PRE-BRANCH 9bc051f (the behaviour this must match)
+live backlog still carries the id? no
+archived? 1
+\$ printf "sample-answers-call\tNorthern route.\n" | fm-captain-hold.sh answers --any-origin --source chat
+skipped: sample-answers-call (no captain-held task with that id)
+answers: closed=0 skipped=1
+exit=1
+
+##### e985602^ (the widened read, before the narrowing)
+live backlog still carries the id? no
+archived? 1
+\$ printf "sample-answers-call\tNorthern route.\n" | fm-captain-hold.sh answers --any-origin --source chat
+skipped: sample-answers-call (already closed)
+answers: closed=0 skipped=1
+exit=1
