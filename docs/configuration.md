@@ -1373,8 +1373,7 @@ Arm the check once per home with `bin/fm-tool-update-check.sh arm`.
 | `FM_TOOL_UPDATE_PROBE_SECS` | 5 | Bounds one probe. |
 | `FM_TOOL_UPDATE_BUDGET_SECS` | 20 | Bounds a whole sweep. |
 
-- A sweep that skips work because its budget runs out records the partial findings, including the incomplete check, and waits until the next configured interval before probing again.
-- A sweep that completes its last probe after the deadline still records the completed result and cadence epoch.
+- A sweep that skips work because its budget runs out records the partial findings, including the incomplete check, and waits until the next configured interval before probing again, and a sweep whose last issued probe finishes after the deadline is complete rather than skipped.
 - The sweep must finish inside `FM_CHECK_TIMEOUT` (default 30), because a run the watcher kills prints nothing and records nothing and would then repeat that silence on every poll.
 - So a budget larger than that timeout allows is cut down to what fits instead of being refused, and the cut is reported in the report line.
 - A budget that is not a whole number from 1 to 120 is still refused outright.
