@@ -1,0 +1,98 @@
+
+================ S1  stale failed run must not mask the crew's later pause (the titular bug) ================
+$ no-mistakes runs  (branch ledger)
+  failed     fm/feat-s1 f0f0f0f0  2026-09-19 02:56
+$ cat state/c1.status
+paused: waiting on a human answer for the API shape
+$ fm-crew-state.sh c1
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=c1 state=failed pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
+
+================ S2  routine ship shape: done: before the run, run fails, crew silent ================
+$ no-mistakes runs  (branch ledger)
+  failed     fm/feat-s2 7bc7393c  2026-09-19 02:56 https://example.test/owner/repo/pull/77
+$ cat state/c2.status
+done: implementation complete
+$ fm-crew-state.sh c2
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=c2 state=failed pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
+--- durable terminal outcome record ---
+schema=fm-terminal-outcome.v1
+fingerprint=bc5240505b2c71e3037d058935f81075
+task_id=c2
+incarnation=s12547.10085
+state=failed
+outcome_key=inactive-outcome-main-c2-failed
+origin=direct
+pr=https://example.test/owner/repo/pull/1
+created_epoch=1789761406
+notice_emitted=0
+status_head=a6d95ca6960286cede552bf3c34d1858
+phase=presentation
+$ grep inactive-outcome state/.wake-queue
+1789761406	1	check	inactive-outcome:bc5240505b2c71e3037d058935f81075	inactive terminal outcome awaiting captain presentation: child=c2 state=failed pr=https://example.test/owner/repo/pull/1
+
+================ S3  ADVERSARIAL: a done: written MID-RUN must not mask the current failure ================
+$ no-mistakes runs  (branch ledger; row IS the attributed run)
+  failed     fm/feat-s3 160283ad  2026-09-19 02:56
+$ cat state/c3.status  (written 40 min ago, run started 60 min ago -> mid-run)
+done: implementation complete
+$ fm-crew-state.sh c3
+state: failed · source: run-step · run failed
+
+================ S4  ADVERSARIAL: a LIVE replacement run outranks the crew's own done: ================
+$ no-mistakes runs  (newest row is LIVE)
+  running    fm/feat-s4 f0f0f0f0  2026-09-19 02:56
+$ cat state/c4.status
+done: implementation complete
+$ fm-crew-state.sh c4
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=c4 state=failed pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
+
+================ S5  a terminal outcome never names a PR its run did not open ================
+meta records an older task PR:
+pr=https://example.test/owner/repo/pull/1
+$ no-mistakes runs  (run opened NO pr)
+  failed     fm/feat-s5 863105c8  2026-09-19 02:56
+$ fm-crew-state.sh c5
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=c5 state=failed pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
+--- durable terminal outcome record ---
+schema=fm-terminal-outcome.v1
+fingerprint=e831db213978280a695e225311371d4e
+task_id=c5
+incarnation=s12547.15954
+state=failed
+outcome_key=inactive-outcome-main-c5-failed
+origin=direct
+pr=https://example.test/owner/repo/pull/1
+created_epoch=1789761408
+notice_emitted=0
+status_head=0c175b176ca19be4d474d0c332cdd7b6
+phase=presentation
+
+forge calls made during reconciliation (must be empty):
+
+================ S6  ADVERSARIAL: crew prose cannot forge the reader's ordering field ================
+$ cat state/c6.status
+done: implementation complete · 
+failed: the build broke
+state line handed to the reconciler:
+state: done · source: status-log · implementation complete · 
+actionable: inactive terminal outcome awaiting captain presentation: child=c6 state=done pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
+
+================ S7  mid-run done: the crew's un-ordered word still suppresses presentation ================
+$ fm-crew-state.sh c7
+state: failed · source: run-step · run failed
+$ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=c7 state=failed pr=https://example.test/owner/repo/pull/1
+captain wakes queued: 1   durable terminal outcome records: 1
