@@ -768,13 +768,6 @@ test_stand_down_allows_a_project_with_no_run_registration() {
     "an unregistered response on stderr must remain a proof that the project owns no run"
   rm -f "$dir/home/state/t1.worker-state"
   alive_as "$dir" claude
-  out=$(FM_FAKE_NM_ERR="ERROR: REPO NOT INITIALISED (RUN 'NO-MISTAKES INIT' FIRST)" \
-    run_control "$dir" t1 stand-down); rc=$?
-  expect_code 0 "$rc" "the unregistered verdict must not depend on the runner's locale or diagnostic case"$'\n'"$out"
-  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
-    "a case-varied unregistered response must still prove that the project owns no run"
-  rm -f "$dir/home/state/t1.worker-state"
-  alive_as "$dir" claude
   out=$(FM_FAKE_NM_UNREGISTERED=1 run_control "$dir" t1 stand-down); rc=$?
   expect_code 0 "$rc" "a repository with no run registration owns no run to protect"$'\n'"$out"
   assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
@@ -938,7 +931,7 @@ test_stand_down_takes_a_full_run_window_as_no_added_run() {
   add_task "$dir" t1 claude
   alive_as "$dir" claude
   head=$(git -C "$dir/wt-t1" rev-parse HEAD)
-  out=$(FM_NM_RUNS_LIMIT=3 \
+  out=$(FM_CREW_STATE_RUNS_LIMIT=3 \
     FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
     FM_FAKE_RUNS_LIST="completed  task-other  aaaaaaa1  2026-08-28
 completed  task-other  aaaaaaa2  2026-08-28
@@ -952,7 +945,7 @@ completed  task-other  aaaaaaa3  2026-08-28" \
   rm -f "$dir/home/state/t1.worker-state"
   : > "$dir/fake/literal"
   alive_as "$dir" claude
-  out=$(FM_NM_RUNS_LIMIT=3 \
+  out=$(FM_CREW_STATE_RUNS_LIMIT=3 \
     FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
     FM_FAKE_RUNS_LIST="completed  task-other  aaaaaaa1  2026-08-28
 running  task-t1  $(git -C "$dir/wt-t1" rev-parse --short HEAD)  2026-08-28

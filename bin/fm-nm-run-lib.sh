@@ -403,9 +403,8 @@ fm_nm_runs_status_for_worktree() {  # <worktree> <branch> <runs-list-output> [ex
 # The bounded corroboration window read from `no-mistakes runs`. The listing is
 # repo-wide and has neither pagination nor an end-of-list marker, so it can add
 # a run this branch owns but can never be asked to prove the absence of one.
-# FM_CREW_STATE_RUNS_LIMIT is the superseded name for the same window.
 fm_nm_runs_limit() {
-  local n=${FM_NM_RUNS_LIMIT:-${FM_CREW_STATE_RUNS_LIMIT:-200}}
+  local n=${FM_CREW_STATE_RUNS_LIMIT:-200}
   case "$n" in ''|*[!0-9]*|0) n=200 ;; esac
   printf '%s' "$n"
 }
@@ -416,12 +415,14 @@ fm_nm_runs_limit() {
 # reasoning the branchless worktree rests on. firstmate supports whole project
 # modes (direct-PR, local-only) that never run `no-mistakes init`.
 fm_nm_says_unregistered() {  # <response-text>...
-  local response text
+  local response line
   for response in "$@"; do
-    text=$(printf '%s' "$response" | LC_ALL=C tr '[:upper:]' '[:lower:]')
-    case "$text" in
-      *"repo not initialized"*|*"repo not initialised"*) return 0 ;;
-    esac
+    while IFS= read -r line; do
+      case "$line" in
+        "repo not initialized (run 'no-mistakes init' first)"|\
+        "error: repo not initialized (run 'no-mistakes init' first)") return 0 ;;
+      esac
+    done <<< "$response"
   done
   return 1
 }
@@ -474,8 +475,8 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 # is each run's current status, so it catches a run a stale `axi status` answer
 # missed), but its absence proves nothing: a full window, an unreadable row, a
 # failed call, an unregistered repo or an absent CLI must never turn a readable
-# quiet branch read into a refusal. That is why widening FM_NM_RUNS_LIMIT is a
-# reporting nicety rather than a safety setting.
+# quiet branch read into a refusal. That is why widening FM_CREW_STATE_RUNS_LIMIT
+# is a reporting nicety rather than a safety setting.
 #
 # The verdict carries no run detail: it answers the safety question and names
 # the active run's id when the branch read placed one. Callers that need run

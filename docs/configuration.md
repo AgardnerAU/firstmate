@@ -1079,7 +1079,6 @@ FM_CREW_STATE_NM_TIMEOUT=10   # seconds allowed per no-mistakes query inside fm-
 FM_TEARDOWN_NM_TIMEOUT=10    # seconds allowed per no-mistakes query or abort inside fm-teardown.sh
 FM_CREW_STATE_RUNS_LIMIT=200  # plain runs-ledger rows scanned for fallback attribution; does not change the CLI's AXI overview window (selection owner: bin/fm-nm-run-lib.sh)
 FM_TEARDOWN_NM_RUNS_LIMIT=200  # recent no-mistakes run rows scanned to prove an unresolved-head parked run belongs to teardown's task
-FM_NM_RUNS_LIMIT=200          # corroboration window the shared branch-run verdict reads for `fm-control stand-down`; a full window simply adds no run, so widening it improves reporting rather than safety (falls back to FM_CREW_STATE_RUNS_LIMIT)
 FM_CREW_STATE_BIN=bin/fm-crew-state.sh   # test override for the current-state reader used by working/paused watcher triage
 FM_MAIL_USER=      # mail-plane IMAP/SMTP login, from .env or environment (docs/configuration.md "Mail plane")
 FM_MAIL_PASS=      # mail-plane IMAP/SMTP password
