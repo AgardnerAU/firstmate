@@ -508,8 +508,15 @@ restage_archive_newest_first() {  # <archive-path>
 # is not in the archive. The staged file IS the backlog for this read, so
 # tasks-axi is addressed directly rather than through `tasks_axi` above, whose
 # markdown branch would append this home's own `--file` on top of it.
+#
+# The read is bounded exactly as fm_backlog_row_show bounds a live row read,
+# and for the same reason task_show gives above: the archive grows without
+# bound and a gate over N inventory entries reaches this read once per entry,
+# so a backend that wedges parsing it would otherwise hang `complete`/`verify`
+# forever. A read that could not finish inside its bound is not absence, so it
+# stops the command by name with 124 rather than being spent as "not archived".
 archived_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
-  local id=$1 root archive tmp out
+  local id=$1 root archive tmp out status=0 secs
   archive_applies || return 1
   root=$(archive_root) || return 1
   archive=$(archive_path) || return 1
@@ -520,13 +527,19 @@ archived_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
     rm -f -- "$tmp"
     fail "cannot stage the closed-task archive $archive for lookup"
   fi
-  if out=$(cd "$root" && tasks-axi show "$id" --file "$tmp" --full 2>/dev/null); then
-    rm -f -- "$tmp"
-    TASK_SHOW_OUTPUT=$out
-    return 0
-  fi
+  secs=$(fm_backlog_row_timeout_secs)
+  # shellcheck disable=SC2016  # Expansion is deliberately deferred to the child shell.
+  out=$(fm_run_timed "$secs" bash -c 'cd "$1" 2>/dev/null || exit 1; shift; exec tasks-axi show "$@"' \
+    _ "$root" "$id" --file "$tmp" --full 2>/dev/null) || status=$?
   rm -f -- "$tmp"
-  return 1
+  if [ "$status" -eq 124 ]; then
+    printf 'fm-captain-hold: %s\n' \
+      "tasks-axi show $id exceeded its ${secs}s backlog read bound reading the closed-task archive" >&2
+    exit 124
+  fi
+  [ "$status" -eq 0 ] || return 1
+  TASK_SHOW_OUTPUT=$out
+  return 0
 }
 
 # The task carrying an id wherever it durably lives, read into
@@ -1453,7 +1466,7 @@ command_answers() {
     if [ -n "$legacy_key" ]; then
       legacy_digest=$(sha256_text "$(legacy_keyed_decision_text "$source" "$legacy_key" "$answer" "$label")")
     fi
-    task_show_durable "$id" || { printf 'skipped: %s (absent)\n' "$id"; skipped=$((skipped + 1)); continue; }
+    task_show "$id" || { printf 'skipped: %s (absent)\n' "$id"; skipped=$((skipped + 1)); continue; }
     show=$TASK_SHOW_OUTPUT
     state=$(show_field "$show" state)
     hold_kind=$(show_field_value "$show" hold_kind)

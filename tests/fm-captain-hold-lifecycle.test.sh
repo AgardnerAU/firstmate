@@ -4310,6 +4310,68 @@ test_reused_id_resolves_to_the_newest_archived_row() {
   pass "a reused archived id resolves to its newest row, not a stale answered one"
 }
 
+# The archive grows without bound and the gate reads it once per inventory
+# entry, so a backend that wedges parsing it must not hang `complete`/`verify`
+# for as long as it likes. Every other row read in fm-captain-hold.sh is
+# bounded and stops the command by name when the bound is hit; the archive read
+# is no different, and a read that could not finish is not evidence the call is
+# unarchived.
+test_a_wedged_archive_read_stops_the_gate_instead_of_hanging() {
+  local home origin call rc
+  home=$(make_home wedged-archive-read)
+  origin=sample-wedged-review
+  call=sample-wedged-call
+  mkdir -p "$home/data/$origin"
+  tasks_in "$home" add "$origin" "Review the wedged path" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the wedged-archive origin"
+  write_origin_meta "$home" "$origin"
+  printf 'done: report complete\n' > "$home/state/$origin.status"
+  printf '# Wedged review\n\nOne captain choice remained.\n' > "$home/data/$origin/report.md"
+  run_captain "$home" hold "$call" \
+    --title "Choose the wedged option" --reason "captain choice pending" --repo sample >/dev/null \
+    || fail "could not register the wedged-archive captain call"
+  run_captain "$home" complete "$origin" "$call" >/dev/null \
+    || fail "completion failed while the wedged-archive call was still live"
+  printf 'Take the northern route.\n' > "$home/answer.txt"
+  run_captain "$home" answer "$call" --decision-file "$home/answer.txt" >/dev/null \
+    || fail "could not record the wedged-archive captain answer"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the wedged-archive captain call"
+  run_captain "$home" verify "$origin" >/dev/null 2>&1 \
+    || fail "setup error: the answered call should pass before the backend wedges"
+
+  # Only the archive read wedges: it is the one read addressed at a staged copy
+  # of the archive, so every live-backlog read still answers normally.
+  cat > "$home/fakebin/tasks-axi" <<'SH'
+#!/usr/bin/env bash
+for arg in "$@"; do
+  case "$arg" in
+    */fm-captain-hold-archive.*) sleep 300; exit 1 ;;
+  esac
+done
+exec "$REAL_TASKS_AXI" "$@"
+SH
+  chmod +x "$home/fakebin/tasks-axi"
+
+  set +e
+  fm_run_timed 60 env PATH="$home/fakebin:$PATH" REAL_TASKS_AXI="$TASKS_AXI_BIN" \
+    FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" FM_DATA_OVERRIDE="$home/data" \
+    FM_CONFIG_OVERRIDE="$home/config" FM_BACKLOG_ROW_TIMEOUT_SECS=2 \
+    "$ROOT/bin/fm-captain-hold.sh" verify "$origin" \
+    > "$home/verify-wedged.out" 2> "$home/verify-wedged.err"
+  rc=$?
+  set -e
+  rm -f "$home/fakebin/tasks-axi"
+  [ "$rc" -ne 124 ] \
+    || fail "a wedged archive read hung the completion gate past its own read bound"
+  [ "$rc" -ne 0 ] \
+    || fail "a wedged archive read passed the gate: $(cat "$home/verify-wedged.out")"
+  assert_grep "read bound" "$home/verify-wedged.err" \
+    "the refusal must name the read bound, not report the call as unarchived"
+  pass "a wedged archive read stops the gate by name instead of hanging"
+}
+
 test_uninventoried_report_decision_refuses_completion
 test_hold_decodes_a_bare_scalar_body_without_the_nonref_default
 test_retained_body_keeps_its_utf8_bytes
@@ -4366,3 +4428,4 @@ test_archived_captain_calls_resolve_without_waving_work_through
 test_configured_archive_is_read_the_way_tasks_axi_reads_it
 test_archive_setting_is_read_from_the_markdown_table_only
 test_reused_id_resolves_to_the_newest_archived_row
+test_a_wedged_archive_read_stops_the_gate_instead_of_hanging
