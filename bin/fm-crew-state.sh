@@ -304,6 +304,20 @@ emit_worker_state_if_current() {  # <proven-only|full>
   return 1
 }
 
+# 0 when this branch provably owns a live no-mistakes run. Consulted only where
+# a worker-state record would otherwise answer, so ordinary run attribution
+# below remains the single owner of run reporting.
+branch_run_verdict_is_active() {
+  FM_NM_BRANCH_RUN_ID=
+  case "$WORKER_LIFECYCLE" in
+    stood-down|standing-down|invalid) ;;
+    *) return 1 ;;
+  esac
+  [ "$KIND" = ship ] && [ -n "$CREW_BRANCH" ] || return 1
+  fm_nm_branch_run_verdict "$WT" "$CREW_BRANCH" "$NM_TIMEOUT"
+  [ "$FM_NM_BRANCH_RUN_VERDICT" = active ]
+}
+
 pane_readable() {  # <target>
   case "$TASK_BACKEND" in
     tmux) tmux display-message -p -t "$1" '#{pane_id}' >/dev/null 2>&1 ;;
@@ -1026,7 +1040,15 @@ fi
 # the current state.
 # With no run to consult, a worker-state record is the most current statement
 # there is about this task - including the discrepancies, whose only remaining
-# alternative is a guess from the pane or a stale status log.
+# alternative is a guess from the pane or a stale status log. Except while the
+# branch still owns a live run: a worker-state record describes the absence of
+# a worker, never the absence of work, so an established active verdict keeps
+# its own authority here even when attribution above could place no detail to
+# report. Reporting it with details withheld is the honest answer; letting the
+# record answer instead would render a live run as a healthy hold.
+if branch_run_verdict_is_active; then
+  emit working run-step "active run (details withheld)${FM_NM_BRANCH_RUN_ID:+${SEP}run: $FM_NM_BRANCH_RUN_ID}"
+fi
 emit_worker_state_if_current full || true
 
 [ -n "$BACKEND_TARGET" ] || emit unknown none "no backend target recorded"

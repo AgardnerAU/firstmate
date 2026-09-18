@@ -1391,6 +1391,46 @@ EOF
   pass "an active run outranks a worker-state record"
 }
 
+# A live run whose head this copy cannot resolve is still a live run on the
+# task's preserved branch. The record describes the absence of a worker, never
+# the absence of work, so the run must be reported with its details withheld
+# instead of the task rendering as a healthy hold.
+test_live_branch_run_outranks_a_stood_down_record_without_detail() {
+  reset_fakes
+  local d out
+  d=$(new_case stood-down-unplaceable-live-run)
+  make_repo_on_branch "$d/wt" fm/feat-unplaceable
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-unplaceable.meta" \
+    "window=fm:fm-feat-unplaceable" "worktree=$d/wt" "kind=ship"
+  cat > "$d/state/feat-unplaceable.worker-state" <<'EOF'
+schema=1
+task_id=feat-unplaceable
+endpoint=fm:fm-feat-unplaceable
+state=stood-down
+EOF
+  printf 'paused: waiting for an upstream maintainer\n' > "$d/state/feat-unplaceable.status"
+  # The declared hold: the endpoint is still there with no agent in it.
+  FM_FAKE_TMUX_WINDOWS="fm-feat-unplaceable"
+  # The overview names another branch's run, and this branch's own live row
+  # carries a head object this copy never fetched, so ordinary attribution can
+  # place no run detail at all.
+  FM_FAKE_AXI_STATUS="$(run_running fm/other-crew)"
+  FM_FAKE_RUNS_LIST="  running    fm/feat-unplaceable f0f0f0f0  2026-08-29 13:00"
+  out=$(run_crew_state "$d" feat-unplaceable)
+  assert_contains "$out" "state: working" \
+    "a live run on the preserved branch must keep its own authority"
+  assert_contains "$out" "source: run-step" \
+    "the live run, not the record, is the current statement about the task"
+  assert_contains "$out" "active run (details withheld)" \
+    "an unplaceable live run must be reported without projecting details"
+  assert_not_contains "$out" "state: parked" \
+    "a live run must never render as a healthy hold"
+  assert_not_contains "$out" "worker deliberately stood down" \
+    "the stand-down record must not answer while a run is in flight"
+  pass "a live branch run outranks a stood-down record even without projectable detail"
+}
+
 # An unprovable record is a repair prompt, not a mask: it must never hide a
 # real run outcome the reader can still act on.
 test_invalid_worker_state_record_does_not_mask_a_failed_run() {
@@ -3722,6 +3762,7 @@ test_stood_down_worker_outranks_a_historical_failed_run
 test_a_vanished_endpoint_is_never_a_healthy_stood_down_hold
 test_an_absent_worker_without_a_declaration_is_still_reported
 test_active_run_outranks_a_stood_down_record
+test_live_branch_run_outranks_a_stood_down_record_without_detail
 test_invalid_worker_state_record_does_not_mask_a_failed_run
 test_terminal_failed
 test_terminal_failed_ci_orphan_after_green_reads_done
