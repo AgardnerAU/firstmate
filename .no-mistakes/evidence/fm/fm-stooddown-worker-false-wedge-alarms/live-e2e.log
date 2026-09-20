@@ -1,0 +1,105 @@
+
+===== S1/S2/S3 stand-down of a live worker, then crew-state and fm-send =====
+pane command before stand-down: claude
+crew-state before stand-down: state: unknown · source: pane · harness state unavailable (unknown missing)
+$ fm-control.sh t1 stand-down
+stood-down t1 harness=claude backend=tmux endpoint=s-hold:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-hold/wt
+PASS - S1 stand-down reported stood-down for the live worker
+pane command after stand-down: bash
+worker-state record:
+  schema=1
+  task_id=t1
+  endpoint=s-hold:fm-t1
+  state=stood-down
+PASS - S1 the agent is gone and the endpoint survives with a durable stood-down record
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down
+PASS - S2 crew-state reports the hold as parked with a worker-state source
+$ fm-send.sh t1 'please pick this back up' (exit 1)
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task t1 deliberately has no worker; relaunch it before sending an instruction
+PASS - S3 fm-send refuses to enqueue an instruction a proven worker-free task cannot read
+
+===== S4 relaunch reuses the endpoint and worktree and clears the hold =====
+$ fm-control.sh t1 relaunch --note 'back on deck'
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-hold/home/data/t1/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+relaunched t1 harness=claude from=claude model=default effort=default backend=tmux endpoint=s-hold:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-hold/wt
+endpoint after relaunch: s-hold:fm-t1  worktree: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-hold/wt  pane: claude
+PASS - S4 relaunch brought a worker back in the same endpoint and cleared the hold
+crew-state after relaunch: state: working · source: pane · harness busy (fm-spawn)
+PASS - S4 crew-state no longer reports a hold after relaunch
+$ fm-send.sh t1 'steer after relaunch' (exit 0)
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+PASS - S4 fm-send works again once a worker is back
+
+===== S5 adversarial: repair-worker-state clears a record a live worker contradicts =====
+pane command behind the stood-down record: claude
+crew-state with a live worker behind the record: state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+PASS - S5 crew-state refuses to call a live worker a healthy hold
+$ fm-control.sh t1 repair-worker-state
+warning: task t1 declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive t1 harness=claude backend=tmux endpoint=s-repair:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-repair/wt
+PASS - S5 repair-worker-state cleared the contradicted record and warned
+
+===== S6 adversarial: stand-down is refused while the branch owns an active run =====
+$ fm-control.sh t1 stand-down (with an active run on the branch)
+error: task t1 owns an active no-mistakes run (run-42) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run run-42', before standing the worker down
+PASS - S6 an in-flight run refuses the hold, names the run, and leaves the worker running
+
+===== S7 adversarial: only the branch's NEWEST ledger row decides =====
+$ fm-control.sh t1 stand-down (newest row completed, older row running)
+stood-down t1 harness=claude backend=tmux endpoint=s-activerun:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-activerun/wt
+PASS - S7 a stale older live row no longer blocks a hold behind a newer terminal row
+$ fm-control.sh t1 stand-down (newest row running)
+error: task t1 owns an active no-mistakes run (unknown) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run <id>', before standing the worker down
+PASS - S7 a newest live ledger row still refuses the hold
+
+===== S8 adversarial: an unacknowledged steering instruction refuses the hold =====
+$ fm-send.sh t1 'read this before you stand down' (exit 0)
+$ fm-control.sh t1 stand-down (with an unread instruction waiting)
+error: task t1 has an unacknowledged instruction waiting at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-pending/home/state/t1.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-pending/home/state/t1.inbox/001.msg /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-pending/home/state/t1.inbox/handled/', before standing the worker down
+PASS - S8 an unread steering instruction refuses the hold and names it
+
+===== S9 the watcher itself: a declared hold raises no wedge alarm, an undeclared one does =====
+watcher still supervising after 8s: yes
+watcher output: 
+pane hashes recorded: 0
+PASS - S9 a declared hold raises no wedge alarm and is not even pane-hashed
+watcher output for the same endpoint stopped WITHOUT a declared hold:
+stale: s-watchdead:fm-t1
+PASS - S9 an undeclared stopped worker still raises the alarm on the same endpoint
+
+===== S10 adversarial: a vanished endpoint is never reported as a healthy hold =====
+crew-state while the endpoint is intact: state: parked · source: worker-state · worker deliberately stood down
+crew-state after the endpoint vanished: state: unknown · source: worker-state · stood down but its endpoint is gone: s-vanished:fm-t1 (relaunch cannot restore it in place)
+PASS - S10 a vanished endpoint reports unknown and names the lost endpoint
+$ fm-send.sh t1 'steer to a vanished endpoint' (exit 0)
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+fm-send: doorbell not typed because the agent in s-vanished:fm-t1 has exited; the steer is durably recorded at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-vanished/home/state/t1.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+PASS - S10 a merely missing endpoint stays on the ordinary durable-inbox path
+
+===== S11 adversarial: a malformed worker-state record suppresses nothing =====
+crew-state with a record bound to another endpoint: state: unknown · source: worker-state · invalid worker-state record; reconcile it with 'fm-control t1 repair-worker-state'
+PASS - S11 an invalid record reports unknown and points at repair
+$ fm-control.sh t1 stand-down (with an invalid record)
+error: task t1 has an invalid worker-state record; run 'fm-control t1 repair-worker-state' to reconcile it against the endpoint before declaring a hold
+PASS - S11 stand-down refuses over an invalid record and names the repair verb
+$ fm-control.sh t1 repair-worker-state
+warning: task t1 had a worker-state record that no longer describes this task and endpoint; it was cleared and the task is back under ordinary supervision
+cleared-invalid agent-state=dead t1 harness=claude backend=tmux endpoint=s-malformed:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.wbkbur/case1-malformed/wt
+PASS - S11 repair clears the invalid record back to ordinary supervision
+
+===== live driver summary: 20 passed, 0 failed =====
