@@ -470,10 +470,12 @@ fm_nm_run_capturing_stderr() {  # <dir> <stdout-var> <stderr-var> <timeout_secs>
 # worktree - leaves the question open, and an open question refuses the caller
 # that needs it proven.
 #
-# The repo-wide `runs` listing is CORROBORATION ONLY. A non-terminal row for
-# this branch is a second way to establish `active` (the listing's status column
-# is each run's current status, so it catches a run a stale `axi status` answer
-# missed), but its absence proves nothing: a full window, an unreadable row, a
+# The repo-wide `runs` listing is CORROBORATION ONLY. The NEWEST row for this
+# branch is a second way to establish `active` when it is non-terminal (the
+# listing's status column is each run's current status, so it catches a run a
+# stale `axi status` answer missed). Only that newest row is read: the listing
+# is ordered newest first, so an older live row never displaces the newer
+# terminal result that superseded it. Its absence proves nothing: a full window, an unreadable row, a
 # failed call, an unregistered repo or an absent CLI must never turn a readable
 # quiet branch read into a refusal. That is why widening FM_CREW_STATE_RUNS_LIMIT
 # is a reporting nicety rather than a safety setting.
@@ -559,8 +561,9 @@ fm_nm_branch_run_verdict() {  # <worktree> <branch> <timeout_secs> [limit]
       [ "$br" = "$branch" ] || continue
       case "$st" in
         completed|failed|cancelled) ;;
-        *) [ -n "$listing_live" ] || listing_live="$st $sha" ;;
+        *) listing_live=$st ;;
       esac
+      break
     done <<< "$inventory"
   fi
   if [ "$branch_state" = active ]; then

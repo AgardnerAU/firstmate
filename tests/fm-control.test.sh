@@ -882,37 +882,39 @@ test_stand_down_allows_a_terminal_run_whose_head_never_reached_here() {
   pass "fm-control stand-down: a terminal run whose head never reached this worktree is history, not doubt"
 }
 
-# The runs listing's status column is each run's CURRENT status, so a finished
-# row says nothing about the rows below it: an older run that still says
-# `running` holds the branch and its worker. The scan has to read the whole
-# branch, whether or not the newer finished row can be placed here.
-test_stand_down_refuses_a_live_run_listed_below_a_finished_one() {
+# The listing is ordered newest first, so only the branch's NEWEST row answers
+# whether a run is in flight. A run killed before it reached a terminal status
+# leaves its row saying `running` forever; the later run that superseded it is
+# the current truth, and an older live row must not displace it - the same rule
+# the worktree parser and the overview selector already follow.
+test_stand_down_reads_only_the_newest_ledger_row_for_the_branch() {
   local dir out rc head short
-  dir=$(new_case stand-down-live-below-finished)
+  dir=$(new_case stand-down-newest-ledger-row)
   add_task "$dir" t1 claude
   alive_as "$dir" claude
   head=$(git -C "$dir/wt-t1" rev-parse HEAD)
   short=$(git -C "$dir/wt-t1" rev-parse --short HEAD)
   out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
-    FM_FAKE_RUNS_LIST="completed  task-t1  deadbeef1  2026-08-28
-running  task-t1  $short  2026-08-27  " \
-    run_control "$dir" t1 stand-down); rc=$?
-  expect_code 1 "$rc" "a live run below an unplaceable finished row must refuse the hold"$'\n'"$out"
-  assert_contains "$out" "active no-mistakes run" \
-    "the refusal should name the run that still needs a worker"
-  [ ! -e "$dir/home/state/t1.worker-state" ] \
-    || fail "a live run below a finished row must publish no worker-state record"
-  [ -z "$(literals "$dir")" ] || fail "a live run must not lose its worker to a hold"
-  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
     FM_FAKE_RUNS_LIST="completed  task-t1  $short  2026-08-28
 running  task-t1  $short  2026-08-27  " \
     run_control "$dir" t1 stand-down); rc=$?
-  expect_code 1 "$rc" "a placeable finished row must not end the scan either"$'\n'"$out"
+  expect_code 0 "$rc" "a stale live row beneath the branch's newest finished run must not block the hold"$'\n'"$out"
+  assert_grep 'state=stood-down' "$dir/home/state/t1.worker-state" \
+    "the branch's newest run being finished leaves the task free to be stood down"
+  rm -f "$dir/home/state/t1.worker-state"
+  : > "$dir/fake/literal"
+  alive_as "$dir" claude
+  out=$(FM_FAKE_AXI_STATUS="$(axi_run_toon "task-other" "$head" running)" \
+    FM_FAKE_RUNS_LIST="running  task-t1  $short  2026-08-28
+completed  task-t1  $short  2026-08-27  " \
+    run_control "$dir" t1 stand-down); rc=$?
+  expect_code 1 "$rc" "a newest live row must still refuse the hold"$'\n'"$out"
   assert_contains "$out" "active no-mistakes run" \
-    "the refusal should still name the live run below the finished one"
+    "the refusal should name the run that still needs a worker"
   [ ! -e "$dir/home/state/t1.worker-state" ] \
-    || fail "a live run below a finished row must publish no worker-state record"
-  pass "fm-control stand-down: a finished row never ends the branch scan while a run is still live"
+    || fail "a live run must publish no worker-state record"
+  [ -z "$(literals "$dir")" ] || fail "a live run must not lose its worker to a hold"
+  pass "fm-control stand-down: corroboration reads the branch's newest run, not its history"
 }
 
 # `axi status` reports the most recent run, so a finished answer for this
@@ -1657,7 +1659,7 @@ test_stand_down_allows_a_project_with_no_run_registration
 test_stand_down_reads_a_garbled_listing_row_as_no_run_at_all
 test_stand_down_refuses_a_live_run_it_cannot_place
 test_stand_down_allows_a_terminal_run_whose_head_never_reached_here
-test_stand_down_refuses_a_live_run_listed_below_a_finished_one
+test_stand_down_reads_only_the_newest_ledger_row_for_the_branch
 test_stand_down_refuses_a_live_run_behind_a_terminal_axi_answer
 test_stand_down_takes_a_full_run_window_as_no_added_run
 test_stand_down_refusal_names_the_unplaceable_live_run_not_the_listing
