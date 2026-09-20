@@ -623,7 +623,10 @@ do_stand_down() {
   esac
   if [ "$lifecycle" = active ] && [ "$state" = alive ]; then
     result=$(do_exit)
-    [ "$result" = stopped ] || die "task $ID's stand-down exit reported '$result'; refusing to publish an intentional no-worker state"
+    case "$result" in
+      stopped|already-stopped) ;;
+      *) die "task $ID's stand-down exit reported '$result'; refusing to publish an intentional no-worker state" ;;
+    esac
   fi
   fm_worker_state_write "$STATE" "$ID" "$T" stood-down \
     || die "task $ID's agent is stopped but its intentional worker-state record could not be published; it remains under ordinary supervision"

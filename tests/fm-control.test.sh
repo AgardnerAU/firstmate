@@ -121,7 +121,15 @@ case "${1:-}" in
     for a in "$@"; do
       case "$a" in
         *cursor_y*) printf '1\n'; exit 0 ;;
-        *pane_current_command*) cat "$D/command"; printf '\n'; exit 0 ;;
+        *pane_current_command*)
+          # The stand-down race: an agent that stops on its own AFTER the
+          # transition record is published, i.e. between the caller's own
+          # agent-state read and do_exit's re-read.
+          if [ -n "${FM_FAKE_DIES_WHEN_STANDING_DOWN:-}" ] \
+             && grep -qs 'state=standing-down' "$FM_HOME"/state/*.worker-state; then
+            printf 'zsh' > "$D/command"
+          fi
+          cat "$D/command"; printf '\n'; exit 0 ;;
         *pane_current_path*) cat "$D/cwd"; printf '\n'; exit 0 ;;
       esac
     done
@@ -557,6 +565,21 @@ test_stand_down_proves_stop_then_records_intent() {
   [ "$(wc -l < "$dir/fake/literal" | tr -d ' ')" = 1 ] \
     || fail "an already stood-down task must not receive another exit command"
   pass "fm-control stand-down: a proven exit becomes an exact durable no-worker declaration"
+}
+
+test_stand_down_accepts_an_agent_that_stopped_during_its_own_exit() {
+  local dir out rc record
+  dir=$(new_case stand-down-race)
+  add_task "$dir" t1 claude
+  alive_as "$dir" claude
+  out=$(FM_FAKE_DIES_WHEN_STANDING_DOWN=1 run_control "$dir" t1 stand-down); rc=$?
+  expect_code 0 "$rc" "an agent that stops itself mid stand-down still meets the postcondition"$'\n'"$out"
+  assert_contains "$out" "stood-down t1 harness=claude" \
+    "an idempotent already-stopped exit must not refuse the hold"
+  record="$dir/home/state/t1.worker-state"
+  assert_grep 'state=stood-down' "$record" \
+    "the declaration must not be left stuck at the transitional record"
+  pass "fm-control stand-down: a self-stopping agent is a successful stop, not a refusal"
 }
 
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent() {
@@ -1622,6 +1645,7 @@ test_state_verified_backends_are_exactly_tmux_and_herdr
 test_worker_state_verbs_refuse_herdr
 test_herdr_relaunch_reaches_existing_validation_path
 test_stand_down_proves_stop_then_records_intent
+test_stand_down_accepts_an_agent_that_stopped_during_its_own_exit
 test_stand_down_refuses_to_relabel_an_unexpected_dead_agent
 test_stand_down_refuses_while_the_task_owns_an_active_run
 test_stand_down_allows_a_terminal_run_for_the_same_task
