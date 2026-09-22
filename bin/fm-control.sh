@@ -49,9 +49,10 @@
 #              cannot see.
 #   stand-down Stop the agent for a deliberately held ship or scout task, then
 #              atomically record that the task has no worker on purpose. The
-#              record is published only after `exit` proves the agent is gone,
-#              so a live worker never loses stale or wedge detection. It is
-#              cleared when `relaunch` starts a replacement in the preserved
+#              record is published only after the recovery-grade classifier
+#              proves the agent is gone, so a live worker never loses stale or
+#              wedge detection. The record is cleared when `relaunch` starts a
+#              replacement in the preserved
 #              endpoint and worktree, and restored if that relaunch aborts
 #              before the replacement is published. An interrupted transition
 #              remains `standing-down`, which stays under ordinary supervision.
@@ -62,8 +63,8 @@
 #              not answer, because the record it would publish suppresses
 #              supervision. Refused as well while an unacknowledged steering
 #              instruction is still waiting in the task's inbox, naming it: the
-#              hold would silence its re-ring ladder, so the worker handles it
-#              or the operator withdraws it first. An agent that already
+#              held task would have no worker to read it, so the worker handles
+#              it or the operator withdraws it first. An agent that already
 #              exited can be declared intentional only when the task's status
 #              log already declares the hold (`paused:`/`captain-held:`), since
 #              deadness alone is the ambiguity this record exists to resolve.
@@ -630,8 +631,8 @@ do_exit() {
 #     ambiguity this record exists to resolve, so it never proves intent, and
 #     the hold is reversible by the ordinary next status append.
 #   - No unacknowledged steering instruction may be waiting for this worker.
-#     The hold stops the watcher's re-ring ladder for the task, so a message
-#     nobody has read yet must first be handled or explicitly withdrawn.
+#     The held task would have no worker to read it, so a message nobody has
+#     read yet must first be handled or explicitly withdrawn.
 do_stand_down() {
   local lifecycle state result
   [ "$KIND" != secondmate ] \
@@ -748,8 +749,8 @@ refuse_stand_down_during_active_run() {
 
 # Refuse a stand-down while a durable steering instruction is still waiting for
 # this task's worker, under the same governing rule: a message nobody has
-# acknowledged is work the hold would silence, because the watcher's re-ring
-# ladder stops for a stood-down window and `fm-send` refuses to add to it.
+# acknowledged is work a held worker cannot read, and `fm-send` refuses to add
+# another while the endpoint remains deliberately worker-free.
 # The instruction is either handled by the worker or explicitly withdrawn by
 # the operator - the same acknowledgement move the worker itself makes - and
 # neither is something stand-down may decide on the task's behalf.

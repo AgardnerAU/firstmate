@@ -92,7 +92,7 @@ It is not deterministic across the verified adapters: codex, grok, and gemini re
 
 ## Transactional relaunch
 
-`relaunch` is the only verb that changes durable records, so it runs as a transaction with a journal at `state/<id>.control-relaunch`, the prior record preserved beside it, and a ship or scout's prior instructions preserved when a progress note is appended.
+`relaunch` changes task metadata and, for a ship or scout, its instructions, so it runs as a transaction with a journal at `state/<id>.control-relaunch`, the prior record preserved beside it, and the prior instructions preserved when a progress note is appended.
 
 1. **Resolve the profile.**
    An explicit `--harness`, `--model`, or `--effort` wins.
@@ -102,6 +102,7 @@ It is not deterministic across the verified adapters: codex, grok, and gemini re
    A harness change resets model and effort unless they are named too, because a model chosen for one adapter does not transfer to another.
 2. **Safe checkpoint.**
    The recorded worktree must exist and be a worktree root; its head and dirty state are recorded.
+   Any worker-state record must still bind this task and endpoint; an invalid record refuses before the note is appended or the old agent is stopped.
    For a `kind=secondmate` task, the home's identity marker must match and its child records must be readable, so a relaunch can never strand child work behind an unreadable home.
    A secondmate's own crewmates run in their own endpoints and outlive its relaunch; the relaunched secondmate reconciles them from its home's durable records at startup.
 3. **Record the note.**
