@@ -1412,6 +1412,8 @@ EOF
   expect_code 1 "$rc" "an unprovable worker-state record must refuse the relaunch"$'\n'"$out"
   assert_contains "$out" "repair-worker-state" \
     "the refusal should name the supported reconciliation"
+  [ "$(cat "$dir/fake/command")" = claude ] \
+    || fail "an invalid worker-state refusal must leave the original agent alive"
   [ -f "$wiring" ] \
     || fail "a refusal that arms no replacement must not retire the prior incarnation's wiring"
   [ "$(meta_field "$dir" rl32 harness)" = claude ] \
@@ -1421,7 +1423,7 @@ EOF
   expect_code 0 "$rc" "repair should reconcile the record"$'\n'"$out"
   out=$(run_control "$dir" rl32 relaunch --note "retry once the record is reconciled"); rc=$?
   expect_code 0 "$rc" "the relaunch should work once the record is reconciled"$'\n'"$out"
-  pass "fm-spawn --relaunch: an unprovable worker-state record refuses with the prior wiring intact"
+  pass "fm-control relaunch: an unprovable worker-state record leaves the prior worker intact"
 }
 
 test_prepublication_abort_retires_replacement_wiring_and_busy_state() {

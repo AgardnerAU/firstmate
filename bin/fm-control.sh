@@ -1084,11 +1084,15 @@ record_note() {
 }
 
 do_relaunch() {
-  local exit_result state note_line
+  local exit_result state note_line worker_state
   local -a spawn_args
 
   require_state_verified_backend relaunch
   resolve_relaunch_profile
+
+  worker_state=$(fm_worker_state_status "$STATE" "$ID" "$T")
+  [ "$worker_state" != invalid ] \
+    || die "task $ID has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control $ID repair-worker-state'"
 
   case "$KIND" in
     ship|scout)
