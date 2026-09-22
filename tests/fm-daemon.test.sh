@@ -1476,11 +1476,12 @@ test_handle_wake_routes_self_and_escalate() {
   FM_STATE_OVERRIDE="$state" handle_wake "signal: $state/h-routine.status" "$state"
   [ -s "$state/.subsuper-escalations" ] && fail "routine signal was escalated by handle_wake"
   printf 'working [at=1758528000]: implemented, ready for the pipeline\n' > "$state/h-pipeline.status"
-  FM_STATE_OVERRIDE="$state" handle_wake "signal: $state/h-pipeline.status" "$state"
+  FM_CAPTAIN_RE='custom-verb:' FM_STATE_OVERRIDE="$state" \
+    handle_wake "signal: $state/h-pipeline.status" "$state"
   out=$(cat "$state/.subsuper-escalations" 2>/dev/null || true)
   case "$out" in
     *"working [at=1758528000]: implemented, ready for the pipeline"*) ;;
-    *) fail "the no-mistakes implementation handoff was not buffered for firstmate: $out" ;;
+    *) fail "FM_CAPTAIN_RE suppressed the no-mistakes implementation handoff: $out" ;;
   esac
   : > "$state/.subsuper-escalations"
   printf 'working: implemented, ready for the pipeline review\n' > "$state/h-near-handoff.status"
