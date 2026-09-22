@@ -1,0 +1,25 @@
+LIVE VALIDATION: isolated tmux stood-down lifecycle
+
+SCENARIO 1 - operator declares the already-held, agent-free endpoint intentional
+stood-down held harness=claude backend=tmux endpoint=nm-live:fm-held worktree=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M34QF9RBVRVZWJFR70E78HVH/.nm-live-stood-down-23359/worktree
+
+Persisted worker-state contract:
+schema=1
+task_id=held
+endpoint=nm-live:fm-held
+state=stood-down
+
+Crew state after stand-down:
+state: parked · source: worker-state · worker deliberately stood down
+
+SCENARIO 2 - endpoint vanishes after the hold; product must not call it healthy
+state: unknown · source: worker-state · stood down but its endpoint is gone: nm-live:fm-held (relaunch cannot restore it in place)
+
+SCENARIO 3 - invalid lifecycle record refuses relaunch before touching the live process
+pane pid before refused relaunch: 24914
+relaunch exit code: 1
+error: task live has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control live repair-worker-state'
+pane pid after refused relaunch: 24914
+pane state after refused relaunch: command=sleep dead=0
+
+RESULT: all three live scenarios passed

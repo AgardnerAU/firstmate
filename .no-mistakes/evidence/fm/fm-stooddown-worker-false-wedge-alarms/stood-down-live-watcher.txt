@@ -1,0 +1,7 @@
+LIVE VALIDATION: stood-down task excluded from real watcher stale polling
+stood-down held harness=claude backend=tmux endpoint=nm-watch:fm-held worktree=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M34QF9RBVRVZWJFR70E78HVH/.nm-live-watch-11066/worktree
+watcher remained running after multiple polls: yes
+watch output bytes: 0
+wake queue bytes: 0
+stale pane hash records: 0
+RESULT: stood-down task produced no stale or wedge signal
