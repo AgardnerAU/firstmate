@@ -1,0 +1,2 @@
+[2026-09-22T12:46:28+0800] daemon starting (pid 7733); target=fm-lab-dod-handoff-7078-1383:w1:p1; target_source=FM_SUPERVISOR_TARGET; backend=herdr; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=240s; batch=0s
+[2026-09-22T12:46:59+0800] daemon shutting down
