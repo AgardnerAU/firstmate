@@ -16,9 +16,8 @@
 # `done:` is terminal to status consumers -
 # bin/fm-inactive-reconcile.sh republishes it to a secondmate's parent channel as
 # a delivered outcome - so a no-mistakes implementation commit hands off with
-# nonterminal `working:` instead. That handoff still reaches firstmate:
-# bin/fm-watch.sh surfaces any crew that stopped its turn without positive
-# evidence it is still executing.
+# nonterminal `working:` instead. bin/fm-classify-lib.sh recognizes that exact
+# handoff as a mandatory captain-relevant wake in both present and away postures.
 # The two PR-based blocks require a non-draft pull request before the done
 # report, read back from the forge; a lane that deliberately holds a draft
 # declares a paused wait instead. bin/fm-pr-check.sh refuses to arm merge
