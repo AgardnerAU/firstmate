@@ -286,7 +286,7 @@ EOF
 # Definition of done
 Delivery contract: mode=no-mistakes
 Terminal condition: \`done [at=<epoch>]: PR {url} checks green\`. That is this task's ONLY legal \`done:\` line: a commit with no PR is not done.
-Commit the finished implementation, then report \`working: implemented, ready for the pipeline\` and stop the turn. Do not start the pipeline yourself; firstmate owns that runtime-specific invocation and sends it to you.
+Commit the finished implementation, then append \`working [at=<epoch>]: implemented, ready for the pipeline\` to the status file and stop the turn. Do not start the pipeline yourself; firstmate owns that runtime-specific invocation and sends it to you.
 
 You drive no-mistakes by responding to its gates, not by implementing fixes.
 Follow the guidance no-mistakes itself provides for the mechanics: it loads when you invoke /no-mistakes, and \`no-mistakes axi run --help\` plus the \`help\` lines in each \`axi\` response are authoritative and version-matched to the installed binary.

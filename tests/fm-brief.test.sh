@@ -465,7 +465,7 @@ test_no_mistakes_hands_off_the_implementation_commit_without_done() {
   FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode no-mistakes >/dev/null 2>&1
   brief="$home/data/$id/brief.md"
   assert_present "$brief" "no-mistakes brief was not scaffolded"
-  assert_grep "Commit the finished implementation, then report \`working: implemented, ready for the pipeline\` and stop the turn" "$brief" \
+  assert_grep "Commit the finished implementation, then append \`working [at=<epoch>]: implemented, ready for the pipeline\` to the status file and stop the turn" "$brief" \
     "no-mistakes DOD must commit, then hand off with the nonterminal working verb"
   assert_no_grep "done: {summary}" "$brief" \
     "no-mistakes DOD still licenses a done: line for a bare implementation commit"
