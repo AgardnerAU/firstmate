@@ -238,17 +238,32 @@ fm_pi_extension_version() {
   fi
 }
 
-# fm_pi_extension_loaded <marker> <expected-version> <session-lock>
+# fm_pi_extension_loaded <marker> <expected-version> <session-lock> [active]
 # True when <marker> records <expected-version> and names the session process in
 # <session-lock>, i.e. the session holding this home loaded exactly this build.
+# The Pi watcher marker additionally carries its generation phase. Requiring
+# `active` rejects the handoff marker a retiring generation leaves behind, so a
+# running Pi process whose replacement did not load the watcher extension can
+# never vouch for an unheld watcher lock with stale load evidence.
 fm_pi_extension_loaded() {
-  local marker=$1 expected_version=$2 lock=$3 marker_version marker_pid lock_pid
+  local marker=$1 expected_version=$2 lock=$3 required_phase=${4:-} marker_version marker_pid lock_pid owner
   [ -f "$marker" ] && [ -f "$lock" ] && [ -n "$expected_version" ] || return 1
   marker_version=$(sed -n '1p' "$marker")
   marker_pid=$(sed -n '2p' "$marker")
   lock_pid=$(sed -n '1p' "$lock")
   [ -n "$marker_pid" ] || return 1
-  [ "$marker_version" = "$expected_version" ] && [ "$marker_pid" = "$lock_pid" ]
+  [ "$marker_version" = "$expected_version" ] && [ "$marker_pid" = "$lock_pid" ] || return 1
+  [ -z "$required_phase" ] && return 0
+  owner=$(sed -n '3p' "$marker")
+  case "$owner" in
+    generation=*\ phase="$required_phase")
+      owner=${owner#generation=}
+      owner=${owner%% *}
+      case "$owner" in ''|0|*[!0-9]*) return 1 ;; esac
+      return 0
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 # fm_pi_extension_owns_supervision <state> <root>
@@ -260,7 +275,7 @@ fm_pi_extension_loaded() {
 # missing it has no benign hand-off to tolerate.
 fm_pi_extension_owns_supervision() {
   fm_extension_pair_owns_supervision "$1" "$2/.pi/extensions" \
-    "fm-primary-pi-watch.ts:.pi-watch-extension-loaded" \
+    "fm-primary-pi-watch.ts:.pi-watch-extension-loaded:active" \
     "fm-primary-turnend-guard.ts:.pi-turnend-extension-loaded"
 }
 
@@ -284,15 +299,18 @@ fm_extension_owns_supervision() {
   fm_pi_extension_owns_supervision "$1" "$2" || fm_omp_extension_owns_supervision "$1" "$2"
 }
 
-fm_extension_pair_owns_supervision() {  # <state> <extension-dir> <source:marker>...
-  local state=$1 dir=$2 lock session_pid pair source marker version
+fm_extension_pair_owns_supervision() {  # <state> <extension-dir> <source:marker[:phase]>...
+  local state=$1 dir=$2 lock session_pid pair source rest marker phase version
   shift 2
   lock="$state/.lock"
   for pair in "$@"; do
     source=${pair%%:*}
-    marker=${pair#*:}
+    rest=${pair#*:}
+    marker=${rest%%:*}
+    phase=
+    [ "$marker" = "$rest" ] || phase=${rest#*:}
     version=$(fm_pi_extension_version "$dir/$source") || return 1
-    fm_pi_extension_loaded "$state/$marker" "$version" "$lock" || return 1
+    fm_pi_extension_loaded "$state/$marker" "$version" "$lock" "$phase" || return 1
   done
   session_pid=$(sed -n '1p' "$lock" 2>/dev/null)
   fm_pid_alive "$session_pid"
@@ -2185,23 +2203,31 @@ fm_wake_status_mark_current() {  # <state> <status-file>
 #     normally.
 # A later, different line from any other writer grows the size past the marker
 # and wakes as before: task identity alone can never suppress new content.
+# Each line is stamped with its emission time on the way in (status_stamp_line,
+# bin/fm-classify-lib.sh), so the appended bytes are the stamped ones, not the
+# caller's: a caller that caps a line first must reserve status_stamp_width,
+# and one that suppresses a repeat must ask status_event_recorded rather than
+# compare exact bytes.
 # Returns 0 appended and self-announced, 1 appended but left for the watcher
 # (the safe direction), 2 the append itself failed.
 fm_wake_status_append_self_announced() {  # <state> <status-file> <line>...
   local state=$1 file=$2 line appended=0 pre_size='' pre_ident='' post_size post_ident classified folded lag span_rc=0
-  local LC_ALL=C
+  local LC_ALL=C stamped=()
   shift 2
   _fm_wake_require_classify || return 1
+  for line in "$@"; do
+    stamped+=("$(status_stamp_line "$line")")
+  done
   if [ -e "$file" ]; then
     pre_size=$(_fm_status_file_size "$file") || pre_size=''
     pre_ident=$(_fm_open_decisions_file_ident "$file") || pre_ident=''
   fi
-  printf '%s\n' "$@" >> "$file" || return 2
+  printf '%s\n' "${stamped[@]}" >> "$file" || return 2
   post_size=$(_fm_status_file_size "$file") || return 1
   post_ident=$(_fm_open_decisions_file_ident "$file") || return 1
   case "$pre_size$post_size" in ''|*[!0-9]*) return 1 ;; esac
   [ -n "$pre_ident" ] && [ "$post_ident" = "$pre_ident" ] || return 1
-  for line in "$@"; do appended=$((appended + ${#line} + 1)); done
+  for line in "${stamped[@]}"; do appended=$((appended + ${#line} + 1)); done
   [ "$post_size" -eq $((pre_size + appended)) ] || return 1
   classified=$(fm_wake_signal_seen_size "$state" "$file")
   if [ "$classified" != "$pre_size" ]; then
