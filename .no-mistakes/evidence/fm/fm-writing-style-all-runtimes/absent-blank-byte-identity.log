@@ -1,0 +1,15 @@
+ship-no-mistakes   absent  file vs pre-change main: BYTE-IDENTICAL
+ship-no-mistakes   blank   file vs pre-change main: BYTE-IDENTICAL
+ship-no-mistakes   empty   file vs pre-change main: BYTE-IDENTICAL
+ship-direct-PR     absent  file vs pre-change main: BYTE-IDENTICAL
+ship-direct-PR     blank   file vs pre-change main: BYTE-IDENTICAL
+ship-direct-PR     empty   file vs pre-change main: BYTE-IDENTICAL
+ship-local-only    absent  file vs pre-change main: BYTE-IDENTICAL
+ship-local-only    blank   file vs pre-change main: BYTE-IDENTICAL
+ship-local-only    empty   file vs pre-change main: BYTE-IDENTICAL
+scout              absent  file vs pre-change main: BYTE-IDENTICAL
+scout              blank   file vs pre-change main: BYTE-IDENTICAL
+scout              empty   file vs pre-change main: BYTE-IDENTICAL
+secondmate         absent  file vs pre-change main: BYTE-IDENTICAL
+secondmate         blank   file vs pre-change main: BYTE-IDENTICAL
+secondmate         empty   file vs pre-change main: BYTE-IDENTICAL

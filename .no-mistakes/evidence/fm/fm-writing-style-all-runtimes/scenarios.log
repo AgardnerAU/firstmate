@@ -1,0 +1,18 @@
+== ship: absent vs base
+cmp: /tmp/fmws.WCgQ/h-base-ship/data/t1/brief.md: No such file or directory
+== ship: blank vs base
+cmp: /tmp/fmws.WCgQ/h-base-ship/data/t1/brief.md: No such file or directory
+== ship: present vs base (diff)
+diff: /tmp/fmws.WCgQ/h-base-ship/data/t1/brief.md: No such file or directory
+== scout: absent vs base
+cmp: /tmp/fmws.WCgQ/h-base-scout/data/t1/brief.md: No such file or directory
+== scout: blank vs base
+cmp: /tmp/fmws.WCgQ/h-base-scout/data/t1/brief.md: No such file or directory
+== scout: present vs base (diff)
+diff: /tmp/fmws.WCgQ/h-base-scout/data/t1/brief.md: No such file or directory
+== secondmate: absent vs base
+cmp: /tmp/fmws.WCgQ/h-base-secondmate/data/t1/brief.md: No such file or directory
+== secondmate: blank vs base
+cmp: /tmp/fmws.WCgQ/h-base-secondmate/data/t1/brief.md: No such file or directory
+== secondmate: present vs base (diff)
+diff: /tmp/fmws.WCgQ/h-base-secondmate/data/t1/brief.md: No such file or directory

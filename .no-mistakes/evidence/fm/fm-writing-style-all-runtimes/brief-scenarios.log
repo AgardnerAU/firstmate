@@ -1,0 +1,92 @@
+== ship: absent file vs pre-change base
+/tmp/fmws.7ZSa/h-base-ship/data/t1/brief.md /tmp/fmws.7ZSa/h-absent-ship/data/t1/brief.md differ: char 1757, line 29
+== ship: blank file vs pre-change base
+/tmp/fmws.7ZSa/h-base-ship/data/t1/brief.md /tmp/fmws.7ZSa/h-blank-ship/data/t1/brief.md differ: char 1758, line 29
+== ship: empty file vs pre-change base
+/tmp/fmws.7ZSa/h-base-ship/data/t1/brief.md /tmp/fmws.7ZSa/h-empty-ship/data/t1/brief.md differ: char 1757, line 29
+== ship: present file vs pre-change base (diff)
+2a3,7
+> # Worker writing style
+> Use ASD-STE100.
+> Use British English spelling.
+> 
+> 
+29c34
+<    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-base-ship/state/t1.status'`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-present-ship/state/t1.status'`
+65,66c70,71
+< Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-base-ship/state/t1.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-base-ship/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-base-ship/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-base-ship/state/t1.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-present-ship/state/t1.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-present-ship/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-present-ship/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-present-ship/state/t1.inbox'/handled/`.
+== ship: FM_CONFIG_OVERRIDE-only file
+1
+== ship: heading count in present brief
+1
+== scout: absent file vs pre-change base
+/tmp/fmws.7ZSa/h-base-scout/data/t1/brief.md /tmp/fmws.7ZSa/h-absent-scout/data/t1/brief.md differ: char 1290, line 26
+== scout: blank file vs pre-change base
+/tmp/fmws.7ZSa/h-base-scout/data/t1/brief.md /tmp/fmws.7ZSa/h-blank-scout/data/t1/brief.md differ: char 1291, line 26
+== scout: empty file vs pre-change base
+/tmp/fmws.7ZSa/h-base-scout/data/t1/brief.md /tmp/fmws.7ZSa/h-empty-scout/data/t1/brief.md differ: char 1290, line 26
+== scout: present file vs pre-change base (diff)
+2a3,7
+> # Worker writing style
+> Use ASD-STE100.
+> Use British English spelling.
+> 
+> 
+26c31
+<    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-base-scout/state/t1.status'`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-present-scout/state/t1.status'`
+60,61c65,66
+< Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-base-scout/state/t1.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-base-scout/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-base-scout/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-base-scout/state/t1.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-present-scout/state/t1.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-present-scout/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-present-scout/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-present-scout/state/t1.inbox'/handled/`.
+65c70
+< Write your findings to `/tmp/fmws.7ZSa/h-base-scout/data/t1/report.md`.
+---
+> Write your findings to `/tmp/fmws.7ZSa/h-present-scout/data/t1/report.md`.
+== scout: FM_CONFIG_OVERRIDE-only file
+1
+== scout: heading count in present brief
+1
+== secondmate: absent file vs pre-change base
+/tmp/fmws.7ZSa/h-base-secondmate/data/t1/brief.md /tmp/fmws.7ZSa/h-absent-secondmate/data/t1/brief.md differ: char 1245, line 22
+== secondmate: blank file vs pre-change base
+/tmp/fmws.7ZSa/h-base-secondmate/data/t1/brief.md /tmp/fmws.7ZSa/h-blank-secondmate/data/t1/brief.md differ: char 1246, line 22
+== secondmate: empty file vs pre-change base
+/tmp/fmws.7ZSa/h-base-secondmate/data/t1/brief.md /tmp/fmws.7ZSa/h-empty-secondmate/data/t1/brief.md differ: char 1245, line 22
+== secondmate: present file vs pre-change base (diff)
+2a3,10
+> # Worker writing style
+> Use ASD-STE100.
+> Use British English spelling.
+> 
+> 
+> At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+> 
+> 
+22c30
+< Nobody reads this chat: the captain and the main firstmate see only what is appended to '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.status', and a captain-facing sentence that is not appended there has not been sent.
+---
+> Nobody reads this chat: the captain and the main firstmate see only what is appended to '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.status', and a captain-facing sentence that is not appended there has not been sent.
+42,43c50,51
+< Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.inbox'/NNN.msg '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.inbox'/handled/`.
+49c57
+<    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-base-secondmate/state/t1.status'`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fmws.7ZSa/h-present-secondmate/state/t1.status'`
+== secondmate: FM_CONFIG_OVERRIDE-only file
+1
+== secondmate: heading count in present brief
+1
