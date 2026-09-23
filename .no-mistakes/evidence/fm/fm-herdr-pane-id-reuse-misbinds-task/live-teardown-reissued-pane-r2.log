@@ -1,0 +1,38 @@
+lab session: fm-lab-live-td-reuse-19447-7100
+finished task pane: w2:p2 terminal: term_65c2771ddb9ef3
+after restart: new workspace w2 pane w2:p2 terminal term_65c2771ed98423
+ok - repro: pane w2:p2 now hosts an unrelated claude agent on terminal term_65c2771ed98423
+--- fm-teardown.sh task-x1 (terminal-bound record, head) ---
+note: herdr pane fm-lab-live-td-reuse-19447-7100:w2:p2 for task-x1 now belongs to another terminal; its own endpoint is already gone, so no pane will be closed
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/bound/project: already current
+teardown task-x1 complete (window fm-lab-live-td-reuse-19447-7100:w2:p2, worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/bound/wt)
+Backlog: task-x1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/bound/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/bound/data/backlog.md - move task-x1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+herdr calls made by teardown:
+  pane get w2:p2 --session fm-lab-live-td-reuse-19447-7100
+  pane get w2:p2 --session fm-lab-live-td-reuse-19447-7100
+  session list --json --session fm-lab-live-td-reuse-19447-7100
+  session list --json --session fm-lab-live-td-reuse-19447-7100
+  pane get w2:p2 --session fm-lab-live-td-reuse-19447-7100
+ok - head teardown retired the finished task, issued no close, and the stranger agent still runs
+--- fm-teardown.sh task-x1 (legacy record, head) ---
+note: herdr pane fm-lab-live-td-reuse-19447-7100:w2:p2 for task-x1 now belongs to another terminal; its own endpoint is already gone, so no pane will be closed
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/legacy/project: already current
+teardown task-x1 complete (window fm-lab-live-td-reuse-19447-7100:w2:p2, worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/legacy/wt)
+Backlog: task-x1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/legacy/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/legacy/data/backlog.md - move task-x1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+ok - head teardown of a legacy record whose pane now works outside its worktree leaves the stranger alone
+--- fm-teardown.sh task-x1 (windowless Herdr record, head) ---
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/windowless/project: already current
+teardown task-x1 complete (window none, worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/windowless/wt)
+Backlog: task-x1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/windowless/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/windowless/data/backlog.md - move task-x1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+ok - head teardown accepts a windowless finished Herdr record with no Herdr call
+--- fm-teardown.sh task-x1 (terminal-bound record, BASE commit) ---
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/base/project: already current
+teardown task-x1 complete (window fm-lab-live-td-reuse-19447-7100:w2:p2, worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/base/wt)
+Backlog: task-x1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/base/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-teardown-reuse.G0gOi9/base/data/backlog.md - move task-x1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+base rc=0; herdr close calls:
+  pane close w2:p2 --session fm-lab-live-td-reuse-19447-7100
+REPRO: the base teardown closed the unrelated agent's pane w2:p2
+--- fm-teardown.sh task-x1 (windowless Herdr record, BASE commit) ---
+REFUSED: task task-x1 has a missing, empty, or ambiguous window endpoint; preserving task state.
+base windowless rc=1
+rc=0

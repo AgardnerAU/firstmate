@@ -1,0 +1,6 @@
+ok - a task record matches its own live pane, bound or legacy
+ok - repro: after a restart Herdr reissued pane w2:p2 to an unrelated terminal
+ok - repro: read by pane id alone, the finished task record names a live agent
+ok - liveness, existence, capture, steering, interrupt, and cleanup all treat the reissued pane as the finished task endpoint gone, and leave it untouched
+ok - the record that owns the pane, bound or legacy, still reads its agent alive
+bash tests/fm-backend-herdr-pane-reuse-e2e.test.sh  1.45s user 1.65s system 45% cpu 6.827 total
