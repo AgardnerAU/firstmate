@@ -222,8 +222,7 @@ A pane id alone therefore does not prove that a live pane is the task's endpoint
 The pane's terminal id is never reissued, so spawn records it as `herdr_terminal_id=`, and `fm_backend_herdr_endpoint_identity` in `bin/backends/herdr.sh` checks it before every liveness read, capture, input, control action, and close.
 A pane that another terminal now holds reads as this task's endpoint gone: liveness reads `missing`, input and capture fail, and cleanup closes nothing and still runs its landed-work checks.
 A record written before the field existed matches only while the pane's foreground working directory lies inside the recorded worktree and no other record of the home claims the live terminal.
-A record written before the field existed reads as gone whenever the pane's foreground working directory lies outside its worktree.
-That directory follows the pane's foreground process-group leader, so a live legacy worker that briefly runs a command in another directory reads as gone for that time.
+That foreground working directory follows the pane's foreground process-group leader, so a legacy record reads its own pane as gone only while that leader (for example the agent process itself, or a command the pane shell runs in the foreground) works outside the recorded worktree, not while the agent's child processes work elsewhere.
 An identity that cannot be read refuses every action and every close.
 
 A finished task whose pane binding was cleared can keep its `backend=herdr`, `endpoint_task_id=`, and other `herdr_*` lines as history with no `window=` line.
