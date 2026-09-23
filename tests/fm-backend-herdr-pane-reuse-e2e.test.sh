@@ -123,8 +123,10 @@ write_record "$STATE_BOUND" finished "$WS_OLD" "$TAB_ID" "$PANE" "$WT_OLD" "$TER
 write_record "$STATE_LEGACY" finished "$WS_OLD" "$TAB_ID" "$PANE" "$WT_OLD"
 TARGET="$HERDR_LAB_SESSION:$PANE"
 
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 [ "$(adapter "$STATE_BOUND" 'fm_backend_herdr_endpoint_identity "$1"' "$TARGET")" = match ] \
   || fail 'the bound record did not match its own live pane'
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 [ "$(adapter "$STATE_LEGACY" 'fm_backend_herdr_endpoint_identity "$1"' "$TARGET")" = match ] \
   || fail 'the legacy record did not match its own pane working inside its worktree'
 pass 'a task record matches its own live pane, bound or legacy'
@@ -134,6 +136,7 @@ lab workspace close "$WS_OLD" >/dev/null || fail 'could not close the finished t
 # --- 2. restart, and Herdr reissues the ids -----------------------------------
 env PATH="$HERDR_ORIGINAL_PATH" "$HERDR_LAB_HELPER" stop "$HERDR_LAB_SESSION" >/dev/null \
   || fail 'could not stop the lab session for the restart'
+# shellcheck disable=SC2016 # Positional parameters expand in the inner bash -c.
 env PATH="$HERDR_ORIGINAL_PATH" bash -c '
   . "$1/bin/fm-backend.sh"
   fm_backend_source herdr && fm_backend_herdr_server_ensure "$2"
@@ -162,11 +165,13 @@ for _ in $(seq 1 50); do
 done
 lab pane report-agent --source fm-pane-reuse-e2e --agent claude --state idle "$PANE" >/dev/null \
   || fail 'could not register the unrelated agent'
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 RAW=$(adapter "$STATE_BOUND" 'fm_backend_herdr_pane_agent_state "$1" "$2"' "$HERDR_LAB_SESSION" "$PANE")
 [ "$RAW" = live ] || fail "repro: the identity-free classifier read '$RAW' for the reissued pane, want live"
 pass 'repro: read by pane id alone, the finished task record names a live agent'
 
 # --- 3. every consumer reads the reissued pane as the task's endpoint gone ----
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 for state in "$STATE_BOUND" "$STATE_LEGACY"; do
   label=${state##*/}
   identity=$(adapter "$state" 'fm_backend_herdr_endpoint_identity "$1"' "$TARGET")
@@ -199,10 +204,12 @@ pass 'liveness, existence, capture, steering, interrupt, and cleanup all treat t
 # --- 4. the pane's real owner still reads alive --------------------------------
 STATE_OWNER="$TMP_ROOT/state-owner"
 write_record "$STATE_OWNER" other "$WS_NEW" "$TAB_ID_NEW" "$PANE" "$WT_NEW" "$TERM_NEW"
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 verdict=$(adapter "$STATE_OWNER" 'fm_backend_agent_state herdr "$1"' "$TARGET")
 [ "$verdict" = alive ] || fail "the reissued pane's own record read '$verdict', want alive"
 STATE_OWNER_LEGACY="$TMP_ROOT/state-owner-legacy"
 write_record "$STATE_OWNER_LEGACY" other "$WS_NEW" "$TAB_ID_NEW" "$PANE" "$WT_NEW"
+# shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 verdict=$(adapter "$STATE_OWNER_LEGACY" 'fm_backend_agent_state herdr "$1"' "$TARGET")
 [ "$verdict" = alive ] || fail "a legacy record working inside its own worktree read '$verdict', want alive"
 pass 'the record that owns the pane, bound or legacy, still reads its agent alive'
