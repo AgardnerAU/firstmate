@@ -222,6 +222,8 @@ A pane id alone therefore does not prove that a live pane is the task's endpoint
 The pane's terminal id is never reissued, so spawn records it as `herdr_terminal_id=`, and `fm_backend_herdr_endpoint_identity` in `bin/backends/herdr.sh` checks it before every liveness read, capture, input, control action, and close.
 A pane that another terminal now holds reads as this task's endpoint gone: liveness reads `missing`, input and capture fail, and cleanup closes nothing and still runs its landed-work checks.
 A record written before the field existed matches only while the pane's foreground working directory lies inside the recorded worktree and no other record of the home claims the live terminal.
+A record written before the field existed reads as gone whenever the pane's foreground working directory lies outside its worktree.
+That directory follows the pane's foreground process-group leader, so a live legacy worker that briefly runs a command in another directory reads as gone for that time.
 An identity that cannot be read refuses every action and every close.
 
 A finished task whose pane binding was cleared can keep its `backend=herdr`, `endpoint_task_id=`, and other `herdr_*` lines as history with no `window=` line.
@@ -292,6 +294,7 @@ No Herdr-specific copy of that protocol exists.
 
 Stopping and restarting a named Herdr server preserves the workspace, tab, pane, and label ids of surviving workspaces, but the underlying harness processes, live agent registrations, and terminal ids do not survive.
 Because the restored pane has a new terminal id, a record that binds its terminal id reads that pane as `missing`, so recovery launches a replacement rather than adopting it, and only the husk rule below may then close the restored tab.
+Restored projection reclaim is the one close that accepts the changed terminal id: it closes the restored pane as the task's own only when the presentation journal confirms its exact workspace, tab, pane, and labels and the pane has no agent.
 A restored same-labeled tab with a missing pane or no registered agent is a husk.
 Create replaces only a confidently dead or no-agent husk, creates the replacement before closing the old tab, and refuses live or unknown states.
 This prevents closing the workspace's last tab before a replacement exists.
@@ -365,7 +368,7 @@ Tests use thin compatibility wrappers in `tests/herdr-test-safety.sh` and never 
 - Mid-session secondmate agent-process liveness is not implemented.
 - Only tmux and Herdr can host the away-mode supervisor terminal.
 - A record without `herdr_terminal_id=` reads its own pane as gone while the foreground process works outside the recorded worktree, and could still match a reissued pane that works inside that same worktree.
-- A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup leaves it open.
+- A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup outside restored projection reclaim leaves it open.
 - When two records of one home name the same pane, an identity check without a validated record reads `unknown` and refuses.
 
 ## Regression entry points

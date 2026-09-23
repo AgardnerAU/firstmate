@@ -2162,7 +2162,8 @@ fm_backend_herdr_path_within() {  # <path> <root>
 # primary firstmate or a different task's copy, therefore reads mismatch.
 # teardown pins one target it has already verified
 # (FM_BACKEND_HERDR_IDENTITY_PIN), because returning a legacy task's worktree
-# moves that pane's working directory before its close runs.
+# moves that pane's working directory before its close runs, and restored
+# projection reclaim pins the husk its journal binding confirmed exactly.
 fm_backend_herdr_endpoint_identity() {  # <target>
   local target=$1 meta rc expected count out code live worktree cwd other
   fm_backend_herdr_parse_target "$target" || { printf 'unknown'; return 0; }
@@ -2900,6 +2901,11 @@ fm_backend_herdr_projection_reclaim_rollback() {  # <session> <new-pane>
 
 # fm_backend_herdr_projection_reclaim_task: replace one exact agent-free
 # restored projection husk inside its original workspace.
+# A Herdr server restart restores the husk with a fresh terminal id, so the
+# task record no longer matches it (fm_backend_herdr_endpoint_identity). The
+# husk close pins the pane as the task's own endpoint, because the journal
+# binding has already confirmed its exact workspace, tab, pane, and labels,
+# and the close itself requires the pane to be agent-free.
 # The caller holds the session presentation lock and has already established
 # that flat fallback is safe across every token match.
 # Return 0 means exact reclaim, 2 means non-mutating or exactly rolled-back
@@ -3004,7 +3010,8 @@ fm_backend_herdr_projection_reclaim_task() {  # <session> <journal> <task-id> <h
       return 2
       ;;
   esac
-  if fm_backend_herdr_projection_close_pane_focus_preserving "$session" "$meta_pane" no-agent; then
+  if FM_BACKEND_HERDR_IDENTITY_PIN="$session:$meta_pane" \
+    fm_backend_herdr_projection_close_pane_focus_preserving "$session" "$meta_pane" no-agent; then
     close_status=0
   else
     close_status=$?

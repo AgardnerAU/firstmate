@@ -3533,10 +3533,17 @@ test_projection_reclaim_refusal_matrix_is_non_mutating() {
   pass "herdr presentation reclaim: legacy, cross-home, ambiguous, live/unknown, and focus-unknown cases refuse without mutation"
 }
 
+# <restarted>: when set, the task record still carries the terminal id from
+# before a Herdr server restart, so the restored husk no longer matches it.
 test_projection_reclaim_replaces_only_exact_husk_and_advances_binding() {
+  local restarted=${1:-}
   local dir state home home_real log resp fb journal token label out calls create_line close_line agent_line boundary_mutations
-  dir="$TMP_ROOT/projection-reclaim-exact"; state="$dir/state"; home="$dir/home"
+  dir="$TMP_ROOT/projection-reclaim-exact${restarted:+-restarted}"; state="$dir/state"; home="$dir/home"
   mkdir -p "$dir/responses" "$state" "$home"
+  if [ -n "$restarted" ]; then
+    printf '%s\n' backend=herdr window=fmtest:w2:p2 herdr_terminal_id=term-before-restart \
+      worktree=/tmp/project > "$state/fm-hibit-r1.meta"
+  fi
   home_real=$(cd "$home" && pwd -P)
   log="$dir/log"; resp="$dir/responses"; : > "$log"
   token=$(bash -c '
@@ -3581,7 +3588,7 @@ test_projection_reclaim_replaces_only_exact_husk_and_advances_binding() {
   printf '%s\n' '{"result":{"tabs":[{"tab_id":"w2:t3","label":"fm-fm-hibit-r1"}]}}' > "$resp/27.out"
   printf '%s\n' '{"result":{"panes":[{"pane_id":"w2:p3","tab_id":"w2:t3"}]}}' > "$resp/28.out"
   fb=$(make_herdr_fakebin "$dir")
-  out=$(PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" \
+  out=$(PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" FM_STATE_OVERRIDE="$state" \
     bash -c '
       . "$0/bin/backends/herdr.sh"
       fm_backend_herdr_projection_reclaim_task \
@@ -3608,6 +3615,15 @@ test_projection_reclaim_replaces_only_exact_husk_and_advances_binding() {
   assert_not_contains "$calls" $'workspace\x1frename' "reclaim renamed the projected workspace"
   assert_not_contains "$calls" $'tab\x1ffocus' "focus-preserving reclaim changed an already-stable focus snapshot"
   assert_not_contains "$calls" $'\x1fw0' "reclaim touched the same-labeled sibling parent"
+  if [ -n "$restarted" ]; then
+    IDENTITY_LOG="$dir/identity-log"; : > "$IDENTITY_LOG"
+    mkdir -p "$dir/identity"
+    [ "$(identity_verdict "$(make_identity_fakebin "$dir/identity")" "$state" \
+      "$(identity_pane_json w2:p2 term-after-restart /tmp/project)" fmtest:w2:p2)" = mismatch ] \
+      || fail "outside reclaim, the restored husk must still read as a changed terminal"
+    pass "herdr presentation reclaim: relaunch after a Herdr server restart replaces the exact restored husk despite its new terminal id"
+    return
+  fi
   pass "herdr presentation reclaim: exact agent-free husk survives duplicate parent labels while its sibling stays untouched"
 }
 
@@ -5456,6 +5472,7 @@ test_presentation_session_lock_path_rejects_malformed_socket
 test_projection_order_rejects_malformed_socket
 test_projection_reclaim_refusal_matrix_is_non_mutating
 test_projection_reclaim_replaces_only_exact_husk_and_advances_binding
+test_projection_reclaim_replaces_only_exact_husk_and_advances_binding restarted
 test_projection_recovery_is_read_only_and_refuses_live_duplicate_risk
 test_workspace_find_matches_only_this_homes_own_label
 test_list_live_scoped_to_this_homes_workspace_only
