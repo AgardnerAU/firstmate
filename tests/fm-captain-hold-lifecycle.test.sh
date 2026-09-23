@@ -4347,6 +4347,157 @@ test_reused_id_resolves_to_the_newest_archived_row() {
   pass "a reused archived id resolves to its newest row, not a stale answered one"
 }
 
+# A current live identity is stronger evidence than an older archived identity.
+# Pre-collapse inventories use a key whose live task has the derived legacy id,
+# so an answered archive row carrying the bare key must not shadow a current
+# unanswered legacy row.
+test_live_legacy_call_precedes_archived_exact_history() {
+  local home origin key legacy rc
+  home=$(make_home live-legacy-before-archived-exact)
+  origin=sample-collision-review
+  key=route
+  legacy="$origin-decision-$key"
+
+  run_captain "$home" hold "$key" \
+    --title "Choose the historical route" --reason "historical captain choice" --repo sample >/dev/null \
+    || fail "could not register the historical exact call"
+  printf 'Take the historical route.\n' > "$home/historical-answer.txt"
+  run_captain "$home" answer "$key" --decision-file "$home/historical-answer.txt" >/dev/null \
+    || fail "could not answer the historical exact call"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the historical exact call"
+
+  mkdir -p "$home/data/$origin"
+  tasks_in "$home" add "$origin" "Review the current route" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the collision origin"
+  write_origin_meta "$home" "$origin"
+  printf 'done: report complete\n' > "$home/state/$origin.status"
+  printf '# Current route review\n\nOne captain choice remained.\n' > "$home/data/$origin/report.md"
+  run_captain "$home" hold "$legacy" \
+    --title "Choose the current route" --reason "current captain choice" --repo sample >/dev/null \
+    || fail "could not register the current legacy call"
+  run_captain "$home" complete "$origin" "$key" >/dev/null \
+    || fail "the live legacy call was not accepted while it remained held"
+  tasks_in "$home" "done" "$legacy" >/dev/null \
+    || fail "could not close the current legacy call without an answer"
+
+  set +e
+  run_captain "$home" verify "$origin" > "$home/verify.out" 2> "$home/verify.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || fail "an archived exact answer shadowed the current unanswered legacy call"
+  assert_grep "recorded captain answer" "$home/verify.err" \
+    "the refusal must name the missing answer on the current legacy call"
+
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the unanswered legacy call"
+  set +e
+  run_captain "$home" verify "$origin" > "$home/verify-archived.out" 2> "$home/verify-archived.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || fail "an archived exact answer shadowed the archived unanswered legacy call"
+  assert_grep "ambiguous" "$home/verify-archived.err" \
+    "the refusal must name the ambiguity between the archived identities"
+  pass "a live legacy call precedes archived history carrying the exact key"
+}
+
+# A lookup may fall through only when tasks-axi explicitly reports NOT_FOUND.
+# A live read error must not select stale archived evidence, and an archive read
+# error for the exact identity must not continue to an answered legacy identity.
+test_durable_lookup_stops_on_live_and_archive_read_errors() {
+  local home origin key legacy rc
+
+  home=$(make_home durable-live-read-error)
+  origin=sample-live-error-review
+  key=sample-live-error-call
+  mkdir -p "$home/data/$origin"
+  tasks_in "$home" add "$origin" "Review the live read error" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the live-error origin"
+  write_origin_meta "$home" "$origin"
+  printf 'done: report complete\n' > "$home/state/$origin.status"
+  printf '# Live error review\n\nOne captain choice remained.\n' > "$home/data/$origin/report.md"
+  run_captain "$home" hold "$key" \
+    --title "Choose the current option" --reason "current captain choice" --repo sample >/dev/null \
+    || fail "could not register the current call"
+  run_captain "$home" complete "$origin" "$key" >/dev/null \
+    || fail "could not inventory the current call"
+  printf 'Take the old option.\n' > "$home/old-answer.txt"
+  run_captain "$home" answer "$key" --decision-file "$home/old-answer.txt" >/dev/null \
+    || fail "could not create the archived answer"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the answered call"
+  run_captain "$home" hold "$key" \
+    --title "Choose the new option" --reason "new captain choice" --repo sample >/dev/null \
+    || fail "could not register the reused live call"
+  cat > "$home/fakebin/tasks-axi" <<'SH'
+#!/usr/bin/env bash
+archive=0
+for arg in "$@"; do
+  case "$arg" in */fm-captain-hold-archive.*) archive=1 ;; esac
+done
+if [ "${1:-}" = show ] && [ "${2:-}" = sample-live-error-call ] && [ "$archive" = 0 ]; then
+  printf 'forced live read failure\n' >&2
+  exit 91
+fi
+exec "$REAL_TASKS_AXI" "$@"
+SH
+  chmod +x "$home/fakebin/tasks-axi"
+  set +e
+  run_captain "$home" verify "$origin" > "$home/verify.out" 2> "$home/verify.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] || fail "a live read error fell through to a stale archived answer"
+  assert_grep "forced live read failure" "$home/verify.err" \
+    "the live read failure must be reported instead of treated as absence"
+
+  home=$(make_home durable-archive-read-error)
+  origin=sample-archive-error-review
+  key=route
+  legacy="$origin-decision-$key"
+  mkdir -p "$home/data/$origin"
+  tasks_in "$home" add "$origin" "Review the archive read error" \
+    --kind scout --repo sample --start >/dev/null \
+    || fail "could not create the archive-error origin"
+  write_origin_meta "$home" "$origin"
+  printf 'done: report complete\n' > "$home/state/$origin.status"
+  printf '# Archive error review\n\nOne captain choice remained.\n' > "$home/data/$origin/report.md"
+  run_captain "$home" hold "$legacy" \
+    --title "Choose the legacy option" --reason "legacy captain choice" --repo sample >/dev/null \
+    || fail "could not register the legacy call"
+  run_captain "$home" complete "$origin" "$key" >/dev/null \
+    || fail "could not inventory the legacy call"
+  printf 'Take the legacy option.\n' > "$home/legacy-answer.txt"
+  run_captain "$home" answer "$legacy" --decision-file "$home/legacy-answer.txt" >/dev/null \
+    || fail "could not answer the legacy call"
+  tasks_in "$home" prune --keep 0 --state "done" >/dev/null \
+    || fail "could not archive the answered legacy call"
+  cat > "$home/fakebin/tasks-axi" <<'SH'
+#!/usr/bin/env bash
+archive=0
+for arg in "$@"; do
+  case "$arg" in */fm-captain-hold-archive.*) archive=1 ;; esac
+done
+if [ "${1:-}" = show ] && [ "${2:-}" = route ] && [ "$archive" = 1 ]; then
+  printf 'forced archive read failure\n' >&2
+  exit 92
+fi
+exec "$REAL_TASKS_AXI" "$@"
+SH
+  chmod +x "$home/fakebin/tasks-axi"
+  set +e
+  run_captain "$home" verify "$origin" > "$home/verify.out" 2> "$home/verify.err"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] || fail "an archive read error fell through to an answered legacy row"
+  assert_grep "forced archive read failure" "$home/verify.err" \
+    "the archive read failure must be reported instead of treated as absence"
+  pass "durable lookup stops on live and archive read errors"
+}
+
 # The archive grows without bound and the gate reads it once per inventory
 # entry, so a backend that wedges parsing it must not hang `complete`/`verify`
 # for as long as it likes. Every other row read in fm-captain-hold.sh is
@@ -4465,5 +4616,7 @@ test_archived_captain_calls_resolve_without_waving_work_through
 test_configured_archive_is_read_the_way_tasks_axi_reads_it
 test_archive_setting_is_read_from_the_markdown_table_only
 test_reused_id_resolves_to_the_newest_archived_row
+test_live_legacy_call_precedes_archived_exact_history
+test_durable_lookup_stops_on_live_and_archive_read_errors
 test_a_wedged_archive_read_stops_the_gate_instead_of_hanging
 test_hold_creates_a_captain_row_when_beads_requires_due_without_custom_type

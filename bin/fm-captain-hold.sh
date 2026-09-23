@@ -510,8 +510,9 @@ restage_archive_newest_first() {  # <archive-path>
   ' "$1"
 }
 
-# Read one archived row into TASK_SHOW_OUTPUT; a non-zero return means the row
-# is not in the archive. The staged file IS the backlog for this read, so
+# Read one archived row into TASK_SHOW_OUTPUT. Status 1 means the row is not in
+# the archive; status 3 means the archive could not be read reliably. The staged
+# file IS the backlog for this read, so
 # tasks-axi is addressed directly rather than through `tasks_axi` above, whose
 # markdown branch would append this home's own `--file` on top of it.
 #
@@ -522,11 +523,23 @@ restage_archive_newest_first() {  # <archive-path>
 # forever. A read that could not finish inside its bound is not absence, so it
 # stops the command by name with 124 rather than being spent as "not archived".
 archived_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
-  local id=$1 root archive tmp out status=0 secs
-  archive_applies || return 1
+  local id=$1 root archive tmp out status=0 secs reason applies_status=0
+  archive_applies || applies_status=$?
+  case "$applies_status" in
+    0) : ;;
+    1) return 1 ;;
+    *)
+      printf 'fm-captain-hold: cannot read the backlog backend configuration while resolving %s\n' "$id" >&2
+      return 3
+      ;;
+  esac
   root=$(archive_root) || return 1
   archive=$(archive_path) || return 1
-  [ -r "$archive" ] || return 1
+  [ -e "$archive" ] || return 1
+  if [ ! -r "$archive" ]; then
+    printf 'fm-captain-hold: cannot read the closed-task archive %s while resolving %s\n' "$archive" "$id" >&2
+    return 3
+  fi
   tmp=$(umask 077; mktemp "${TMPDIR:-/tmp}/fm-captain-hold-archive.XXXXXX") \
     || fail "cannot stage the closed-task archive for lookup"
   if ! { printf '## In flight\n\n## Queued\n\n## Done\n'; restage_archive_newest_first "$archive"; } > "$tmp" 2>/dev/null; then
@@ -536,16 +549,36 @@ archived_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
   secs=$(fm_backlog_row_timeout_secs)
   # shellcheck disable=SC2016  # Expansion is deliberately deferred to the child shell.
   out=$(fm_run_timed "$secs" bash -c 'cd "$1" 2>/dev/null || exit 1; shift; exec tasks-axi show "$@"' \
-    _ "$root" "$id" --file "$tmp" --full 2>/dev/null) || status=$?
+    _ "$root" "$id" --file "$tmp" --full 2>&1) || status=$?
   rm -f -- "$tmp"
   if [ "$status" -eq 124 ]; then
     printf 'fm-captain-hold: %s\n' \
       "tasks-axi show $id exceeded its ${secs}s backlog read bound reading the closed-task archive" >&2
     exit 124
   fi
-  [ "$status" -eq 0 ] || return 1
+  if [ "$status" -ne 0 ]; then
+    printf '%s\n' "$out" | grep -q '^code: NOT_FOUND$' && return 1
+    reason=${out%%$'\n'*}
+    printf 'fm-captain-hold: %s\n' \
+      "${reason:-tasks-axi show $id failed while reading the closed-task archive}" >&2
+    return 3
+  fi
   TASK_SHOW_OUTPUT=$out
   return 0
+}
+
+# Read one live row for a durable lookup. Only tasks-axi's explicit NOT_FOUND
+# permits an archive or sibling-identity fallback; every other read failure is
+# missing evidence and must stop the resolution by name.
+durable_live_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
+  local id=$1 status=0 reason
+  task_show "$id" || status=$?
+  [ "$status" -ne 0 ] || return 0
+  printf '%s\n' "$TASK_SHOW_OUTPUT" | grep -q '^code: NOT_FOUND$' && return 1
+  reason=${TASK_SHOW_OUTPUT%%$'\n'*}
+  printf 'fm-captain-hold: %s\n' \
+    "${reason:-tasks-axi show $id failed while reading the live backlog}" >&2
+  return 3
 }
 
 # The task carrying an id wherever it durably lives, read into
@@ -561,8 +594,13 @@ archived_task_show() {  # <id>; sets TASK_SHOW_OUTPUT
 # would catch that exit in the subshell and hand the archive a read bound to
 # spend as absence.
 task_show_durable() {  # <id>; sets TASK_SHOW_OUTPUT
-  task_show "$1" && return 0
-  archived_task_show "$1"
+  local status=0
+  durable_live_task_show "$1" || status=$?
+  case "$status" in
+    0) return 0 ;;
+    1) archived_task_show "$1" ;;
+    *) return "$status" ;;
+  esac
 }
 
 show_field() {  # <show-output> <field>
@@ -688,9 +726,15 @@ resolution_block() {  # <mode>
 # Durable state of one captain call: an active captain hold (annotations
 # surviving even when a date gate has expired) or a recorded captain answer.
 verify_hold_durable() {  # <task-id>
-  local id=$1 show state hold_kind body
-  task_show_durable "$id" \
-    || fail "captain-held task $id is absent from this home's configured backlog and its closed-task archive (data directory $DATA)"
+  local id=$1 show state hold_kind body status=0
+  task_show_durable "$id" || status=$?
+  case "$status" in
+    0) : ;;
+    1)
+      fail "captain-held task $id is absent from this home's configured backlog and its closed-task archive (data directory $DATA)"
+      ;;
+    *) exit "$status" ;;
+  esac
   show=$TASK_SHOW_OUTPUT
   state=$(show_field "$show" state)
   hold_kind=$(show_field_value "$show" hold_kind)
@@ -902,23 +946,56 @@ resolve_migrated_entry() {  # <origin-or-empty> <entry>
 # Prints "<resolved id> <how>", where <how> is exact, legacy, migrated-note or
 # migrated-prefix, so a caller can record which evidence carried the attestation.
 #
-# The exact and legacy reads are durable: they see an answered call that
-# `tasks-axi prune` has moved into the closed-task archive as well as one still
-# listed. <how> still names which IDENTITY carried the row, not which file it
-# was found in, so an archived row resolves as exact or legacy exactly as a
-# live one does.
+# Current rows take precedence across identities: the exact and legacy ids are
+# both tried live before either is tried in the archive. This prevents an old
+# archived exact id from shadowing the current legacy call, and when both
+# identities are only archived the entry is refused as ambiguous. <how> still names
+# which IDENTITY carried the row, not which file it was found in, so an archived
+# row resolves as exact or legacy exactly as a live one does.
 resolve_entry() {  # <origin-or-empty> <entry>; prints "<id> <how>" or fails
-  local origin=$1 entry=$2 legacy migrated rc
-  if task_show_durable "$entry"; then
-    printf '%s exact' "$entry"
-    return 0
-  fi
+  local origin=$1 entry=$2 legacy='' migrated rc status=0 archived_exact=0
+  durable_live_task_show "$entry" || status=$?
+  case "$status" in
+    0) printf '%s exact' "$entry"; return 0 ;;
+    1) : ;;
+    *) return "$status" ;;
+  esac
   if [ -n "$origin" ] && [ "$origin" != "$BINDING_ANY" ]; then
     legacy=$(legacy_hold_id "$origin" "$entry")
-    if task_show_durable "$legacy"; then
-      printf '%s legacy' "$legacy"
-      return 0
-    fi
+    status=0
+    durable_live_task_show "$legacy" || status=$?
+    case "$status" in
+      0) printf '%s legacy' "$legacy"; return 0 ;;
+      1) : ;;
+      *) return "$status" ;;
+    esac
+  fi
+  status=0
+  archived_task_show "$entry" || status=$?
+  case "$status" in
+    0) archived_exact=1 ;;
+    1) : ;;
+    *) return "$status" ;;
+  esac
+  if [ -n "$legacy" ]; then
+    status=0
+    archived_task_show "$legacy" || status=$?
+    case "$status" in
+      0)
+        if [ "$archived_exact" = 1 ]; then
+          printf 'fm-captain-hold: %s is ambiguous: the closed-task archive carries both %s and its legacy identity %s\n' \
+            "$entry" "$entry" "$legacy" >&2
+          return 3
+        fi
+        printf '%s legacy' "$legacy"; return 0
+        ;;
+      1) : ;;
+      *) return "$status" ;;
+    esac
+  fi
+  if [ "$archived_exact" = 1 ]; then
+    printf '%s exact' "$entry"
+    return 0
   fi
   rc=0
   migrated=$(resolve_migrated_entry "$origin" "$entry") || rc=$?
@@ -1448,6 +1525,10 @@ command_answers() {
       printf 'skipped: %s (migrated-hold scan refused%s)\n' "$key" "${reason:+: $reason}"
       skipped=$((skipped + 1))
       continue
+    fi
+    if [ "$resolve_rc" = 3 ]; then
+      reason=$(tr -d '\n' < "$err")
+      fail "cannot resolve $key${reason:+: $reason}"
     fi
     if [ "$resolve_rc" -ne 0 ]; then
       # resolve_entry runs in a command substitution, so task_show's exit
