@@ -1,0 +1,4 @@
+scenario: idle live Herdr crew with a declared external pause
+session: fm-lab-grok-27529
+harness lifecycle: idle
+product output: state: paused · source: status-log · waiting for upstream review
