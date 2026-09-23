@@ -225,9 +225,12 @@ test_ship_modes_generate_clean_briefs() {
 # worker-writing-style change. Normalise only the test checkout and temporary
 # roots, then compare every remaining byte so optional rendering cannot change
 # any scaffold when the local file is absent.
+# The scout scaffold's Lavish line follows the host's lavish-axi build, so
+# lavish-axi is hidden to make the recorded bytes independent of the host.
 assert_scaffolds_match_absent_fixtures() {
-  local home="$1" reason="$2" kind id brief actual expected
+  local home="$1" reason="$2" kind id brief actual expected base
   mkdir -p "$home/data" "$home/config"
+  base=$(fm_test_base_path_sans "$PATH" lavish-axi)
 
   for kind in ship scout secondmate; do
     id="absent-$kind"
@@ -237,7 +240,7 @@ assert_scaffolds_match_absent_fixtures() {
           "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode direct-PR >/dev/null 2>&1
         ;;
       scout)
-        FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+        PATH="$base" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
           "$ROOT/bin/fm-brief.sh" "$id" some-proj --scout >/dev/null 2>&1
         ;;
       secondmate)

@@ -17,7 +17,7 @@ You are in a disposable git worktree of some-proj, at a detached HEAD on a clean
 
 **Verify isolation before anything else.** Run `pwd -P` and `git rev-parse --show-toplevel`; both must resolve to the disposable task worktree you were launched in, such as a treehouse pool path or an Orca-managed worktree, not the primary checkout firstmate operates from.
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
-If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked: launched in primary checkout, not an isolated worktree` to the status file and stop.
+If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked [at=<epoch>]: launched in primary checkout, not an isolated worktree` to the status file and stop.
 
 1. First action: create your branch: `git checkout -b fm/absent-ship`
 
@@ -26,8 +26,9 @@ If the top-level path is the primary checkout or not the worktree you were launc
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state}: {one short line}" >> '__TMP_ROOT__/home/state/absent-ship.status'`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '__TMP_ROOT__/home/state/absent-ship.status'`
    States: working, needs-decision, blocked, paused, done, failed.
+   Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
    would act on (setup done, bug reproduced, fix implemented, validation passed) and the
    needs-decision/blocked/paused/done/failed states. No step-by-step FYI progress lines;
@@ -41,18 +42,18 @@ If the top-level path is the primary checkout or not the worktree you were launc
    known external wait you expect to clear on its own (an upstream release, a rate-limit reset, a scheduled window, or your own validation round):
    firstmate then leaves your idle pane alone and rechecks it on a long
    cadence instead of treating it as a possible wedge. Use `blocked:` when you are stuck and need help.
-5. If you hit the same obstacle twice, append `blocked: {why}` and stop; firstmate will help.
+5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
-   append `needs-decision: {summary of options}` and stop. Firstmate will reply with the decision.
+   append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
 
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
-   Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
+   Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved [at=<epoch>]: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
 7. Never stop, restart, or update the shared `no-mistakes` daemon - it is one instance serving
    every lane/home, so restarting it kills other lanes' in-flight pipeline runs; only firstmate
    manages the daemon.
    Before you append `blocked:` about the pipeline, run `no-mistakes daemon status` and
    `no-mistakes axi status`. If the daemon socket refuses connections or is missing, append
-   `blocked: {the daemon error}` and stop even when the local run record still says running or
+   `blocked [at=<epoch>]: {the daemon error}` and stop even when the local run record still says running or
    fixing, because that record can be stale after the daemon exits. A run record failed with a
    daemon error is also a real block.
    Only after ruling out socket refusal, if the run is still running or fixing, reattach and keep
@@ -76,5 +77,9 @@ Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no
 Delivery contract: mode=direct-PR
 This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
 The task is complete only when committed on your branch.
-When it is implemented and committed, push your branch and open a PR with `gh-axi`, then append `done: PR {url}` to the status file and stop.
+When it is implemented and committed, push your branch and open a PR with `gh-axi` that is ready for review, not a draft.
+Before you report done, read the PR back from the forge and confirm it is not a draft (`gh pr view <url> --json isDraft` must print false); if it is a draft, mark it ready with `gh-axi pr ready`.
+A draft cannot be merged, so a done report on one leaves the merge unasked.
+Then append `done [at=<epoch>]: PR {url}` to the status file and stop.
+If you deliberately keep the PR a draft, append `paused [at=<epoch>]: {why the draft is held}` instead of done.
 Do NOT run /no-mistakes. The configured merge authority decides whether to merge the PR; firstmate relays the outcome.

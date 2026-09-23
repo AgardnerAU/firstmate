@@ -23,8 +23,9 @@ The report is the only thing that survives, so anything worth keeping must be in
 2. Stay inside this worktree; the only files you may write outside it are the report and the status file below.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state}: {one short line}" >> '__TMP_ROOT__/home/state/absent-scout.status'`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '__TMP_ROOT__/home/state/absent-scout.status'`
    States: working, needs-decision, blocked, paused, done, failed.
+   Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
    would act on and the needs-decision/blocked/paused/done/failed states. No step-by-step
    FYI progress lines; firstmate reads your pane for that.
@@ -37,17 +38,17 @@ The report is the only thing that survives, so anything worth keeping must be in
    treating it as a possible wedge. When you know when the wait clears, say so in the line with
    `until <YYYY-MM-DDTHH:MMZ>` (UTC) and firstmate rechecks at that time instead.
    Use `blocked:` when you are stuck and need help.
-5. If you hit the same obstacle twice, append `blocked: {why}` and stop; firstmate will help.
+5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs to a human (product choices, destructive actions),
-   append `needs-decision: {summary of options}` and stop. Firstmate will reply with the decision.
+   append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
-   Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
+   Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved [at=<epoch>]: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
 7. Never stop, restart, or update the shared `no-mistakes` daemon - it is one instance serving
    every lane/home, so restarting it kills other lanes' in-flight pipeline runs; only firstmate
    manages the daemon.
    Before you append `blocked:` about the pipeline, run `no-mistakes daemon status` and
    `no-mistakes axi status`. If the daemon socket refuses connections or is missing, append
-   `blocked: {the daemon error}` and stop even when the local run record still says running or
+   `blocked [at=<epoch>]: {the daemon error}` and stop even when the local run record still says running or
    fixing, because that record can be stale after the daemon exits. A run record failed with a
    daemon error is also a real block.
    Only after ruling out socket refusal, if the run is still running or fixing, reattach and keep
@@ -63,7 +64,7 @@ The move IS the acknowledgement: without it firstmate rings again and eventually
 # Definition of done
 Write your findings to `__TMP_ROOT__/home/data/absent-scout/report.md`.
 The report must stand alone: what you did, what you found, the evidence (commands run, output, file:line references), and what you recommend.
-If your deliverable is a visual artifact the captain will review and iterate on, you may host the Lavish review loop yourself (poll, revise, re-serve, staying alive) instead of handing it back to firstmate.
+Lavish is unavailable (lavish-axi is missing or below its supported version floor), so deliver your findings as a text report without Lavish, even for a visual deliverable.
 Before reporting done, read and follow `__ROOT__/.agents/skills/captain-hold-lifecycle/SKILL.md` and pass its shared completion gate for the report and any visual review.
-When the report is complete, append `done: {one-line conclusion}` to the status file and stop.
+When the report is complete, append `done [at=<epoch>]: {one-line conclusion}` to the status file and stop.
 If your findings reveal work that should ship (e.g. you reproduced a bug and the fix is clear), say so in the report; firstmate may promote this task in place, and you would then receive mode-specific ship instructions as a follow-up message.
