@@ -210,11 +210,22 @@ herdr_session=<session>
 herdr_workspace_id=<workspace-id>
 herdr_tab_id=<tab-id>
 herdr_pane_id=<pane-id>
+herdr_terminal_id=<terminal-id>
 ```
 
 A Herdr pane id contains a colon, so the adapter splits `window=` on the first colon only.
 The recorded pane is the operational fast path.
 Workspace and tab ids support verification and cleanup but are not inferred from mutable labels during normal operation.
+
+Herdr reissues pane ids: after a server restart, the next new workspace takes a closed workspace's id, and its panes take that workspace's old pane ids (measured on Herdr 0.9.1 - [verification](verification/runtime-backends.md#pane-id-reissue)).
+A pane id alone therefore does not prove that a live pane is the task's endpoint.
+The pane's terminal id is never reissued, so spawn records it as `herdr_terminal_id=`, and `fm_backend_herdr_endpoint_identity` in `bin/backends/herdr.sh` checks it before every liveness read, capture, input, control action, and close.
+A pane that another terminal now holds reads as this task's endpoint gone: liveness reads `missing`, input and capture fail, and cleanup closes nothing and still runs its landed-work checks.
+A record written before the field existed matches only while the pane's foreground working directory lies inside the recorded worktree and no other record of the home claims the live terminal.
+An identity that cannot be read refuses every action and every close.
+
+A finished task whose pane binding was cleared can keep its `backend=herdr`, `endpoint_task_id=`, and other `herdr_*` lines as history with no `window=` line.
+Cleanup accepts that record shape, with or without `spawn_gen=`, makes no Herdr call for it, and still runs its landed-work checks.
 
 ## Current transport behavior
 
@@ -279,7 +290,8 @@ No Herdr-specific copy of that protocol exists.
 
 ## Restart and liveness behavior
 
-Stopping and restarting a named Herdr server preserves workspace, tab, pane, and label ids, but the underlying harness processes and live agent registrations do not survive.
+Stopping and restarting a named Herdr server preserves the workspace, tab, pane, and label ids of surviving workspaces, but the underlying harness processes, live agent registrations, and terminal ids do not survive.
+Because the restored pane has a new terminal id, a record that binds its terminal id reads that pane as `missing`, so recovery launches a replacement rather than adopting it, and only the husk rule below may then close the restored tab.
 A restored same-labeled tab with a missing pane or no registered agent is a husk.
 Create replaces only a confidently dead or no-agent husk, creates the replacement before closing the old tab, and refuses live or unknown states.
 This prevents closing the workspace's last tab before a replacement exists.
@@ -352,6 +364,9 @@ Tests use thin compatibility wrappers in `tests/herdr-test-safety.sh` and never 
 - Ghost and placeholder recognition uses ANSI de-emphasis when available; an unstyled glyph row carrying trailing non-idle text fails safely to `unknown`.
 - Mid-session secondmate agent-process liveness is not implemented.
 - Only tmux and Herdr can host the away-mode supervisor terminal.
+- A record without `herdr_terminal_id=` reads its own pane as gone while the foreground process works outside the recorded worktree, and could still match a reissued pane that works inside that same worktree.
+- A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup leaves it open.
+- When two records of one home name the same pane, an identity check without a validated record reads `unknown` and refuses.
 
 ## Regression entry points
 
@@ -366,6 +381,7 @@ tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
 tests/fm-backend-herdr-launcher-workspace-e2e.test.sh
 tests/fm-backend-herdr-presentation-e2e.test.sh
 tests/fm-backend-herdr-agent-exit-shell-e2e.test.sh
+tests/fm-backend-herdr-pane-reuse-e2e.test.sh
 tests/fm-herdr-pi-stale-registration-live-e2e.test.sh
 tests/fm-backend-herdr-eventwait-smoke.test.sh
 tests/fm-control-herdr-smoke.test.sh
