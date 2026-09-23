@@ -1,0 +1,151 @@
+=== [head] tasks-axi 0.2.6, home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-head.l2zb
+
+### S1: answered captain call, then pruned to the archive
+
+$ fm-captain-hold.sh hold north-call --title Choose north or south --reason captain choice pending --repo sample
+north-call
+[exit 0]
+
+$ fm-captain-hold.sh complete north-review north-call
+complete: north-review captain-call inventory reviewed (north-call)
+[exit 0]
+
+$ fm-captain-hold.sh answer north-call --decision-file /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-head.l2zb/answer.txt
+answered: north-call
+[exit 0]
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ tasks-axi show north-call
+error: "Task \"north-call\" not found in this backlog"
+code: NOT_FOUND
+help[1]: Run `tasks-axi list` to see existing tasks
+
+$ grep -c north-call data/done-archive.md
+1
+
+$ fm-captain-hold.sh verify north-review
+verified: north-review captain-call inventory
+[exit 0]
+
+$ fm-captain-hold.sh complete north-review north-call
+complete: north-review captain-call inventory reviewed (north-call)
+[exit 0]
+
+### S2: call closed WITHOUT a captain answer, then pruned
+
+$ fm-captain-hold.sh hold dropped-call --title Choose the dropped option --reason captain choice pending --repo sample
+dropped-call
+[exit 0]
+
+$ fm-captain-hold.sh complete dropped-review dropped-call
+complete: dropped-review captain-call inventory reviewed (dropped-call)
+[exit 0]
+
+$ tasks-axi done dropped-call
+ok: done dropped-call -> Done
+help[1]:
+  - Run `tasks-axi ready` to dispatch work unblocked by this
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ fm-captain-hold.sh verify dropped-review
+fm-captain-hold: captain-held task dropped-call is neither held for the captain nor closed with a recorded captain answer
+[exit 1]
+
+### S3: reused id - old answered row archived, newer unanswered row archived later
+
+$ fm-captain-hold.sh hold reuse-call --title First use of the id --reason pending --repo sample
+reuse-call
+[exit 0]
+
+$ fm-captain-hold.sh complete reuse-review-1 reuse-call
+complete: reuse-review-1 captain-call inventory reviewed (reuse-call)
+[exit 0]
+
+$ fm-captain-hold.sh answer reuse-call --decision-file /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-head.l2zb/answer.txt
+answered: reuse-call
+[exit 0]
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ fm-captain-hold.sh hold reuse-call --title Second use of the id --reason pending --repo sample
+reuse-call
+[exit 0]
+
+$ fm-captain-hold.sh complete reuse-review-2 reuse-call
+complete: reuse-review-2 captain-call inventory reviewed (reuse-call)
+[exit 0]
+
+$ tasks-axi done reuse-call
+ok: done reuse-call -> Done
+help[1]:
+  - Run `tasks-axi ready` to dispatch work unblocked by this
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ grep -c '^## Archived' data/done-archive.md
+4
+
+$ fm-captain-hold.sh verify reuse-review-2
+fm-captain-hold: captain-held task reuse-call is neither held for the captain nor closed with a recorded captain answer
+[exit 1]
+
+### S4: unreadable archive refuses by name
+
+$ fm-captain-hold.sh verify north-review
+fm-captain-hold: cannot read the closed-task archive /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-head.l2zb/data/done-archive.md; refusing to resolve captain calls against an archive this home cannot read
+[exit 1]
+
+### S5: live legacy call precedes archived exact-key history
+
+$ fm-captain-hold.sh hold route --title Old route call --reason pending --repo sample
+route
+[exit 0]
+
+$ fm-captain-hold.sh answer route --decision-file /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-head.l2zb/answer.txt
+answered: route
+[exit 0]
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ fm-captain-hold.sh hold legacy-review-decision-route --title Legacy route call --reason pending --repo sample
+legacy-review-decision-route
+[exit 0]
+
+$ fm-captain-hold.sh complete legacy-review route
+complete: legacy-review captain-call inventory reviewed (route)
+[exit 0]
+
+$ tasks-axi done legacy-review-decision-route
+ok: done legacy-review-decision-route -> Done
+help[1]:
+  - Run `tasks-axi ready` to dispatch work unblocked by this
+
+$ fm-captain-hold.sh verify legacy-review
+fm-captain-hold: captain-held task legacy-review-decision-route is neither held for the captain nor closed with a recorded captain answer
+[exit 1]
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 1 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+
+$ fm-captain-hold.sh verify legacy-review
+fm-captain-hold: route is ambiguous: the closed-task archive carries both route and its legacy identity legacy-review-decision-route
+[exit 3]
