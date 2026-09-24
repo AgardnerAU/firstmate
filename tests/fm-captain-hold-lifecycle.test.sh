@@ -2305,6 +2305,12 @@ test_board_note_without_selection_keeps_the_call_open() {
   run_captain "$home" hold sample-board-words --title "Provide the sample credential route" \
     --reason "captain credential route pending" --repo sample >/dev/null \
     || fail "could not register the freeform-only board call"
+  run_captain "$home" hold sample-board-done --title "Choose the sample closed call" \
+    --reason "captain closed call pending" --repo sample >/dev/null \
+    || fail "could not register the already-answered board call"
+  printf 'south\n' > "$home/board-done.txt"
+  run_captain "$home" answer sample-board-done --decision-file "$home/board-done.txt" >/dev/null \
+    || fail "could not answer the board call before the board re-sent it"
 
   stub="$home/board-source.sh"
   cat > "$stub" <<'SH'
@@ -2313,11 +2319,12 @@ cat <<'OUT'
 session:
   status: feedback
   session_ended: false
-prompts[4]{tag,text,prompt}:
+prompts[5]{tag,text,prompt}:
   "choice","Board pick -> north","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-pick\",\"selection\":\"north\",\"note\":\"\",\"intent\":\"answer\"}"
   "choice","Export tab -> Show me where this tab is. I will decide from there.","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-question\",\"selection\":\"\",\"note\":\"Show me where this tab is. I will decide from there.\",\"intent\":\"comment\"}"
   "choice","Old board -> re-present the calls","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-old-note\",\"selection\":\"\",\"note\":\"re-present the calls\"}"
   "choice","Credential route -> use the staging vault","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-words\",\"selection\":\"\",\"note\":\"use the staging vault\",\"intent\":\"answer\"}"
+  "choice","Closed call -> east","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-done\",\"selection\":\"east\",\"note\":\"\",\"intent\":\"answer\"}"
 OUT
 SH
   chmod +x "$stub"
@@ -2346,10 +2353,12 @@ SH
     "the captain's comment never reached firstmate: $queue"
 
   receipt=$(cat "$home/state/procevent/.$sid.lavish-receipt" 2>/dev/null || true)
-  assert_contains "$receipt" "Recorded: Board pick (north); Credential route (your own words)." \
+  assert_contains "$receipt" "Recorded: Board pick (north); Credential route (your own words); Closed call (already recorded)." \
     "the receipt did not name the recorded calls: $receipt"
   assert_contains "$receipt" "Still open: Export tab (your comment); Old board (your comment)." \
     "the receipt did not name the calls that stay open: $receipt"
+  assert_not_contains "$receipt" "Not recorded, still open" \
+    "the receipt called an already-closed call still open: $receipt"
   pass "a note without a selection keeps its call open, and the receipt names recorded and open calls"
 }
 

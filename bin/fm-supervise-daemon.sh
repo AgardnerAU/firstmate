@@ -198,8 +198,8 @@ FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 # shellcheck source=bin/fm-busy-lib.sh
 . "$FM_DAEMON_DIR/fm-busy-lib.sh"
 
-# Only for fm_procevent_is_handled: a buffered process-event escalation whose
-# result was acknowledged meanwhile is dropped before delivery.
+# Only for fm_procevent_unhandled_escalations: a buffered process-event
+# escalation whose result was acknowledged meanwhile is dropped before delivery.
 # shellcheck source=bin/fm-procevent-lib.sh
 . "$FM_DAEMON_DIR/fm-procevent-lib.sh"
 
@@ -722,32 +722,14 @@ escalate_buffer_has_board_answer() {  # <state>
 # Drop buffered process-event items whose result is already handled, so a
 # deferred digest never names a result the supervisor has since acknowledged.
 escalate_drop_handled() {  # <state>
-  local state=$1 buf tmp item rest id seq
+  local state=$1 buf tmp dropped
   buf="$state/.subsuper-escalations"
   [ -s "$buf" ] || return 0
   grep -q '^check: procevent ' "$buf" || return 0
   tmp=$(mktemp "$state/.subsuper-escalations.XXXXXX") || return 1
-  while IFS= read -r item; do
-    case "$item" in
-      "check: procevent "*)
-        rest=${item#check: procevent }
-        rest=${rest#* }
-        id=${rest%% *}
-        seq=${rest#* }
-        case "$id" in ''|*[!A-Za-z0-9._-]*) ;; *)
-          case "$seq" in ''|*[!0-9]*) ;; *)
-            if fm_procevent_is_handled "$state" "$id" "$seq"; then
-              log "escalate dropped: $item (already handled)"
-              continue
-            fi
-            ;;
-          esac
-          ;;
-        esac
-        ;;
-    esac
-    printf '%s\n' "$item"
-  done < "$buf" > "$tmp" || { rm -f "$tmp"; return 1; }
+  fm_procevent_unhandled_escalations "$state" "$buf" > "$tmp" || { rm -f "$tmp"; return 1; }
+  dropped=$(( $(wc -l < "$buf") - $(wc -l < "$tmp") ))
+  [ "$dropped" -eq 0 ] || log "escalate dropped $dropped already-handled process-event item(s)"
   mv -f "$tmp" "$buf" || { rm -f "$tmp"; return 1; }
   [ -s "$buf" ] || rm -f "${buf}.since"
 }
@@ -1026,7 +1008,7 @@ inject_wedge_alarm() {  # <state> <age-seconds>
   {
     printf 'fm away-mode inject WEDGED: %ss undelivered as of %s\n' "$age" "$(date '+%Y-%m-%dT%H:%M:%S%z')"
     printf 'The supervisor pane could not accept an escalation. Buffered items:\n'
-    cat "$state/.subsuper-escalations" 2>/dev/null
+    fm_procevent_unhandled_escalations "$state" "$state/.subsuper-escalations"
   } 2>/dev/null > "$marker" || true
   target="${FM_SUPERVISOR_TARGET:-$FM_SUPERVISOR_TARGET_DEFAULT}"
   backend="${FM_SUPERVISOR_BACKEND:-$FM_SUPERVISOR_BACKEND_DEFAULT}"

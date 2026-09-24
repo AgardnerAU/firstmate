@@ -1240,6 +1240,32 @@ fm_procevent_is_handled() {
   [ -f "$marker" ] && [ ! -L "$marker" ]
 }
 
+# fm_procevent_unhandled_escalations <state> <buffer>
+# Prints the away-mode escalation buffer without the process-event items whose
+# result is already handled, so no consumer of that buffer presents them again.
+fm_procevent_unhandled_escalations() {
+  local state=$1 buf=$2 item rest id seq
+  [ -s "$buf" ] || return 0
+  while IFS= read -r item; do
+    case "$item" in
+      "check: procevent "*)
+        rest=${item#check: procevent }
+        rest=${rest#* }
+        id=${rest%% *}
+        seq=${rest#* }
+        case "$id" in ''|*[!A-Za-z0-9._-]*) ;; *)
+          case "$seq" in ''|*[!0-9]*) ;; *)
+            fm_procevent_is_handled "$state" "$id" "$seq" && continue
+            ;;
+          esac
+          ;;
+        esac
+        ;;
+    esac
+    printf '%s\n' "$item"
+  done < "$buf"
+}
+
 # fm_procevent_announced_marker <state> <source-id> <sequence>
 # Records the epoch of a result's last wake-queue announcement; see
 # fm_procevent_reannounce_seconds for why re-announcement is bounded.

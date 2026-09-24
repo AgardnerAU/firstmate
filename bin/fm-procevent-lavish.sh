@@ -707,8 +707,12 @@ cmd_choice_rows() {
           next;
         }
         ($id) = grep { $_ eq $key || $_ =~ /-decision-\Q$key\E\z/ } sort keys %skipped;
+        if (defined $id && $skipped{$id} eq "already closed") {
+          push @recorded, "$title (already recorded)";
+          next;
+        }
         $follow = 1;
-        if (defined $id && $skipped{$id} ne "no captain-held task with that id") {
+        if (defined $id && $skipped{$id} ne "no captain-held task with that id" && $skipped{$id} ne "absent") {
           push @unrecorded, "$title (" . $short->($skipped{$id}) . ")";
         } else {
           push @sent, $title;
