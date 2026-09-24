@@ -72,7 +72,9 @@ A reconcile value delivered through chat or any ordinary keyed-answer caller the
 
 Board request creation uses a separate captured-source seam.
 The board emits `fm-bearings-answer.v1` context with the slug-shaped selected option and freeform note in separate fields, so annotating Reconcile cannot turn it into an ordinary answer value.
-`bin/fm-procevent-lavish.sh answers` emits an exact non-reconcile selection, or a bare note when no option was selected, while `reconciles` emits only task ids whose structured selection is Reconcile and carries their notes as request provenance.
+`bin/fm-procevent-lavish.sh answers` emits an exact non-reconcile selection, or the typed words of a card that offers no answer option besides Reconcile, which the board marks `intent: answer`, while `reconciles` emits only task ids whose structured selection is Reconcile and carries their notes as request provenance.
+A note sent with no option selected on a card that offers answer options is the captain's comment, not a decision: it feeds neither intake, the call stays held, and the note still reaches firstmate through the announced result, so a question can never close the call it asks about.
+A current-shape row without an `intent` is read the same way, so a board built before the field existed never closes a call from a bare note.
 Current rows require the versioned shape and the `choice` tag; a time-limited rollout branch accepts ordinary answers from the old question/answer shape but refuses its bare and separator-annotated reconcile values from both intakes because those rows do not separate the selected option from its note.
 Every other structurally uncertain capture feeds neither intake, remains announced, and cannot forge a task id from freeform prose.
 The adapter-agnostic runner pipes reconcile rows into `reconcile-requests` only for a bound source, and that intake verifies the named binding again before it creates anything.

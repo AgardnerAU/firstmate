@@ -182,6 +182,7 @@ Classify each wake this way:
 Escalations are buffered up to `FM_ESCALATE_BATCH_SECS` (default 90s; 0 =
 immediate) and flushed as one single-line digest prefixed with the current
 operational prefix, carrying pre-read status summaries and a recommended action.
+A buffered Lavish board answer flushes at once, a buffered item is never added twice, and a board or other process-event item whose result is already handled is dropped before delivery.
 The single-line format makes the submission unambiguous across harnesses, and
 the operational prefix lets firstmate distinguish it from a real captain message.
 

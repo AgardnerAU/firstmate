@@ -10,7 +10,9 @@
 # signal/stale/heartbeat wakes cost zero firstmate context; only done/
 # needs-decision/blocked/failed/persistent-wedge/check-output events and a
 # declared-wait recheck reach the LLM, and even then as one pre-read digest per
-# batch window.
+# batch window. A Lavish board answer skips the batch window, a buffered item
+# is never added twice, and a process-event item whose result was handled
+# before delivery is dropped from the digest.
 #
 # PRESENCE-GATING (the /afk contract). The daemon is the away-mode engine: it
 # injects ONLY when the durable away-mode flag state/.afk is present. Invoking
@@ -102,7 +104,9 @@
 #                                   captain-held transfer is never rechecked
 #                                   while the away-posture record exists
 #          FM_ESCALATE_BATCH_SECS   buffer window for batched escalation
-#                                   digests; 0 = flush immediately (default 90)
+#                                   digests; 0 = flush immediately (default 90);
+#                                   a buffered board answer always flushes
+#                                   immediately
 #          FM_HEARTBEAT_SCAN_SECS   cadence for the catch-all status scan
 #                                   (default 300)
 #          FM_HOUSEKEEPING_TICK     seconds between housekeeping passes while
@@ -193,6 +197,11 @@ FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 # (fm_busy_classify).
 # shellcheck source=bin/fm-busy-lib.sh
 . "$FM_DAEMON_DIR/fm-busy-lib.sh"
+
+# Only for fm_procevent_is_handled: a buffered process-event escalation whose
+# result was acknowledged meanwhile is dropped before delivery.
+# shellcheck source=bin/fm-procevent-lib.sh
+. "$FM_DAEMON_DIR/fm-procevent-lib.sh"
 
 # --- tunables ---------------------------------------------------------------
 # Supervisor backends this daemon knows how to inject into today. zellij, orca,
@@ -692,11 +701,55 @@ stale_window_is_busy() {  # <window> <state>
   [ "${verdict%% *}" = busy ]
 }
 
+# An item already waiting in the buffer is not added again: the digest would
+# only repeat it, and a result re-announced while delivery waits must not reach
+# the supervisor as many copies.
 escalate_add() {  # <state> <distilled-item>
   local state=$1 item=$2 buf
   buf="$state/.subsuper-escalations"
+  if [ -s "$buf" ] && grep -qxF -- "$item" "$buf"; then
+    return 0
+  fi
   [ -s "$buf" ] || _now > "${buf}.since"
   printf '%s\n' "$item" >> "$buf"
+}
+
+# A board answer is the captain's own input, so the batch window never holds it.
+escalate_buffer_has_board_answer() {  # <state>
+  grep -q '^check: procevent lavish ' "$1/.subsuper-escalations" 2>/dev/null
+}
+
+# Drop buffered process-event items whose result is already handled, so a
+# deferred digest never names a result the supervisor has since acknowledged.
+escalate_drop_handled() {  # <state>
+  local state=$1 buf tmp item rest id seq
+  buf="$state/.subsuper-escalations"
+  [ -s "$buf" ] || return 0
+  grep -q '^check: procevent ' "$buf" || return 0
+  tmp=$(mktemp "$state/.subsuper-escalations.XXXXXX") || return 1
+  while IFS= read -r item; do
+    case "$item" in
+      "check: procevent "*)
+        rest=${item#check: procevent }
+        rest=${rest#* }
+        id=${rest%% *}
+        seq=${rest#* }
+        case "$id" in ''|*[!A-Za-z0-9._-]*) ;; *)
+          case "$seq" in ''|*[!0-9]*) ;; *)
+            if fm_procevent_is_handled "$state" "$id" "$seq"; then
+              log "escalate dropped: $item (already handled)"
+              continue
+            fi
+            ;;
+          esac
+          ;;
+        esac
+        ;;
+    esac
+    printf '%s\n' "$item"
+  done < "$buf" > "$tmp" || { rm -f "$tmp"; return 1; }
+  mv -f "$tmp" "$buf" || { rm -f "$tmp"; return 1; }
+  [ -s "$buf" ] || rm -f "${buf}.since"
 }
 
 # Flush the escalation buffer as ONE batched, single-line digest to the
@@ -705,6 +758,7 @@ escalate_add() {  # <state> <distilled-item>
 escalate_flush() {  # <state>
   local state=$1 buf item n msg
   buf="$state/.subsuper-escalations"
+  escalate_drop_handled "$state" || true
   [ -s "$buf" ] || return 0
   n=$(wc -l < "$buf" 2>/dev/null || echo 0)
   # Join buffered items with the literal " | " separator into one digest line.
@@ -1007,7 +1061,8 @@ _oldest_line_age() {  # <buf> -> seconds since the oldest buffered item first ar
 # --- housekeeping (runs every tick while the watcher is mid-cycle) ----------
 # Four cheap jobs, each guarded so an empty/quiet fleet costs near zero:
 #  1) batch flush: if the escalation buffer's oldest content is older than
-#     ESCALATE_BATCH_SECS (or batching is disabled), inject one digest.
+#     ESCALATE_BATCH_SECS (or batching is disabled, or a board answer is
+#     buffered), inject one digest.
 #  1b) max-defer escape: if the buffer is STILL undelivered past MAX_DEFER_SECS,
 #     attempt one normal delivery; if it cannot confirm, raise the wedge alarm.
 #     Never silently defer forever.
@@ -1025,7 +1080,8 @@ housekeeping() {  # <state>
   migrate_watcher_pause_markers "$state"
 
   # (1) batch flush
-  if [ "${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}" -le 0 ]; then
+  if [ "${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}" -le 0 ] \
+    || escalate_buffer_has_board_answer "$state"; then
     escalate_flush "$state" || true
   else
     due=$(_oldest_line_age "$state/.subsuper-escalations")
@@ -1422,7 +1478,10 @@ handle_wake() {  # <reason> <state>
         # housekeeping re-escalates the same pane as a false wedge later.
         [ "$kind" = "stale" ] && stale_marker_remove "$arg" "$state"
         mark_escalated_seen "$state" "$capture" || classification_failed=1
-        [ "${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}" -le 0 ] && { escalate_flush "$state" || true; }
+        if [ "${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}" -le 0 ] \
+          || escalate_buffer_has_board_answer "$state"; then
+          escalate_flush "$state" || true
+        fi
       else
         classification_failed=1
       fi
