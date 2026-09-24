@@ -1046,7 +1046,7 @@ External binding responses never enter either authority-bearing intake.
 A receipt to the person who answered uses one more built-in seam.
 Right after the feeds, a built-in source with no owner task has its result passed to `bin/fm-procevent-<adapter>.sh receipt <source-id> <result-file>` with the keyed-answer intake's report on stdin, empty for an unbound source.
 The adapter alone decides whether and how to acknowledge receipt on its own surface; a missing command or any failure changes nothing about capture, feeding, or the wake.
-For Lavish, a `feedback` round that leaves the session open stages one plain-language receipt naming the calls recorded, the calls still open, and anything else that reached firstmate, and the next listener, started by the following supervision cycle, posts it as the agent reply, so a board shows it without waiting for any handler turn.
+For Lavish, a `feedback` round that leaves the session open stages one plain-language receipt naming the calls recorded, the calls still open, any answer to an already-closed call that was not applied, and anything else that reached firstmate, and the next listener, started by the following supervision cycle, posts it as the agent reply, so a board shows it without waiting for any handler turn.
 The staged receipt rides the same best-effort consume-once path as a task-owned re-arm's reply, and retiring the board through the adapter drops a receipt that was never posted.
 
 Ownership is machine-wide per canonical source, because separate homes can share one underlying source store.
