@@ -679,7 +679,7 @@ cmd_choice_rows() {
         my ($text) = @_;
         return length($text) > 60 ? substr($text, 0, 57) . "..." : $text;
       };
-      my (@recorded, @open, @unrecorded, @sent);
+      my (@recorded, @open, @unrecorded, @unapplied, @sent);
       my $follow = ($messages || $others) ? 1 : 0;
       for my $choice (grep { defined } @choices) {
         my $key = $choice->{key};
@@ -707,22 +707,23 @@ cmd_choice_rows() {
           next;
         }
         ($id) = grep { $_ eq $key || $_ =~ /-decision-\Q$key\E\z/ } sort keys %skipped;
+        $follow = 1;
         if (defined $id && $skipped{$id} eq "already closed") {
-          push @recorded, "$title (already recorded)";
+          push @unapplied, $title;
           next;
         }
-        $follow = 1;
         if (defined $id && $skipped{$id} ne "no captain-held task with that id" && $skipped{$id} ne "absent") {
           push @unrecorded, "$title (" . $short->($skipped{$id}) . ")";
         } else {
           push @sent, $title;
         }
       }
-      exit 1 unless @recorded || @open || @unrecorded || @sent || $messages || $others;
+      exit 1 unless @recorded || @open || @unrecorded || @unapplied || @sent || $messages || $others;
       my @parts = ("Firstmate received this at " . strftime("%H:%M", localtime) . ".");
       push @parts, "Recorded: " . join("; ", @recorded) . "." if @recorded;
       push @parts, "Still open: " . join("; ", @open) . "." if @open;
       push @parts, "Not recorded, still open: " . join("; ", @unrecorded) . "." if @unrecorded;
+      push @parts, "Already recorded earlier, this answer not applied: " . join("; ", @unapplied) . "." if @unapplied;
       push @parts, "Sent to firstmate: " . join("; ", @sent) . "." if @sent;
       push @parts, "Your message reached firstmate." if $messages;
       push @parts, "$others other " . ($others == 1 ? "comment" : "comments") . " reached firstmate." if $others;

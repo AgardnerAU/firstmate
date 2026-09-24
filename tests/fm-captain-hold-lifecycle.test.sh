@@ -2353,12 +2353,16 @@ SH
     "the captain's comment never reached firstmate: $queue"
 
   receipt=$(cat "$home/state/procevent/.$sid.lavish-receipt" 2>/dev/null || true)
-  assert_contains "$receipt" "Recorded: Board pick (north); Credential route (your own words); Closed call (already recorded)." \
+  assert_contains "$receipt" "Recorded: Board pick (north); Credential route (your own words)." \
     "the receipt did not name the recorded calls: $receipt"
   assert_contains "$receipt" "Still open: Export tab (your comment); Old board (your comment)." \
     "the receipt did not name the calls that stay open: $receipt"
   assert_not_contains "$receipt" "Not recorded, still open" \
     "the receipt called an already-closed call still open: $receipt"
+  assert_contains "$receipt" "Already recorded earlier, this answer not applied: Closed call." \
+    "the receipt did not say a changed answer to a closed call was not applied: $receipt"
+  assert_contains "$receipt" "Firstmate will follow up." \
+    "the receipt did not promise a follow-up for an answer that was not applied: $receipt"
   pass "a note without a selection keeps its call open, and the receipt names recorded and open calls"
 }
 
