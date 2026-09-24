@@ -2372,8 +2372,10 @@ prompts[1]{tag,text,prompt}:
   "choice","Closed call -> east","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-board-done\",\"selection\":\"east\",\"note\":\"\",\"intent\":\"answer\"}"
 OUT
 SH
+  rm -f "$home/state/procevent/.$sid.lavish-receipt"
   out=$(run_procevent "$home" start "$sid" 2>&1) \
     || fail "the second board round did not complete: $out"
+  assert_contains "$out" "receipt-staged: $sid" "the lone changed resend staged no receipt: $out"
   receipt=$(cat "$home/state/procevent/.$sid.lavish-receipt" 2>/dev/null || true)
   assert_contains "$receipt" "Already recorded earlier, this answer not applied: Closed call." \
     "a lone changed resend to a closed call was not reported as not applied: $receipt"
