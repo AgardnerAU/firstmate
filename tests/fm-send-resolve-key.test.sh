@@ -853,6 +853,68 @@ test_remote_reserved_pending_reply_key_closes_locally() {
   pass "fm-send --resolve-key: a remote secondmate reserved-key close is the same local ledger append"
 }
 
+# The decision-answer partition (bin/fm-send.sh header "Answering a decision"):
+# a --resolve-key naming an open needs-decision or a captain-held task is a
+# decision answer, main-owned while attended and refused for the supervision
+# branch before anything is sent; a blocked: key is ordinary steering for
+# either actor; and while the away-posture record exists the same branch
+# answer is sent and closes the key, because main is parked. Main itself never
+# meets the partition.
+test_decision_answer_partition_relocates_under_the_record() {
+  local dir fb log home rc out
+  dir="$TMP_ROOT/partition"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"
+  home=$(setup_home partition)
+  fm_write_meta "$home/state/t1.meta" "window=sess:fm-t1" "kind=ship"
+  printf 'needs-decision [key=api-shape]: pick REST or RPC\n' > "$home/state/t1.status"
+  printf 'blocked [key=token]: firstmate can refresh the token\n' >> "$home/state/t1.status"
+
+  # Attended branch: the decision is refused at the partition, nothing sent.
+  : > "$log"
+  out=$(env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    FM_SUPERVISION_ACTOR=branch "$SEND" t1 --resolve-key api-shape "go with REST" 2>&1); rc=$?
+  expect_code 6 "$rc" "an attended branch answering a decision must be refused at the partition"
+  assert_contains "$out" "decision answer (fm-send --resolve-key) refused" "the partition refusal lost its action label"
+  [ ! -e "$home/state/t1.inbox" ] || fail "a refused decision answer still reached the worker's inbox"
+  [ ! -s "$log" ] || fail "a refused decision answer still rang the doorbell"
+  out=$(drain_out "$home")
+  printf '%s' "$out" | grep -F '[key=api-shape]' >/dev/null \
+    || fail "the refused answer closed the decision anyway: $out"
+
+  # Attended branch: a blocked: key is steering, sent and closed under the
+  # ordinary lease guard alone.
+  FM_SUPERVISION_ACTOR=branch run_send "$fb" "$home" "$log" t1 --resolve-key token "refreshed the token; resume"; rc=$?
+  expect_code 0 "$rc" "an attended branch resolving a blocker is ordinary steering"
+  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=token]: answered: refreshed the token; resume' \
+    || fail "the branch's blocker answer did not close the key:"$'\n'"$(cat "$home/state/t1.status")"
+  grep -qF "refreshed the token; resume" "$home/state/t1.inbox/001.msg" \
+    || fail "the branch's blocker answer did not reach the worker's inbox"
+
+  # Under the record: the same decision answer is sent and closes the key.
+  FM_HOME="$home" "$ROOT/bin/fm-afk-contract.sh" enter >/dev/null || fail "away entry failed"
+  out=$(env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    FM_SUPERVISION_ACTOR=branch "$SEND" t1 --resolve-key api-shape "go with REST" 2>&1); rc=$?
+  expect_code 0 "$rc" "under the away-posture record the branch's decision answer must be sent: $out"
+  assert_contains "$out" "main is parked" "the relocation did not announce itself"
+  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=api-shape]: answered: go with REST' \
+    || fail "the relocated answer did not close the decision:"$'\n'"$(cat "$home/state/t1.status")"
+  grep -qF "go with REST" "$home/state/t1.inbox/002.msg" \
+    || fail "the relocated answer did not reach the worker's inbox"
+  out=$(drain_out "$home")
+  if printf '%s' "$out" | grep -F '[key=api-shape]' >/dev/null; then
+    fail "the relocated answer left the decision open: $out"
+  fi
+
+  # Main never meets the partition, attended or not.
+  FM_HOME="$home" "$ROOT/bin/fm-afk-contract.sh" archive >/dev/null || fail "away archive failed"
+  printf 'needs-decision [key=db]: postgres or sqlite\n' >> "$home/state/t1.status"
+  run_send "$fb" "$home" "$log" t1 --resolve-key db "postgres"; rc=$?
+  expect_code 0 "$rc" "main answering a decision attended is unaffected by the partition"
+  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=db]: answered: postgres' \
+    || fail "main's attended decision answer did not close the key"
+  pass "fm-send --resolve-key: a decision answer refuses the attended branch before sending, a blocked: key stays steering, and the away-posture record relocates the answer"
+}
+
 # The reported failure this pair exists for: a worker trailed its key AFTER the
 # summary ("blocked: ... [key=no-mistakes-start]"), where the key grammar reads
 # it as prose, so the line opened "default". The listing then suppressed
@@ -884,8 +946,7 @@ test_listed_key_closes_a_trailing_token_blocker() {
     "the key the listing showed ('$key') must close the entry the listing showed it for"
   grep -qF "restart the run" "$home/state/t10.inbox/001.msg" \
     || fail "the answer never reached the worker's durable inbox record"
-  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t10.status" \
-    | grep -qF "resolved [key=$key]: answered: restart the run" \
+  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t10.status" | grep -F "resolved [key=$key]: answered: restart the run" >/dev/null \
     || fail "the closing resolved line is missing:"$'\n'"$(cat "$home/state/t10.status")"
 
   out=$(drain_out "$home")
@@ -1050,75 +1111,54 @@ test_refusal_resend_carries_its_own_routing_context() {
   pass "fm-send --resolve-key: a printed resend carries the home, state override, and script path it needs"
 }
 
-# The decision-answer partition (bin/fm-send.sh header "Answering a decision"):
-# a --resolve-key naming an open needs-decision or a captain-held task is a
-# decision answer, main-owned while attended and refused for the supervision
-# branch before anything is sent; a blocked: key is ordinary steering for
-# either actor; and while the away-posture record exists the same branch
-# answer is sent and closes the key, because main is parked. Main itself never
-# meets the partition.
-test_decision_answer_partition_relocates_under_the_record() {
-  local dir fb log home rc out
-  dir="$TMP_ROOT/partition"; mkdir -p "$dir"
-  fb=$(make_stubs "$dir"); log="$dir/send.log"
-  home=$(setup_home partition)
-  fm_write_meta "$home/state/t1.meta" "window=sess:fm-t1" "kind=ship"
-  printf 'needs-decision [key=api-shape]: pick REST or RPC\n' > "$home/state/t1.status"
-  printf 'blocked [key=token]: firstmate can refresh the token\n' >> "$home/state/t1.status"
+# A refusal on the SECOND of two keys must not lose the first. The keys are
+# checked in order, so an open key named before the mistyped one was already
+# accepted; a keyed resend carrying only the placeholder would close the
+# corrected key and leave that first decision open behind the answer.
+test_refusal_keyed_resend_keeps_the_accepted_keys() {
+  local dir fb log home err msg keyed
+  dir="$TMP_ROOT/multi-key"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); log="$dir/send.log"; err="$dir/send.err"
+  home=$(setup_home multi-key)
+  fm_write_meta "$home/state/t15.meta" "window=sess:fm-t15" "kind=ship"
+  printf 'needs-decision [key=alpha]: A or B\nneeds-decision [key=beta]: C or D\n' \
+    > "$home/state/t15.status"
+  msg="A, and C"
 
-  # Attended branch: the decision is refused at the partition, nothing sent.
   : > "$log"
-  out=$(env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
-    FM_SUPERVISION_ACTOR=branch "$SEND" t1 --resolve-key api-shape "go with REST" 2>&1); rc=$?
-  expect_code 6 "$rc" "an attended branch answering a decision must be refused at the partition"
-  assert_contains "$out" "decision answer (fm-send --resolve-key) refused" "the partition refusal lost its action label"
-  [ ! -e "$home/state/t1.inbox" ] || fail "a refused decision answer still reached the worker's inbox"
-  [ ! -s "$log" ] || fail "a refused decision answer still rang the doorbell"
-  out=$(drain_out "$home")
-  printf '%s' "$out" | grep -F '[key=api-shape]' >/dev/null \
-    || fail "the refused answer closed the decision anyway: $out"
+  env PATH="$fb:$PATH" \
+    FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
+    "$SEND" t15 --resolve-key alpha --resolve-key bta "$msg" >/dev/null 2>"$err" \
+    && fail "a mistyped second key should refuse"
+  [ ! -d "$home/state/t15.inbox" ] || fail "a refused answer still enqueued an inbox record"
 
-  # Attended branch: a blocked: key is steering, sent and closed under the
-  # ordinary lease guard alone.
-  FM_SUPERVISION_ACTOR=branch run_send "$fb" "$home" "$log" t1 --resolve-key token "refreshed the token; resume"; rc=$?
-  expect_code 0 "$rc" "an attended branch resolving a blocker is ordinary steering"
-  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=token]: answered: refreshed the token; resume' \
-    || fail "the branch's blocker answer did not close the key:"$'\n'"$(cat "$home/state/t1.status")"
-  grep -qF "refreshed the token; resume" "$home/state/t1.inbox/001.msg" \
-    || fail "the branch's blocker answer did not reach the worker's inbox"
+  keyed=$(grep -F -- "--resolve-key '<key>'" "$err" | sed 's/^[[:space:]]*//')
+  [ -n "$keyed" ] || fail "the refusal printed no keyed resend command: $(cat "$err")"
+  assert_contains "$keyed" "t15 --resolve-key alpha --resolve-key '<key>'" \
+    "the keyed resend must keep the open key this send had already accepted"
 
-  # Under the record: the same decision answer is sent and closes the key.
-  FM_HOME="$home" "$ROOT/bin/fm-afk-contract.sh" enter >/dev/null || fail "away entry failed"
-  out=$(env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
-    FM_SUPERVISION_ACTOR=branch "$SEND" t1 --resolve-key api-shape "go with REST" 2>&1); rc=$?
-  expect_code 0 "$rc" "under the away-posture record the branch's decision answer must be sent: $out"
-  assert_contains "$out" "main is parked" "the relocation did not announce itself"
-  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=api-shape]: answered: go with REST' \
-    || fail "the relocated answer did not close the decision:"$'\n'"$(cat "$home/state/t1.status")"
-  grep -qF "go with REST" "$home/state/t1.inbox/002.msg" \
-    || fail "the relocated answer did not reach the worker's inbox"
-  out=$(drain_out "$home")
-  if printf '%s' "$out" | grep -F '[key=api-shape]' >/dev/null; then
-    fail "the relocated answer left the decision open: $out"
+  # Fill in the corrected key the way an operator would and run it: both
+  # decisions the answer was meant for must close.
+  keyed=${keyed/"'<key>'"/beta}
+  ( cd / && env -u FM_HOME -u FM_STATE_OVERRIDE PATH="$fb:$PATH" \
+      FM_SEND_LOG="$log" FM_SEND_SETTLE=0 bash -c "$keyed" ) >/dev/null 2>"$dir/keyed.err" \
+    || fail "the corrected keyed resend failed: $keyed"$'\n'"$(cat "$dir/keyed.err")"
+  grep -qF "$msg" "$home/state/t15.inbox/001.msg" \
+    || fail "the corrected resend did not deliver the preserved message"
+  if drain_out "$home" | grep -F 'OPEN DECISIONS' >/dev/null; then
+    fail "the corrected resend left a decision open: $(drain_out "$home")"
   fi
-
-  # Main never meets the partition, attended or not.
-  FM_HOME="$home" "$ROOT/bin/fm-afk-contract.sh" archive >/dev/null || fail "away archive failed"
-  printf 'needs-decision [key=db]: postgres or sqlite\n' >> "$home/state/t1.status"
-  run_send "$fb" "$home" "$log" t1 --resolve-key db "postgres"; rc=$?
-  expect_code 0 "$rc" "main answering a decision attended is unaffected by the partition"
-  sed -E 's/ \[at=[0-9]+\]//' "$home/state/t1.status" | grep -qF 'resolved [key=db]: answered: postgres' \
-    || fail "main's attended decision answer did not close the key"
-  pass "fm-send --resolve-key: a decision answer refuses the attended branch before sending, a blocked: key stays steering, and the away-posture record relocates the answer"
+  pass "fm-send --resolve-key: a refused key's keyed resend keeps the keys already accepted"
 }
 
 test_answer_send_closes_open_decision
 test_answer_close_is_self_announced
+test_separate_resolve_key_answers_do_not_rewake
 test_listed_key_closes_a_trailing_token_blocker
 test_unresolvable_key_refusal_preserves_the_message
 test_refusal_resend_carries_its_own_routing_context
 test_empty_status_open_set_still_offers_the_keyed_resend
-test_separate_resolve_key_answers_do_not_rewake
+test_refusal_keyed_resend_keeps_the_accepted_keys
 test_colon_first_key_position_is_answerable
 test_answer_starts_work_never_orphans
 test_routine_steer_never_closes

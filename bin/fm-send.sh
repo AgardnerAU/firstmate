@@ -173,7 +173,8 @@
 # prints the resend commands with the message quoted back verbatim. The keyed
 # resend leaves an explicit <key> placeholder for the operator to replace, even
 # when only one key is open, so an answer cannot be redirected to an unrelated
-# decision. It is printed even when the status log holds nothing open, because a
+# decision, and it keeps every key this same send had already accepted, in
+# order, so the corrected resend closes all of them. It is printed even when the status log holds nothing open, because a
 # key transferred to a captain-held task is answerable through that other ledger
 # alone; the status log's own emptiness is stated as the emptiness of that FILE,
 # never as a claim about the task.
@@ -685,10 +686,12 @@ if [ -n "$RESOLVE_KEYS" ]; then
   RESOLVE_TASK_ID=$(fm_send_id_from_meta "$TARGET_META")
   RESOLVE_STATUS_FILE="$STATE/$RESOLVE_TASK_ID.status"
   resolve_open_set=$(status_open_decisions "$RESOLVE_STATUS_FILE")
+  resolve_accepted_args=
   for k in $RESOLVE_KEYS; do
     case "$resolve_open_set" in
     "$k"$'\t'* | *$'\n'"$k"$'\t'*)
       RESOLVE_STATUS_KEYS="${RESOLVE_STATUS_KEYS}${RESOLVE_STATUS_KEYS:+ }$k"
+      resolve_accepted_args="$resolve_accepted_args --resolve-key $k"
       continue
       ;;
     esac
@@ -697,6 +700,7 @@ if [ -n "$RESOLVE_KEYS" ]; then
     # through the other ledger - so check there before refusing.
     if resolved_hold_id=$(fm_send_hold_resolved_id "$RESOLVE_TASK_ID" "$k"); then
       RESOLVE_HOLD_KEYS="${RESOLVE_HOLD_KEYS}${RESOLVE_HOLD_KEYS:+ }$resolved_hold_id"
+      resolve_accepted_args="$resolve_accepted_args --resolve-key $k"
       continue
     fi
     # Nothing owns this key, so refuse rather than deliver. Sending the answer
@@ -720,8 +724,8 @@ if [ -n "$RESOLVE_KEYS" ]; then
       # the preserved message nowhere.
       resolve_resend_prefix="$(fm_send_resend_env)$(fm_send_resend_exe)"
       printf '  resend, your message preserved:\n'
-      printf "    %s %s --resolve-key '<key>' %s\n" \
-        "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
+      printf "    %s %s%s --resolve-key '<key>' %s\n" \
+        "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_accepted_args" "$resolve_quoted_message"
       printf '    %s %s %s   # deliver without closing anything\n' \
         "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
     } >&2
