@@ -1,0 +1,36 @@
+[17:58:36] daemon up (pid 14149), FM_ESCALATE_BATCH_SECS=90, FM_POLL=1, re-announce interval default 300s
+=== Scenario: composer guard holds a board answer while the captain types
+[17:58:36] board result lavish-ce9f6cc1be07a770 1 captured (unhandled)
+[17:58:46] after 10s (~10 watcher cycles): digests delivered for seq 1 = 0; buffered copies = 1; wake-queue announcements = 0
+0
+[17:58:46] captain submitted their own line
+[17:58:47] board answer digest delivered 1s after the composer emptied (11s after capture; batch window is 90s)
+=== Scenario: one unhandled result is not re-escalated on every watcher cycle
+[17:59:03] after 15 more watcher cycles: digests for seq 1 = 1; wake-queue announcements = 0
+0
+=== Scenario: a result handled while its delivery waits is never delivered
+[17:59:03] board result lavish-ce9f6cc1be07a770 2 captured while the captain types
+[17:59:07] buffered: 1
+handled: lavish-ce9f6cc1be07a770 2
+[17:59:07] captain submitted; composer empty
+[17:59:15] digests for seq 2 = 0
+=== Submitted lines in the supervisor pane (verbatim, text column):
+captain is typing a reply	user
+⁣FIRSTMATE_OP: v1 away-supervisor: Supervisor escalate (       1 event(s)): check: procevent lavish lavish-ce9f6cc1be07a770 1 (pre-read; re-arm not needed — watcher daemon-managed)	injection
+second draft	user
+=== daemon log lines about escalation:
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:36+0800] daemon starting (pid 14149); target=%0; target_source=FM_SUPERVISOR_TARGET; backend=tmux; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=999999s; batch=90s
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:38+0800] escalate: check: procevent lavish lavish-ce9f6cc1be07a770 1 -> check: procevent lavish lavish-ce9f6cc1be07a770 1
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:38+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:40+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:41+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:43+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:44+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:58:46+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:59:05+0800] escalate: check: procevent lavish lavish-ce9f6cc1be07a770 2 -> check: procevent lavish lavish-ce9f6cc1be07a770 2
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:59:05+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:59:07+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+/private/tmp/fm-lab-daemon.H5QpzY/state/.supervise-daemon.log:[2026-09-24T17:59:08+0800] escalate dropped 1 already-handled process-event item(s)
+bash '/private/tmp/fm-lab-daemon.H5QpzY/loop.sh' '/private/tmp/fm-lab-daemon.H5QpzY/submitted.log'
+agardner@AG-MBP-96 01M39CBJF6X8YJ1DKEAPD5YGSR  HEAD? ❯ bash '/private/tmp/fm-lab-daemon.H5QpzY/loop.sh' '/private/tmp/fm-lab-daemon.H5QpzY/submitted.log'
+❯

@@ -1,0 +1,26 @@
+## wake-queue lines before:        1
+$ fm-procevent.sh reconcile   # default interval 300s, result 1 announced <300s ago
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+## wake-queue lines after 3 cycles:        1
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=bogus fm-procevent.sh reconcile
+error: FM_PROCEVENT_REANNOUNCE_SECONDS must be whole seconds from 0 to 86400
+exit=1
+$ backdate announced marker by 301s (simulates one interval passing), then reconcile x2
+reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+## wake-queue lines:        2
+$ fm-procevent.sh handled lavish-ce9f6cc1be07a770 1
+handled: lavish-ce9f6cc1be07a770 1
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile x2   # would announce every cycle if unhandled
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+## wake-queue lines:        2
+1790243816	1	check	procevent:lavish-ce9f6cc1be07a770:1	check: procevent lavish lavish-ce9f6cc1be07a770 1
+1790243854	2	check	procevent:lavish-ce9f6cc1be07a770:1	check: procevent lavish lavish-ce9f6cc1be07a770 1
+.
+..
+lavish-ce9f6cc1be07a770.1.adapter
+lavish-ce9f6cc1be07a770.1.handled
+lavish-ce9f6cc1be07a770.1.result
