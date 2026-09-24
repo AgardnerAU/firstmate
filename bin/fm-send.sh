@@ -173,10 +173,12 @@
 # prints the resend commands with the message quoted back verbatim. The keyed
 # resend leaves an explicit <key> placeholder for the operator to replace, even
 # when only one key is open, so an answer cannot be redirected to an unrelated
-# decision, and it keeps every key this same send had already accepted, in
-# order, so the corrected resend closes all of them. It is printed even when the status log holds nothing open, because a
-# key transferred to a captain-held task is answerable through that other ledger
-# alone; the status log's own emptiness is stated as the emptiness of that FILE,
+# decision. Every named key is checked before refusing: the refusal names each
+# refused key, and the keyed resend keeps every accepted key in the operator's
+# order with a placeholder in each refused key's position, so the corrected
+# resend closes all of them. It is printed even when the status log holds
+# nothing open, because a key transferred to a captain-held task is answerable
+# through that other ledger alone; the status log's own emptiness is stated as the emptiness of that FILE,
 # never as a claim about the task.
 # The plain resend delivers the message without closing any decision.
 # After a delivered close it also
@@ -686,12 +688,13 @@ if [ -n "$RESOLVE_KEYS" ]; then
   RESOLVE_TASK_ID=$(fm_send_id_from_meta "$TARGET_META")
   RESOLVE_STATUS_FILE="$STATE/$RESOLVE_TASK_ID.status"
   resolve_open_set=$(status_open_decisions "$RESOLVE_STATUS_FILE")
-  resolve_accepted_args=
+  resolve_resend_args=
+  resolve_refused_keys=
   for k in $RESOLVE_KEYS; do
     case "$resolve_open_set" in
     "$k"$'\t'* | *$'\n'"$k"$'\t'*)
       RESOLVE_STATUS_KEYS="${RESOLVE_STATUS_KEYS}${RESOLVE_STATUS_KEYS:+ }$k"
-      resolve_accepted_args="$resolve_accepted_args --resolve-key $k"
+      resolve_resend_args="$resolve_resend_args --resolve-key $k"
       continue
       ;;
     esac
@@ -700,18 +703,24 @@ if [ -n "$RESOLVE_KEYS" ]; then
     # through the other ledger - so check there before refusing.
     if resolved_hold_id=$(fm_send_hold_resolved_id "$RESOLVE_TASK_ID" "$k"); then
       RESOLVE_HOLD_KEYS="${RESOLVE_HOLD_KEYS}${RESOLVE_HOLD_KEYS:+ }$resolved_hold_id"
-      resolve_accepted_args="$resolve_accepted_args --resolve-key $k"
+      resolve_resend_args="$resolve_resend_args --resolve-key $k"
       continue
     fi
-    # Nothing owns this key, so refuse rather than deliver. Sending the answer
-    # anyway would leave the decision open behind an answer the operator
-    # believes settled it - the orphaned decision --resolve-key exists to
-    # prevent - so the send keeps ONE meaning: answered and closed, or neither.
-    # The cost of refusing is paid here instead of by the operator: name what is
-    # actually open and hand the message back quoted so a refused key never
-    # costs the text they typed.
+    resolve_refused_keys="${resolve_refused_keys}${resolve_refused_keys:+ }$k"
+    resolve_resend_args="$resolve_resend_args --resolve-key '<key>'"
+  done
+  # Nothing owns a refused key, so refuse rather than deliver. Sending the
+  # answer anyway would leave the decision open behind an answer the operator
+  # believes settled it - the orphaned decision --resolve-key exists to
+  # prevent - so the send keeps ONE meaning: answered and closed, or neither.
+  # The cost of refusing is paid here instead of by the operator: name what is
+  # actually open and hand the message back quoted so a refused key never
+  # costs the text they typed.
+  if [ -n "$resolve_refused_keys" ]; then
     {
-      echo "error: --resolve-key '$k': no open decision or blocker with that key in $RESOLVE_STATUS_FILE, and no captain-held task '$k' or '$RESOLVE_TASK_ID-decision-$k' still open (already closed or mistyped); nothing was sent."
+      for k in $resolve_refused_keys; do
+        echo "error: --resolve-key '$k': no open decision or blocker with that key in $RESOLVE_STATUS_FILE, and no captain-held task '$k' or '$RESOLVE_TASK_ID-decision-$k' still open (already closed or mistyped); nothing was sent."
+      done
       resolve_open_keys=$(fm_send_open_set_keys "$resolve_open_set")
       if [ -n "$resolve_open_keys" ]; then
         printf '  open on %s: %s\n' "$RESOLVE_TASK_ID" "$(printf '%s' "$resolve_open_keys" | tr '\n' ' ')"
@@ -724,13 +733,13 @@ if [ -n "$RESOLVE_KEYS" ]; then
       # the preserved message nowhere.
       resolve_resend_prefix="$(fm_send_resend_env)$(fm_send_resend_exe)"
       printf '  resend, your message preserved:\n'
-      printf "    %s %s%s --resolve-key '<key>' %s\n" \
-        "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_accepted_args" "$resolve_quoted_message"
+      printf '    %s %s%s %s\n' \
+        "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_resend_args" "$resolve_quoted_message"
       printf '    %s %s %s   # deliver without closing anything\n' \
         "$resolve_resend_prefix" "$RESOLVE_TASK_ID" "$resolve_quoted_message"
     } >&2
     exit 1
-  done
+  fi
   # The decision-answer partition (the header's "Answering a decision"
   # contract): a key that is an open needs-decision, or already a captain-held
   # task, is a decision, and answering one is main-owned while attended. A

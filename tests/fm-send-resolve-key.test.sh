@@ -1111,15 +1111,17 @@ test_refusal_resend_carries_its_own_routing_context() {
   pass "fm-send --resolve-key: a printed resend carries the home, state override, and script path it needs"
 }
 
-# A refusal on the SECOND of two keys must not lose the first. The keys are
-# checked in order, so an open key named before the mistyped one was already
-# accepted; a keyed resend carrying only the placeholder would close the
-# corrected key and leave that first decision open behind the answer.
-test_refusal_keyed_resend_keeps_the_accepted_keys() {
-  local dir fb log home err msg keyed
-  dir="$TMP_ROOT/multi-key"; mkdir -p "$dir"
+# A refused key must not lose the other keys the same send named, wherever it
+# sits among them. Every key is checked before refusing, so a keyed resend
+# carrying only the placeholder would close the corrected key and leave the
+# other decisions open behind the answer.
+refusal_keyed_resend_case() { # <name> <expected keyed args> <resolve-key>...
+  local name=$1 expected=$2 dir fb log home err msg keyed args=() k
+  shift 2
+  for k in "$@"; do args+=(--resolve-key "$k"); done
+  dir="$TMP_ROOT/multi-key-$name"; mkdir -p "$dir"
   fb=$(make_stubs "$dir"); log="$dir/send.log"; err="$dir/send.err"
-  home=$(setup_home multi-key)
+  home=$(setup_home "multi-key-$name")
   fm_write_meta "$home/state/t15.meta" "window=sess:fm-t15" "kind=ship"
   printf 'needs-decision [key=alpha]: A or B\nneeds-decision [key=beta]: C or D\n' \
     > "$home/state/t15.status"
@@ -1128,27 +1130,43 @@ test_refusal_keyed_resend_keeps_the_accepted_keys() {
   : > "$log"
   env PATH="$fb:$PATH" \
     FM_ROOT_OVERRIDE="$home" FM_HOME="$home" FM_SEND_LOG="$log" FM_SEND_SETTLE=0 \
-    "$SEND" t15 --resolve-key alpha --resolve-key bta "$msg" >/dev/null 2>"$err" \
-    && fail "a mistyped second key should refuse"
-  [ ! -d "$home/state/t15.inbox" ] || fail "a refused answer still enqueued an inbox record"
+    "$SEND" t15 "${args[@]}" "$msg" >/dev/null 2>"$err" \
+    && fail "$name: a mistyped key should refuse"
+  [ ! -d "$home/state/t15.inbox" ] || fail "$name: a refused answer still enqueued an inbox record"
+  for k in "$@"; do
+    case "$k" in alpha | beta) continue ;; esac
+    assert_contains "$(cat "$err")" "--resolve-key '$k': no open decision" \
+      "$name: the refusal must name every refused key"
+  done
 
   keyed=$(grep -F -- "--resolve-key '<key>'" "$err" | sed 's/^[[:space:]]*//')
-  [ -n "$keyed" ] || fail "the refusal printed no keyed resend command: $(cat "$err")"
-  assert_contains "$keyed" "t15 --resolve-key alpha --resolve-key '<key>'" \
-    "the keyed resend must keep the open key this send had already accepted"
+  [ -n "$keyed" ] || fail "$name: the refusal printed no keyed resend command: $(cat "$err")"
+  assert_contains "$keyed" "t15 $expected " \
+    "$name: the keyed resend must keep every accepted key in order"
 
   # Fill in the corrected key the way an operator would and run it: both
   # decisions the answer was meant for must close.
+  # A second placeholder is a key the operator drops rather than corrects.
   keyed=${keyed/"'<key>'"/beta}
+  keyed=${keyed//" --resolve-key '<key>'"/}
   ( cd / && env -u FM_HOME -u FM_STATE_OVERRIDE PATH="$fb:$PATH" \
       FM_SEND_LOG="$log" FM_SEND_SETTLE=0 bash -c "$keyed" ) >/dev/null 2>"$dir/keyed.err" \
-    || fail "the corrected keyed resend failed: $keyed"$'\n'"$(cat "$dir/keyed.err")"
+    || fail "$name: the corrected keyed resend failed: $keyed"$'\n'"$(cat "$dir/keyed.err")"
   grep -qF "$msg" "$home/state/t15.inbox/001.msg" \
-    || fail "the corrected resend did not deliver the preserved message"
+    || fail "$name: the corrected resend did not deliver the preserved message"
   if drain_out "$home" | grep -F 'OPEN DECISIONS' >/dev/null; then
-    fail "the corrected resend left a decision open: $(drain_out "$home")"
+    fail "$name: the corrected resend left a decision open: $(drain_out "$home")"
   fi
-  pass "fm-send --resolve-key: a refused key's keyed resend keeps the keys already accepted"
+}
+
+test_refusal_keyed_resend_keeps_the_accepted_keys() {
+  refusal_keyed_resend_case open-first \
+    "--resolve-key alpha --resolve-key '<key>'" alpha bta
+  refusal_keyed_resend_case refused-first \
+    "--resolve-key '<key>' --resolve-key alpha" bta alpha
+  refusal_keyed_resend_case two-refused \
+    "--resolve-key '<key>' --resolve-key alpha --resolve-key '<key>'" zz alpha bta
+  pass "fm-send --resolve-key: a refused key's keyed resend keeps every accepted key in order"
 }
 
 test_answer_send_closes_open_decision
