@@ -178,11 +178,10 @@
 # order with a placeholder in each refused key's position, so the corrected
 # resend closes all of them. It is printed even when the status log holds
 # nothing open, because a key transferred to a captain-held task is answerable
-# through that other ledger alone; the status log's own emptiness is stated as the emptiness of that FILE,
-# never as a claim about the task.
-# The plain resend delivers the message without closing any decision.
-# After a delivered close it also
-# re-folds and fails loudly if the named key is still open. On the inbox plane
+# through that other ledger alone; the status log's own emptiness is stated as
+# the emptiness of that FILE, never as a claim about the task. The plain resend
+# delivers the message without closing any decision. After a delivered close it
+# also re-folds and fails loudly if the named key is still open. On the inbox plane
 # the close happens at ENQUEUE time, because enqueue is durable delivery to
 # the task's record; the worker reading the answer late is covered by the
 # acknowledgement re-ring ladder. On the typed plane it still waits for the
