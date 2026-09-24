@@ -1,0 +1,35 @@
+===== [head] scenario preserve  home=/tmp/fmrk.DbeU/home-head-preserve.6H0e
+--- status log:
+blocked: axi run hung [key=decoy-token]
+needs-decision [key=alpha]: A or B
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t10 [key=default] blocked: axi run hung [key=decoy-token]
+t10 [key=alpha] needs-decision: A or B
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+$ bin/fm-send.sh t10 --resolve-key decoy-token $'don\'t restart it; $RUN is still live\nsecond line' 
+rc=1
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'decoy-token': no open decision or blocker with that key in /tmp/fmrk.DbeU/home-head-preserve.6H0e/state/t10.status, and no captain-held task 'decoy-token' or 't10-decision-decoy-token' still open (already closed or mistyped); nothing was sent.
+  open on t10: default alpha
+  resend, your message preserved:
+    FM_HOME=/tmp/fmrk.DbeU/home-head-preserve.6H0e /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 --resolve-key '<key>' $'don\'t restart it; $RUN is still live\nsecond line'
+    FM_HOME=/tmp/fmrk.DbeU/home-head-preserve.6H0e /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 $'don\'t restart it; $RUN is still live\nsecond line'   # deliver without closing anything
+--- inbox:
+(no inbox - nothing delivered)
+# operator pastes the printed plain resend from / with nothing exported:
+$ FM_HOME=/tmp/fmrk.DbeU/home-head-preserve.6H0e /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 $'don\'t restart it; $RUN is still live\nsecond line'
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+fm-send: doorbell not typed because the agent in sess:fm-t10 has exited; the steer is durably recorded at /tmp/fmrk.DbeU/home-head-preserve.6H0e/state/t10.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+rc=0
+--- inbox:
+[/tmp/fmrk.DbeU/home-head-preserve.6H0e/state/t10.inbox/001.msg]
+schema=fm-task-inbox.v1
+at=2026-09-24T04:41:36Z
+--
+don't restart it; $RUN is still live
+second line
+--- status log:
+blocked: axi run hung [key=decoy-token]
+needs-decision [key=alpha]: A or B

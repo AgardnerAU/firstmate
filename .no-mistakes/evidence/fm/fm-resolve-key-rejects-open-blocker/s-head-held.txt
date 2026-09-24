@@ -1,0 +1,16 @@
+===== [head] scenario held  home=/tmp/fmrk.DbeU/home-head-held.yNcX
+--- status log:
+needs-decision [key=migration]: cut over now or after the freeze
+captain-held [key=migration]: transferred to the captain-held task
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+(no OPEN DECISIONS section)
+$ bin/fm-send.sh t10 --resolve-key migratoin cut\ over\ after\ the\ freeze 
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'migratoin': no open decision or blocker with that key in /tmp/fmrk.DbeU/home-head-held.yNcX/state/t10.status, and no captain-held task 'migratoin' or 't10-decision-migratoin' still open (already closed or mistyped); nothing was sent.
+  no decision or blocker is open in /tmp/fmrk.DbeU/home-head-held.yNcX/state/t10.status.
+  resend, your message preserved:
+    FM_HOME=/tmp/fmrk.DbeU/home-head-held.yNcX /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 --resolve-key '<key>' cut\ over\ after\ the\ freeze
+    FM_HOME=/tmp/fmrk.DbeU/home-head-held.yNcX /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 cut\ over\ after\ the\ freeze   # deliver without closing anything
+rc=1
+--- inbox:
+(no inbox - nothing delivered)

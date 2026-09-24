@@ -1,0 +1,45 @@
+===== [head] scenario multi  home=/tmp/fmrk.DbeU/home-head-multi.M0TF
+--- status log:
+needs-decision [key=alpha]: A or B
+needs-decision [key=beta]: C or D
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t10 [key=alpha] needs-decision: A or B
+t10 [key=beta] needs-decision: C or D
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+$ bin/fm-send.sh t10 --resolve-key bta --resolve-key alpha A\,\ and\ C 
+rc=1
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'bta': no open decision or blocker with that key in /tmp/fmrk.DbeU/home-head-multi.M0TF/state/t10.status, and no captain-held task 'bta' or 't10-decision-bta' still open (already closed or mistyped); nothing was sent.
+  open on t10: alpha beta
+  resend, your message preserved:
+    FM_HOME=/tmp/fmrk.DbeU/home-head-multi.M0TF /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 --resolve-key '<key>' --resolve-key alpha A\,\ and\ C
+    FM_HOME=/tmp/fmrk.DbeU/home-head-multi.M0TF /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 A\,\ and\ C   # deliver without closing anything
+--- inbox:
+(no inbox - nothing delivered)
+# paste the keyed resend verbatim (placeholder unfilled):
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key '<key>' is not a valid decision key (allowed: A-Z a-z 0-9 . _ -)
+rc=1
+--- inbox:
+(no inbox - nothing delivered)
+# operator fills the placeholder with 'beta' and runs it from /:
+$ FM_HOME=/tmp/fmrk.DbeU/home-head-multi.M0TF /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 --resolve-key beta --resolve-key alpha A\,\ and\ C
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+fm-send: doorbell not typed because the agent in sess:fm-t10 has exited; the steer is durably recorded at /tmp/fmrk.DbeU/home-head-multi.M0TF/state/t10.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+rc=0
+--- inbox:
+[/tmp/fmrk.DbeU/home-head-multi.M0TF/state/t10.inbox/001.msg]
+schema=fm-task-inbox.v1
+at=2026-09-24T04:41:38Z
+--
+A, and C
+--- status log:
+needs-decision [key=alpha]: A or B
+needs-decision [key=beta]: C or D
+resolved [key=beta] [at=1790224898]: answered: A, and C
+resolved [key=alpha] [at=1790224898]: answered: A, and C
+--- after:
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+(no OPEN DECISIONS section)

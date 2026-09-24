@@ -1,0 +1,23 @@
+===== [head] scenario listed-key  home=/tmp/fmrk.DbeU/home-head-listed-key.bwSb
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t10 [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+# operator reads the first [key=...] on the entry: 'default'
+$ bin/fm-send.sh t10 --resolve-key default restart\ the\ run 
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+fm-send: doorbell not typed because the agent in sess:fm-t10 has exited; the steer is durably recorded at /tmp/fmrk.DbeU/home-head-listed-key.bwSb/state/t10.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+rc=0
+--- inbox:
+[/tmp/fmrk.DbeU/home-head-listed-key.bwSb/state/t10.inbox/001.msg]
+schema=fm-task-inbox.v1
+at=2026-09-24T04:41:33Z
+--
+restart the run
+--- status log:
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+resolved [key=default] [at=1790224893]: answered: restart the run
+--- after:
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+(no OPEN DECISIONS section)

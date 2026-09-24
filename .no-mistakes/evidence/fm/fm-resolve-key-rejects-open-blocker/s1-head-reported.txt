@@ -1,0 +1,18 @@
+===== [head] scenario reported  home=/tmp/fmrk.DbeU/home-head-reported.dvbK
+--- status log:
+blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+$ bin/fm-wake-drain.sh   # OPEN DECISIONS section
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t10 [key=default] blocked: no-mistakes axi run hung without registering a branch run [key=no-mistakes-start]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+$ bin/fm-send.sh t10 --resolve-key no-mistakes-start restart\ the\ run 
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'no-mistakes-start': no open decision or blocker with that key in /tmp/fmrk.DbeU/home-head-reported.dvbK/state/t10.status, and no captain-held task 'no-mistakes-start' or 't10-decision-no-mistakes-start' still open (already closed or mistyped); nothing was sent.
+  open on t10: default
+  resend, your message preserved:
+    FM_HOME=/tmp/fmrk.DbeU/home-head-reported.dvbK /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 --resolve-key '<key>' restart\ the\ run
+    FM_HOME=/tmp/fmrk.DbeU/home-head-reported.dvbK /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M38VBSMBVJQN8X9QZ3HFEQWH/bin/fm-send.sh t10 restart\ the\ run   # deliver without closing anything
+rc=1
+--- inbox:
+(no inbox - nothing delivered)
