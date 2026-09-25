@@ -1,0 +1,62 @@
+== 1. spawn an anchor and the task that will finish (presentation projection on by default)
+--- state/oldtask.meta (endpoint lines)
+window=fm-lab-fm-live-reuse-51464-20893:w2:p2
+backend=herdr
+herdr_session=fm-lab-fm-live-reuse-51464-20893
+herdr_workspace_id=w2
+herdr_tab_id=w2:t2
+herdr_pane_id=w2:p2
+not ok - record terminal '' vs live 'term_65c4448d61bcc4'
+crew-state oldtask (live): state: unknown · source: pane · harness state unavailable (unknown missing)
+== 2. the worker finishes: its projected workspace w2 closes; record stays. Then the Herdr server restarts.
+== 3. spawn a new task in the same home while the old record still exists
+--- state/newtask.meta (endpoint lines)
+window=fm-lab-fm-live-reuse-51464-20893:w2:p2
+backend=herdr
+herdr_session=fm-lab-fm-live-reuse-51464-20893
+herdr_workspace_id=w2
+herdr_tab_id=w2:t2
+herdr_pane_id=w2:p2
+ok - repro: Herdr reissued pane w2:p2 to the new task; two records now name fm-lab-fm-live-reuse-51464-20893:w2:p2 ( vs )
+ok - the new task's launch command was typed and ran in its pane
+== 4. per-task reads bind each task's own record
+crew-state oldtask: state: unknown · source: pane · harness state unavailable (unknown missing)
+crew-state newtask: state: unknown · source: pane · harness state unavailable (unknown missing)
+ok - crew-state reads the new task from its live pane
+not ok - crew-state reads the finished task from the reissued pane
+fm-peek oldtask rc=0: agardner@AG-MBP-96 project  HEAD ❯ expo. '/tmp/fm-newtask+f25e1262a1634f753ce029ed26107cc5c4be67e243592642c1c528f5b93f0
+69c/launch.s1790298221.58727.24295.sh'
+LAUNCHED-newtask
+not ok - fm-peek oldtask showed the new task's pane
+ok - fm-peek newtask shows its own pane
+fm-send oldtask rc=0: fm-send: doorbell did not reach fm-lab-fm-live-reuse-51464-20893:w2:p2; the steer is durably recorded at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/state/oldtask.inbox/001.msg and the watcher will re-ring
+fm-send newtask rc=0: fm-send: doorbell did not reach fm-lab-fm-live-reuse-51464-20893:w2:p2; the steer is durably recorded at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/state/newtask.inbox/001.msg and the watcher will re-ring
+--- new task pane screen (tail)
+agardner@AG-MBP-96 project  main ❯ treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/project-82c2ac/1/project. Type 'exit' to return.
+agardner@AG-MBP-96 project  HEAD ❯ export GOTMPDIR=/tmp/fm-newtask/gotmp
+agardner@AG-MBP-96 project  HEAD ❯ export COMPACT_ADVISER_DISABLE=1
+agardner@AG-MBP-96 project  HEAD ❯ expo. '/tmp/fm-newtask+f25e1262a1634f753ce029ed26107cc5c4be67e243592642c1c528f5b93f0
+69c/launch.s1790298221.58727.24295.sh'
+LAUNCHED-newtask
+ok - old task's doorbell did not reach the new task's pane
+ok - the new task's own doorbell reached its pane
+== 5. tear down the finished task: nothing of the new task's may be closed
+fm-teardown oldtask rc=0
+  🌳 Worktree returned to pool.
+  warning: herdr presentation journal for oldtask remains quarantined; no workspace cleanup was attempted
+  /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/project: already current
+  teardown oldtask complete (window fm-lab-fm-live-reuse-51464-20893:w2:p2, worktree /Users/agardner/.treehouse/project-82c2ac/2/project)
+  Backlog: oldtask just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/data/backlog.md - move oldtask to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+not ok - teardown of the finished task closed the new task's pane
+ok - the finished task's record was cleaned up
+crew-state newtask after: state: unknown · source: none · backend target gone: fm-lab-fm-live-reuse-51464-20893:w2:p2
+== 6. tear down the new task: it closes its own pane
+fm-teardown newtask rc=0
+  warning: herdr presentation journal for newtask remains quarantined; no workspace cleanup was attempted
+  /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/project: already current
+  teardown newtask complete (window fm-lab-fm-live-reuse-51464-20893:w2:p2, worktree /Users/agardner/.treehouse/project-82c2ac/1/project)
+  Backlog: newtask just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.rBuXFK/home/data/backlog.md - move newtask to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+ok - teardown of the new task closed its own pane
+RESULT failed=1

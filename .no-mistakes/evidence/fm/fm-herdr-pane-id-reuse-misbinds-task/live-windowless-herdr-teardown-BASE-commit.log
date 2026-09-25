@@ -1,0 +1,13 @@
+== spawn a task, the worker finishes, its workspace closes, and its record's window is cleared
+--- state/oldtask.meta endpoint lines after clearing window
+endpoint_task_id=oldtask
+backend=herdr
+herdr_session=fm-lab-fm-live-reuse-28681-19436
+herdr_workspace_id=w2
+herdr_tab_id=w2:t2
+herdr_pane_id=w2:p2
+fm-teardown oldtask rc=1
+  REFUSED: task oldtask has a missing, empty, or ambiguous window endpoint; preserving task state.
+not ok - windowless Herdr record refused (rc=1)
+ok - no Herdr pane was closed (["w1:p2"])
+RESULT failed=1

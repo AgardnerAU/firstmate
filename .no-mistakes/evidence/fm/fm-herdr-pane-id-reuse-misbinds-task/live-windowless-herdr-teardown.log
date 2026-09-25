@@ -1,0 +1,16 @@
+== spawn a task, the worker finishes, its workspace closes, and its record's window is cleared
+--- state/oldtask.meta endpoint lines after clearing window
+endpoint_task_id=oldtask
+backend=herdr
+herdr_session=fm-lab-fm-live-reuse-93328-18773
+herdr_workspace_id=w2
+herdr_tab_id=w2:t2
+herdr_pane_id=w2:p2
+herdr_terminal_id=term_65c444c5ab9374
+fm-teardown oldtask rc=0
+  🌳 Worktree returned to pool.
+  teardown oldtask complete (window none, worktree /Users/agardner/.treehouse/project-7de208/2/project)
+  Backlog: oldtask just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.Z2TN3p/home/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-live-reuse.Z2TN3p/home/data/backlog.md - move oldtask to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+ok - a windowless finished Herdr record is accepted by cleanup
+ok - no Herdr pane was closed (["w1:p2"])
+RESULT failed=0
