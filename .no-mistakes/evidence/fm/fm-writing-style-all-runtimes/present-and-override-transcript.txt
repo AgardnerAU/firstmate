@@ -1,0 +1,52 @@
+== Scenario: populated config/worker-writing-style.md reaches ship, scout and secondmate briefs ==
+ship rc=0
+scout rc=0
+secondmate rc=0
+--- head of ship brief ---
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use ASD-STE100 for all human-facing prose.
+- Use British English spelling.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+--- head of scout brief ---
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use ASD-STE100 for all human-facing prose.
+- Use British English spelling.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+--- head of sm brief ---
+You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use ASD-STE100 for all human-facing prose.
+- Use British English spelling.
+
+
+At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+
+
+# Charter
+Own docs.
+
+== Scenario: FM_CONFIG_OVERRIDE directory is honoured ==
+rc=0
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+OVERRIDE RULE: short sentences.
+
+

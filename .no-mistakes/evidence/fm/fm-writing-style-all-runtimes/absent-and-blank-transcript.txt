@@ -1,0 +1,48 @@
+== Scenario: absent style file, base (main 70e41a8) vs branch (e04be37) ==
+- ship base: rc=0 branch: rc=0
+  cmp: DIFFER
+29c29
+<    `echo "{state} [at=<epoch>]: {one short line}" >> '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.status' && { [ ! -e '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/config/fleet-ledger' ] || '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/bin/fm-fleet-ledger.sh' appended '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/config' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.status' >/dev/null 2>&1 || true; }`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.status' && { [ ! -e '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/config/fleet-ledger' ] || '/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BP57YZQTD7TBYTF7MY2KWV/bin/fm-fleet-ledger.sh' appended '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/config' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.status' >/dev/null 2>&1 || true; }`
+75,76c75,76
+< Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-ship/state/same-id.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-ship/state/same-id.inbox'/handled/`.
+- scout base: rc=0 branch: rc=0
+  cmp: DIFFER
+26c26
+<    `echo "{state} [at=<epoch>]: {one short line}" >> '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.status' && { [ ! -e '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/config/fleet-ledger' ] || '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/bin/fm-fleet-ledger.sh' appended '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/config' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.status' >/dev/null 2>&1 || true; }`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.status' && { [ ! -e '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/config/fleet-ledger' ] || '/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BP57YZQTD7TBYTF7MY2KWV/bin/fm-fleet-ledger.sh' appended '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/config' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.status' >/dev/null 2>&1 || true; }`
+70,71c70,71
+< Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-scout/state/same-id.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-scout/state/same-id.inbox'/handled/`.
+- sm base: rc=0 branch: rc=0
+  cmp: DIFFER
+22c22
+< Nobody reads this chat: the captain and the main firstmate see only what is appended to '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-sm/state/same-id.status', and a captain-facing sentence that is not appended there has not been sent.
+---
+> Nobody reads this chat: the captain and the main firstmate see only what is appended to '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-sm/state/same-id.status', and a captain-facing sentence that is not appended there has not been sent.
+42,43c42,43
+< Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-sm/state/same-id.inbox'.
+< When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-sm/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-sm/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-base-sm/state/same-id.inbox'/handled/`.
+---
+> Firstmate steers you through durable message files in '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-sm/state/same-id.inbox'.
+> When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-sm/state/same-id.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-sm/state/same-id.inbox'/NNN.msg '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.kEsH0gvfch/home-new-sm/state/same-id.inbox'/handled/`.
+
+== Scenario: blank (whitespace-only) style file treated as absent ==
+- ship branch: rc=0
+  cmp vs main: DIFFER
+  heading/fallback matches: 0
+- scout branch: rc=0
+  cmp vs main: DIFFER
+  heading/fallback matches: 0
+- sm branch: rc=0
+  cmp vs main: DIFFER
+  heading/fallback matches: 0

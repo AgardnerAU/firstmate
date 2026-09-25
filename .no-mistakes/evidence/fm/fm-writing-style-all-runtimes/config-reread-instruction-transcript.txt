@@ -1,0 +1,40 @@
+== Scenario: primary style change propagates to secondmate home and reread instruction gives mandatory framing ==
+propagate rc=0
+--- report ---
+crew-dispatch.json	unchanged	
+crew-harness	pushed	
+worker-writing-style.md	pushed	
+backlog-backend	pushed	
+backend	unchanged	
+herdr-presentation-spaces	unchanged	
+startup-memory-budget	unchanged	
+trace-context	unchanged	
+launch-env-allowlist	unchanged	
+claude-permission-mode	unchanged	
+lavish-axi-host	unchanged	
+instruction rc=0
+--- secondmate config/worker-writing-style.md ---
+- Use ASD-STE100.
+- Use British English.
+--- emitted reread instruction ---
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/crew-harness
+-----BEGIN config/crew-harness-----
+codex
+-----END config/crew-harness-----
+
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+- Use ASD-STE100.
+- Use British English.
+-----END config/worker-writing-style.md-----
+
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/backlog-backend
+-----BEGIN config/backlog-backend-----
+manual
+-----END config/backlog-backend-----

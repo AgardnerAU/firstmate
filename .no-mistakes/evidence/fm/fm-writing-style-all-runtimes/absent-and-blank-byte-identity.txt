@@ -1,0 +1,9 @@
+Same FM_HOME and same root for main (70e41a8) fm-brief.sh and branch (e04be37) fm-brief.sh
+== style file: absent ==
+- ship: main rc=0 branch rc=0 cmp=IDENTICAL (8923 bytes); heading lines: 0
+- scout: main rc=0 branch rc=0 cmp=IDENTICAL (8247 bytes); heading lines: 0
+- sm: main rc=0 branch rc=0 cmp=IDENTICAL (9001 bytes); heading lines: 0
+== style file: blank ==
+- ship: main rc=0 branch rc=0 cmp=IDENTICAL (8915 bytes); heading lines: 0
+- scout: main rc=0 branch rc=0 cmp=IDENTICAL (8238 bytes); heading lines: 0
+- sm: main rc=0 branch rc=0 cmp=IDENTICAL (8992 bytes); heading lines: 0
