@@ -46,7 +46,7 @@ The move IS the acknowledgement: without it firstmate rings again and eventually
 # Escalation to main firstmate
 Handle routine work yourself.
 Report only true captain-relevant outcomes or a declared external wait by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '__TMP_ROOT__/home/state/absent-secondmate.status'`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '__TMP_ROOT__/home/state/absent-secondmate.status' && { [ ! -e '__TMP_ROOT__/home/config/fleet-ledger' ] || '__ROOT__/bin/fm-fleet-ledger.sh' appended '__TMP_ROOT__/home/config' '__TMP_ROOT__/home/state/absent-secondmate.status' >/dev/null 2>&1 || true; }`
 States: working, needs-decision, blocked, paused, done, failed.
 Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
 Use `paused: {why}` (distinct from `blocked:`) only when your domain is deliberately idling on a known external wait you expect to clear on its own, naming when it clears with `until <YYYY-MM-DDTHH:MMZ>` (UTC) when you know; use `blocked:` when you are stuck and need firstmate to act.
