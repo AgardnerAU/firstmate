@@ -1,0 +1,18 @@
+[2026-09-25T16:26:02+0800] daemon starting (pid 99962); target=%0; target_source=FM_SUPERVISOR_TARGET; backend=tmux; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=240s; batch=90s
+[2026-09-25T16:26:03+0800] wake: check: process-event result captured: procevent:lavish-881b9239e46b4558:1
+[2026-09-25T16:26:05+0800] escalate: check: procevent lavish lavish-881b9239e46b4558 1 -> check: procevent lavish lavish-881b9239e46b4558 1
+[2026-09-25T16:26:05+0800] escalate dropped 1 already-handled process-event item(s)
+[2026-09-25T16:26:38+0800] wake: check: process-event result captured: procevent:lavish-881b9239e46b4558:2
+[2026-09-25T16:26:39+0800] escalate: check: procevent lavish lavish-881b9239e46b4558 2 -> check: procevent lavish lavish-881b9239e46b4558 2
+[2026-09-25T16:26:40+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:26:49+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:26:57+0800] wake: check: rearm-resurface
+[2026-09-25T16:26:58+0800] escalate: check: procevent lavish lavish-881b9239e46b4558 2 -> check: procevent lavish lavish-881b9239e46b4558 2
+[2026-09-25T16:26:58+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:27:04+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:27:19+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:27:31+0800] wake: check: rearm-resurface
+[2026-09-25T16:27:31+0800] escalate: check: procevent lavish lavish-881b9239e46b4558 2 -> check: procevent lavish lavish-881b9239e46b4558 2
+[2026-09-25T16:27:32+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:27:34+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+[2026-09-25T16:27:49+0800] escalate dropped 1 already-handled process-event item(s)

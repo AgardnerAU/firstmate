@@ -1,0 +1,18 @@
+## Observed at 16:24, 5 s after the first Send answers (round 1: North selected; Export tab note-only comment; Credential route freeform-only):
+lab-route-pick: state: done, held: no (Answer: north)
+lab-export-tab: state: queued, held: yes   <- note-only comment left the call open
+lab-cred-words: state: done, held: no (Answer: use the staging vault)
+
+## Intake at teardown, after round 2 selected Settings on Export tab
+$ tasks-axi show lab-route-pick --full (state/held lines)
+  state: done
+  held: no
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: 83fb82f1a62d74c2913a482311c24ed562bc3f7f48da3661c3312642eedbb06d\nResolution mode: answered\n\nCaptain decision:\nCaptain answered this call through the captured result lavish-881b9239e46b4558 sequence 1.\nTask: lab-route-pick\nAnswer: north\nAnswer as shown to the captain: Release route -> north"
+$ tasks-axi show lab-export-tab --full (state/held lines)
+  state: done
+  held: no
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: 868e185587d1f5d3fdbc29f5f41c5ccaa6316dacc5904a74381c13ae39615fd8\nResolution mode: answered\n\nCaptain decision:\nCaptain answered this call through the captured result lavish-881b9239e46b4558 sequence 2.\nTask: lab-export-tab\nAnswer: settings\nAnswer as shown to the captain: Export tab -> settings"
+$ tasks-axi show lab-cred-words --full (state/held lines)
+  state: done
+  held: no
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: de746bdf765f91e8e13afd406785794b2a2cf0a2b1a2ea4db832e388da231e1f\nResolution mode: answered\n\nCaptain decision:\nCaptain answered this call through the captured result lavish-881b9239e46b4558 sequence 1.\nTask: lab-cred-words\nAnswer: use the staging vault\nAnswer as shown to the captain: Credential route -> use the staging vault"

@@ -1,29 +1,40 @@
-$ wc -l state/.wake-queue (after capture)
-       1
-$ fm-procevent.sh reconcile   # cycle 1, default interval
+## Five back-to-back watcher-cycle reconciles, default interval (300 s)
+$ fm-procevent.sh reconcile
 reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
-$ fm-procevent.sh reconcile   # cycle 2, default interval
+$ fm-procevent.sh reconcile
 reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
-$ fm-procevent.sh reconcile   # cycle 3, default interval
+$ fm-procevent.sh reconcile
 reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
-$ wc -l state/.wake-queue
-       1
-$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile   # control: interval disabled
+$ fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+wake-queue lines:        1
+
+## FM_PROCEVENT_REANNOUNCE_SECONDS=10: wait past the interval, then two cycles
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=10 fm-procevent.sh reconcile
 reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0
-$ wc -l state/.wake-queue
-       2
-$ FM_PROCEVENT_REANNOUNCE_SECONDS=abc fm-procevent.sh reconcile   # bad value refused
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=10 fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+wake-queue:
+1790324646	1	check	procevent:lavish-881b9239e46b4558:1	check: procevent lavish lavish-881b9239e46b4558 1
+1790324696	2	check	procevent:lavish-881b9239e46b4558:1	check: procevent lavish lavish-881b9239e46b4558 1
+
+## Supervisor acknowledges the result
+$ fm-procevent.sh handled lavish-881b9239e46b4558 1
+handled: lavish-881b9239e46b4558 1
+
+## Reconcile with interval 0 (would re-announce every cycle if unhandled)
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+wake-queue:
+1790324646	1	check	procevent:lavish-881b9239e46b4558:1	check: procevent lavish lavish-881b9239e46b4558 1
+1790324696	2	check	procevent:lavish-881b9239e46b4558:1	check: procevent lavish lavish-881b9239e46b4558 1
+
+## Bad interval is refused by name
 error: FM_PROCEVENT_REANNOUNCE_SECONDS must be whole seconds from 0 to 86400
 exit=1
-$ fm-procevent.sh handled lavish-1ccd564766f97492 1
-handled: lavish-1ccd564766f97492 1
-$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile   # after handled
-reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
-$ wc -l state/.wake-queue
-       2
-$ ls state/procevent-inbox (announced marker gone)
-.
-..
-lavish-1ccd564766f97492.1.adapter
-lavish-1ccd564766f97492.1.handled
-lavish-1ccd564766f97492.1.result
