@@ -1,0 +1,57 @@
+## S2: older tasks-axi (0.0.1) and gnhf (v0.0.9) resolve first on PATH -> npm latest is newer
+config: {"tools":[{"name":"tasks-axi","command":"tasks-axi","published":{"source":"npm","package":"tasks-axi"}},{"name":"gnhf","command":"gnhf","published":{"source":"npm","package":"gnhf"}}]}
+tool updates: tasks-axi update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/tasks-axi but 0.2.6 is installed at /Users/agardner/.nvm/versions/node/v22.23.1/bin/tasks-axi; tasks-axi update available: installed 0.0.1, published 0.2.6 at https://registry.npmjs.org/tasks-axi/latest; gnhf update not in effect: PATH resolves 0.0.9 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/gnhf but 0.1.49 is installed at /Users/agardner/.nvm/versions/node/v22.23.1/bin/gnhf; gnhf update available: installed 0.0.9, published 0.1.49 at https://registry.npmjs.org/gnhf/latest
+exit=0
+
+## S3: installed copies newer than any published release (999.0.0) -> silent
+exit=0
+
+## S4: real installed tasks-axi 0.2.6 and gnhf 0.1.49, no fakes -> silent when current
+exit=0
+
+## S5: scoped npm package (@anthropic-ai/claude-code) with an old command
+config: {"tools":[{"name":"claude-code","command":"claude-old","published":{"source":"npm","package":"@anthropic-ai/claude-code"}}]}
+tool updates: claude-code update available: installed 0.0.1, published 2.1.282 at https://registry.npmjs.org/%40anthropic-ai%2Fclaude-code/latest
+exit=0
+
+## S6: npm package that does not exist -> loud check failure, never reported current
+config: {"tools":[{"name":"ghost","command":"claude-old","published":{"source":"npm","package":"zz-no-such-package-fm-lab-9f3a"}}]}
+tool updates: ghost check failed: published source https://registry.npmjs.org/zz-no-such-package-fm-lab-9f3a/latest could not be reached or read (exit 56)
+exit=0
+
+## S7: published entry whose version probe prints 0.0.1 but exits 3 -> check failure, no comparison
+config: {"tools":[{"name":"tasks-axi","command":"tasks-axi","published":{"source":"npm","package":"tasks-axi"}}]}
+tool updates: tasks-axi check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/tasks-axi exited 3, so its version was not compared with the published release; tasks-axi update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/tasks-axi but 0.2.6 is installed at /Users/agardner/.nvm/versions/node/v22.23.1/bin/tasks-axi
+exit=0
+
+## S8: entry WITHOUT published: resolved copy prints 1.0.0 and exits 3, a later PATH copy prints 2.0.0 -> PATH skew still read
+config: {"tools":[{"name":"skewtool","command":"skewtool"}]}
+tool updates: skewtool update not in effect: PATH resolves 1.0.0 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/skewtool but 2.0.0 is installed at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin2/skewtool
+exit=0
+
+## S9: malformed published entries -> arm refuses loudly; check reports a registry failure
+config: {"tools":[{"name":"x","command":"tasks-axi","published":{"source":"pypi","package":"x"}}]}
+fm-tool-update-check: tool x published.source must be npm or github (/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/config/watched-tools.json)
+arm exit=1
+tool updates: watched tool registry: tool x published.source must be npm or github
+exit=0
+config: {"tools":[{"name":"x","command":"tasks-axi","published":{"source":"npm","package":"https://evil/x"}}]}
+fm-tool-update-check: tool x published.package must be an npm package name (/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/config/watched-tools.json)
+arm exit=1
+tool updates: watched tool registry: tool x published.package must be an npm package name
+exit=0
+config: {"tools":[{"name":"x","published":{"source":"npm","package":"x"}}]}
+fm-tool-update-check: tool x needs command, git, or both (/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/config/watched-tools.json)
+arm exit=1
+tool updates: watched tool registry: tool x needs command, git, or both
+exit=0
+config: {"tools":[{"name":"x","command":"tasks-axi","published":{"source":"github","repo":"a/b","token":"t"}}]}
+fm-tool-update-check: tool x published has unsupported fields (/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/config/watched-tools.json)
+arm exit=1
+tool updates: watched tool registry: tool x published has unsupported fields
+exit=0
+
+## S10: GitHub source (herdrdev/herdr) with an old herdr 0.0.1
+config: {"tools":[{"name":"herdr","command":"herdr","published":{"source":"github","repo":"herdrdev/herdr"}}]}
+tool updates: herdr update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.higVuH/fakebin/herdr but 0.9.1 is installed at /opt/homebrew/bin/herdr; herdr check failed: published source https://api.github.com/repos/herdrdev/herdr/releases/latest could not be reached or read (exit 56)
+exit=0
