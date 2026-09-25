@@ -1,0 +1,68 @@
+===== build 1 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+armed: lavish-e197eca35a389cdb
+===== build 2 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+already-armed: lavish-e197eca35a389cdb
+===== build 3 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+armed: lavish-e197eca35a389cdb
+===== build 4 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+already-armed: lavish-e197eca35a389cdb
+===== build 5 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: user-ended
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: reopened
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+armed: lavish-e197eca35a389cdb
+===== build 6 =====
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.vfAu1Z/.lavish/bearings-board.html
+  url: "http://127.0.0.1:47913/session/e197eca35a389cdb"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.vfAu1Z/.lavish/bearings-board.html
+bound: lavish-e197eca35a389cdb
+already-armed: lavish-e197eca35a389cdb
+===== browser launches recorded by the open launcher shim =====
+15:46:47 http://127.0.0.1:47913/session/e197eca35a389cdb
+15:47:38 http://127.0.0.1:47913/session/e197eca35a389cdb
+15:48:39 http://127.0.0.1:47913/session/e197eca35a389cdb
