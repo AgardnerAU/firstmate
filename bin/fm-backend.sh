@@ -581,6 +581,11 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
 
 fm_backend_meta_for_window() {  # <target> <state-dir>
   local target=$1 state=$2 meta window terminal
+  if [ -n "${FM_BACKEND_BOUND_META:-}" ] && [ "${FM_BACKEND_BOUND_TARGET:-}" = "$target" ] \
+    && [ "${FM_BACKEND_BOUND_META%/*}" = "$state" ] && [ -f "$FM_BACKEND_BOUND_META" ]; then
+    printf '%s' "$FM_BACKEND_BOUND_META"
+    return 0
+  fi
   for meta in "$state"/*.meta; do
     [ -e "$meta" ] || continue
     window=$(fm_meta_get "$meta" window)

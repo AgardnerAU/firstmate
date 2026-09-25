@@ -226,6 +226,7 @@ That foreground working directory follows the pane's foreground process-group le
 An identity that cannot be read refuses every action and every close.
 Each caller that acts for one task checks that task's own record (`fm_backend_bind_task_record` in `bin/fm-backend.sh`), and spawn trusts the pane it has just created until its record exists.
 So when an old record and a new task's record name the same reissued pane id, the old record reads its endpoint as gone and the new record reads a match.
+The stale-pane watcher walks task records rather than panes, so the live task keeps its stall detection whichever record sorts first.
 
 A finished task whose pane binding was cleared can keep its `backend=herdr`, `endpoint_task_id=`, and other `herdr_*` lines as history with no `window=` line.
 Cleanup accepts that record shape, with or without `spawn_gen=`, makes no Herdr call for it, and still runs its landed-work checks.
@@ -379,7 +380,6 @@ Tests use thin compatibility wrappers in `tests/herdr-test-safety.sh` and never 
 - A record without `herdr_terminal_id=` reads its own pane as gone while the foreground process works outside the recorded worktree, and could still match a reissued pane that works inside that same worktree.
 - A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup outside restored projection reclaim leaves it open.
 - When two records of one home name the same pane, a read that no task record binds, such as an ad hoc `<session>:<pane>` selector, reads `unknown` and refuses.
-- The stale-pane watcher finds a pane's task by its window, so it reads a pane that two records name through the record it finds first.
 
 ## Regression entry points
 
