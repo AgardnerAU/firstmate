@@ -1,0 +1,61 @@
+Live lab transcript: real lavish-axi 0.1.78 on a private server (LAVISH_AXI_STATE_DIR in lab, port 4497); PATH 'open' shim logs each browser-window open request lavish-axi makes.
+=== build 3
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.F3g31m/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4497/session/48e33b0c6fbd70dc"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+bound: lavish-48e33b0c6fbd70dc
+already-armed: lavish-48e33b0c6fbd70dc
+=== build 4
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.F3g31m/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4497/session/48e33b0c6fbd70dc"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+bound: lavish-48e33b0c6fbd70dc
+armed: lavish-48e33b0c6fbd70dc
+=== build 5
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.F3g31m/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4497/session/48e33b0c6fbd70dc"
+  status: user-ended
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.F3g31m/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4497/session/48e33b0c6fbd70dc"
+  status: opened
+session: reopened
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+bound: lavish-48e33b0c6fbd70dc
+armed: lavish-48e33b0c6fbd70dc
+=== build 6
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.F3g31m/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4497/session/48e33b0c6fbd70dc"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.F3g31m/.lavish/bearings-board.html
+bound: lavish-48e33b0c6fbd70dc
+already-armed: lavish-48e33b0c6fbd70dc
+=== open() calls (one line = one new browser window)
+16:10:29 http://127.0.0.1:4497/session/48e33b0c6fbd70dc
+16:11:09 http://127.0.0.1:4497/session/48e33b0c6fbd70dc
+16:11:52 http://127.0.0.1:4497/session/48e33b0c6fbd70dc
+
+=== Sequence summary (builds 1-2 printed to terminal during the run)
+build 1 (no session)            -> status: opened, session: live, armed          -> open() #1 16:10:29
+build 2 (session open, browser connected, payload title changed)
+                                -> session: live, already-armed, same session id -> no open(); connected page kept its JS marker and showed "REBUILT - window reuse check" (02-same-window-after-rebuild.png)
+build 3 (session open)          -> session: live, already-armed                  -> no open()
+lavish-axi end (agent end)
+build 4 (session not listed)    -> session: live, armed                          -> open() #2 16:11:09
+captain Send & End in browser   -> listing empty; plain open reports user-ended
+build 5 (captain-ended)         -> user-ended, then --reopen, session: reopened  -> open() #3 16:11:52
+build 6 (reopened session open) -> session: live, already-armed                  -> no open()
+Final listing: the session is still open (build never ended it).

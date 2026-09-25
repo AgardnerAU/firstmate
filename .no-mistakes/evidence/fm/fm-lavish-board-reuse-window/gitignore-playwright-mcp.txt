@@ -1,0 +1,10 @@
+$ ls .playwright-mcp | head -3
+01-window-after-first-build.png
+02-same-window-after-rebuild.png
+console-2026-09-25T08-10-36-659Z.log
+$ git check-ignore -v .playwright-mcp/01-window-after-first-build.png
+.gitignore:16:.playwright-mcp/	.playwright-mcp/01-window-after-first-build.png
+$ git status --porcelain --untracked-files=all
+(empty = nothing untracked)
+$ git ls-files .playwright-mcp | wc -l
+       0
