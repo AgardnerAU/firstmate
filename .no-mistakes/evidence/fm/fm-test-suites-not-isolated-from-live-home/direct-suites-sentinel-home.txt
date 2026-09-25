@@ -1,0 +1,16 @@
+== BASE c643b577 (before the change)
+tests/fm-gotmp.test.sh                        exit=1   new-entries-in-sentinel-home=0
+tests/fm-quota-choose.test.sh                 exit=0   new-entries-in-sentinel-home=0
+tests/fm-procevent-quota.test.sh              exit=0   new-entries-in-sentinel-home=0
+tests/fm-sessionstart-nudge.test.sh           exit=1   new-entries-in-sentinel-home=0
+tests/fm-gitignore-config.test.sh             exit=1   new-entries-in-sentinel-home=0
+tests/fm-pi-primary-types.test.sh             exit=0   new-entries-in-sentinel-home=0
+tests/fm-test-fixtures.test.sh                exit=1   new-entries-in-sentinel-home=0
+== TARGET a013d7f1 (this change)
+tests/fm-gotmp.test.sh                        exit=0   new-entries-in-sentinel-home=0
+tests/fm-quota-choose.test.sh                 exit=0   new-entries-in-sentinel-home=0
+tests/fm-procevent-quota.test.sh              exit=0   new-entries-in-sentinel-home=0
+tests/fm-sessionstart-nudge.test.sh           exit=0   new-entries-in-sentinel-home=0
+tests/fm-gitignore-config.test.sh             exit=0   new-entries-in-sentinel-home=0
+tests/fm-pi-primary-types.test.sh             exit=0   new-entries-in-sentinel-home=0
+tests/fm-test-fixtures.test.sh                exit=0   new-entries-in-sentinel-home=0

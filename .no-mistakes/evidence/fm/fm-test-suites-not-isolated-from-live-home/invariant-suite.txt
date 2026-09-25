@@ -1,0 +1,14 @@
+== bash tests/fm-test-env-lib.test.sh
+ok - the owner clears every fleet pointer it publishes
+ok - the pollution sentinel genuinely reaches a child process
+ok - a pointer that cannot be cleared is named and refused
+ok - all 232 behavior suites reach the fleet-environment isolation owner
+ok - the probe rejects unrelated bin/fm-*-lib.sh mentions and a disclaiming comment
+ok - the probe rejects an owner reference that never executes
+ok - the probe rejects isolation that leaves the top-level shell exposed
+ok - the probe rejects child isolation with a forwarded exit status
+ok - the probe rejects a fleet-home write before isolation
+ok - the probe accepts the direct, shared-library and helper routes
+ok - a directly invoked suite that routes to the owner is isolated
+# fm-test-env-lib.test.sh: all assertions passed
+exit=

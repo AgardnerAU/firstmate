@@ -1,0 +1,6 @@
+== BASE tests/fm-gotmp.test.sh with inherited fleet pointers
+exit=1
+not ok - teardown exited non-zero with a valid tasktmp
+== BASE tests/fm-sessionstart-nudge.test.sh with inherited fleet pointers
+exit=1
+not ok - missing state nudge must be silent, got: ⁣FIRSTMATE_OP: v1 session-start: Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.

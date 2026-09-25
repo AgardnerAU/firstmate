@@ -1,0 +1,26 @@
+== bin/fm-test-run.sh (serial, then --jobs 2) with every fleet pointer aimed at sentinel home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/tmp.EnlEGLMpRg/home
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=70993
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=2 duration_ms=73638 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-sessionstart-nudge.test.sh duration_ms=70784
+FM_TEST_SLOWEST rank=2 script=tests/fm-gotmp.test.sh duration_ms=2854
+runner exit=0
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=73111
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=2 duration_ms=75450 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-sessionstart-nudge.test.sh duration_ms=72911
+FM_TEST_SLOWEST rank=2 script=tests/fm-gotmp.test.sh duration_ms=2539
+runner exit=0
+new entries in sentinel home: 0
+
+== Refusal: a fleet pointer that cannot be cleared (readonly FM_HOME in the calling shell)
+fm-test-env: could not clear FM_HOME from the environment
+fm-test-run: refusing to run: the live fleet home is still reachable
+fm-test-run.sh exit=2
+fm-test-env: could not clear FM_STATE_OVERRIDE from the environment
+fm-test-isolation-proof: refusing to run: the live fleet home is still reachable
+fm-test-isolation-proof.sh exit=2
+fm-test-env: could not clear FM_WAKE_QUEUE from the environment
+tests/lib.sh: refusing to run a suite against the live fleet home
+tests/lib.sh exit=2
+fm-test-env: could not clear FM_HOME from the environment
+fm_test_env_isolate rc=1
+fm_test_env_isolate rc=0 FM_HOME=[unset] FM_BACKEND=[unset]
