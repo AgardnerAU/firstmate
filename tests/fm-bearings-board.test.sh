@@ -589,7 +589,6 @@ test_first_build_opens_a_window() {
   data="$home/payload.json"
   write_valid_payload "$data"
   out=$(run_board "$home" build "$data") || fail "the first build failed: $out"
-  assert_contains "$out" "window: opened" "a new session did not report an opened window: $out"
   [ "$(establish_calls "$home")" = "" ] \
     || fail "a new session was not established with one window-opening call: $(establish_calls "$home")"
   pass "a build opens a window for a session that was not open"
@@ -604,7 +603,6 @@ test_rebuild_reuses_the_open_window() {
   reset_establish_calls "$home"
   out=$(run_board "$home" build "$data") || fail "the rebuild failed: $out"
   assert_contains "$out" "session: live" "the rebuild did not prove the session live: $out"
-  assert_contains "$out" "window: reused" "the rebuild did not report a reused window: $out"
   [ "$(establish_calls "$home")" = "--no-open" ] \
     || fail "a rebuild of an open session opened another window: $(establish_calls "$home")"
   pass "a rebuild of an open session reuses its window with --no-open"
@@ -620,7 +618,6 @@ test_rebuild_of_an_agent_ended_session_opens_a_window() {
     lavish-axi end "$home/.lavish/bearings-board.html" >/dev/null
   reset_establish_calls "$home"
   out=$(run_board "$home" build "$data") || fail "the rebuild failed: $out"
-  assert_contains "$out" "window: opened" "an ended session did not get a window: $out"
   [ "$(establish_calls "$home")" = "" ] \
     || fail "an agent-ended session was established without opening a window: $(establish_calls "$home")"
   pass "a rebuild of a session that is no longer open opens a window"
@@ -636,7 +633,6 @@ test_rebuild_reopen_opens_a_window() {
   reset_establish_calls "$home"
   out=$(run_board "$home" build "$data") || fail "the rebuild failed: $out"
   assert_contains "$out" "session: reopened" "the rebuild did not reopen: $out"
-  assert_contains "$out" "window: opened" "a reopened session did not get a window: $out"
   [ "$(establish_calls "$home")" = "$(printf '\n--reopen')" ] \
     || fail "a reopened session was not established with window-opening calls: $(establish_calls "$home")"
   pass "a rebuild that reopens an ended session opens a window"

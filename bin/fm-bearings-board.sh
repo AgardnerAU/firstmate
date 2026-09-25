@@ -25,8 +25,6 @@
 #            `board: <path>`, then includes lavish-axi's session output and
 #            the remaining status:
 #              session: live | reopened
-#              window: reused | opened       (reused = the session was already
-#                                             open, so no new browser window)
 #              served: <path>
 #              bound: <source-id>
 #              armed: <source-id>            (first registration)
@@ -265,21 +263,21 @@ establish_board_session() {  # <board>
     out=$(lavish-axi "$board" --no-open) || fail "cannot establish the board Lavish session"
     printf '%s\n' "$out"
     if lavish_board_live "$out" "$real"; then
-      printf 'session: live\nwindow: reused\n'
+      printf 'session: live\n'
       return 0
     fi
   fi
   out=$(lavish-axi "$board") || fail "cannot establish the board Lavish session"
   printf '%s\n' "$out"
   if lavish_board_live "$out" "$real"; then
-    printf 'session: live\nwindow: opened\n'
+    printf 'session: live\n'
     return 0
   fi
   out=$(lavish-axi "$board" --reopen) || fail "cannot reopen the ended board Lavish session"
   printf '%s\n' "$out"
   if lavish_board_live "$out" "$real"; then
     BOARD_SESSION_REOPENED=1
-    printf 'session: reopened\nwindow: opened\n'
+    printf 'session: reopened\n'
     return 0
   fi
   status=$(lavish_status_field "$out")
