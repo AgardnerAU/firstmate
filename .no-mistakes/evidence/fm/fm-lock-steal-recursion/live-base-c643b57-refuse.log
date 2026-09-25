@@ -1,0 +1,12 @@
+== scenario=refuse root=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-base.HfIvVT lab=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM
+fm-watch rc=142 elapsed=30s
+-- fm-watch output (first 5 lines, each cut to 200 chars):
+basename: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM/state/.watch.lock.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.
+basename: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM/state/.watch.lock.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.
+basename: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM/state/.watch.lock.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.
+basename: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM/state/.watch.lock.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.
+basename: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lF60FM/state/.watch.lock.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.steal.
+refused lock creations:      169; deepest reclaim-marker depth attempted: 168
+'File name too long' lines: 352
+reclaim markers left in state: 0
+lab removed: yes

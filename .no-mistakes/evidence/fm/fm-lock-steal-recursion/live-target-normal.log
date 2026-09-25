@@ -1,0 +1,6 @@
+== scenario=normal root=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3C37R6N6YXCQCR81DKAAEYJ lab=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.xDtlSy
+first watcher pid=24352 lock pid=24354
+-- second start:
+watcher: already running pid 24354
+second rc=0
+lab removed: yes

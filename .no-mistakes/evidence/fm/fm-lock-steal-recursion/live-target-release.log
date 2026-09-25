@@ -1,0 +1,5 @@
+== scenario=release root=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3C37R6N6YXCQCR81DKAAEYJ lab=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Wv2fIZ
+release fired: yes
+watcher pid=55978 alive=yes lock pid=55980
+-- fm-watch output:
+lab removed: yes

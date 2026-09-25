@@ -1,0 +1,8 @@
+== scenario=refuse root=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3C37R6N6YXCQCR81DKAAEYJ lab=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.WzKHGD
+fm-watch rc=0 elapsed=0s
+-- fm-watch output (first 5 lines, each cut to 200 chars):
+watcher: already running
+refused lock creations:        2; deepest reclaim-marker depth attempted: 0
+'File name too long' lines: 0
+reclaim markers left in state: 0
+lab removed: yes
