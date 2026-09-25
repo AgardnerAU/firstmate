@@ -1,0 +1,24 @@
+### S4 adversarial: config names a branch missing on the fork -> primary skipped, secondmate stays on primary commit
+self-update source: fork nosuchbranch (config/self-update-source)
+firstmate: skipped: fetch of fork nosuchbranch failed
+secondmate sm1: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+
+### S5 carry refreshed forward on the fork (upstream main merged into carry) -> primary and secondmate advance to the refreshed carry
+fork carry now: bb50ba0 refresh carry onto upstream 2b2b30a
+self-update source: fork carry (config/self-update-source)
+firstmate: updated fcb7ee9..bb50ba0
+no watches registered
+secondmate sm1: updated fcb7ee9..bb50ba0
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: bb50ba0 refresh carry onto upstream 2b2b30a
+  sm-standalone HEAD: bb50ba0 refresh carry onto upstream 2b2b30a
+upstream-only 2 (2b2b30a) now in primary: yes

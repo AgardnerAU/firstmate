@@ -1,0 +1,10 @@
+### S1 no config/self-update-source (origin path, unchanged behaviour)
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+firstmate: skipped: diverged from origin/main
+secondmate sm1: updated dbe124d..876bc4d
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: 91a0408 Merge remote-tracking branch 'origin/main' into fm/fm-carry-own-fixes-ahead-of-upstream
+  sm-standalone HEAD: 876bc4d upstream-only change

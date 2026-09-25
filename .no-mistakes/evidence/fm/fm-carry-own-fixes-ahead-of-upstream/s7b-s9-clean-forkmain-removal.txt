@@ -1,0 +1,23 @@
+### S7b same forward carry once the primary is clean -> advances
+self-update source: fork carry (config/self-update-source)
+firstmate: updated bb50ba0..55da0fd
+no watches registered
+secondmate sm1: updated bb50ba0..55da0fd
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: 55da0fd carry forward
+  sm-standalone HEAD: 55da0fd carry forward
+
+### S8 fork main never touched by the updates: before=dbe124d after=dbe124d
+
+### S9 file removed -> origin path again; primary ahead of origin is reported diverged, nothing moves
+firstmate: skipped: diverged from origin/main
+secondmate sm1: skipped: diverged from origin/main; reconciliation required (record: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.sLSJ4v/state/.secondmate-update-reconcile/sm1.pending)
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: 55da0fd carry forward
+  sm-standalone HEAD: 55da0fd carry forward

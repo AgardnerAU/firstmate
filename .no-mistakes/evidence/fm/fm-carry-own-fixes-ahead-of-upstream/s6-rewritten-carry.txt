@@ -1,0 +1,11 @@
+### S6 adversarial: carry rebuilt from scratch (history rewritten, not a fast-forward of bb50ba0) -> skipped, never forced
+fork carry now: 2eeb37a rebuilt carry
+self-update source: fork carry (config/self-update-source)
+firstmate: skipped: diverged from refs/remotes/fork/carry
+secondmate sm1: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: bb50ba0 refresh carry onto upstream 2b2b30a
+  sm-standalone HEAD: bb50ba0 refresh carry onto upstream 2b2b30a

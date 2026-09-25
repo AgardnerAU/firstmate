@@ -1,0 +1,28 @@
+### S2 config/self-update-source = 'fork carry': primary and standalone secondmate follow the fork carry branch
+(sm-standalone reset to dbe124d; it does not hold the carry commits: lacks fcb7ee9)
+$ cat config/self-update-source
+fork carry
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: updated 91a0408..fcb7ee9 (instructions changed: AGENTS.md)
+no watches registered
+secondmate sm1: updated dbe124d..fcb7ee9 (instructions changed: AGENTS.md, bin, .agents/skills)
+reread-firstmate: yes
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix (branch main)
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix (branch main)
+primary origin/main still: 876bc4d  upstream-only commit in primary? no
+sm-standalone refs moved besides main? refs/heads/main refs/remotes/origin/HEAD refs/remotes/origin/main 
+
+### S2b re-run is idempotent
+self-update source: fork carry (config/self-update-source)
+firstmate: already current
+secondmate sm1: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+exit=0
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix (branch main)
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix (branch main)

@@ -1,0 +1,37 @@
+### S3 adversarial: unusable config refuses the whole update, never falls back to origin (upstream main now 2b2b30a)
+--- config: nosuchremote\ carry
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: remote 'nosuchremote' does not exist in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-carry-world.RGFzwr/primary; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: fork
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: fork\ carry\ extra
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: fork\ bad..branch
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: invalid branch name 'bad..branch'; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: -fork\ carry
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: invalid remote name '-fork'; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: fork\ -carry
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: invalid branch name '-carry'; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+--- config: fork\ carry$'
+'fork\ other
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.sLSJ4v/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+exit=1
+  primary HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
+  sm-standalone HEAD: fcb7ee9 carried: simulated herdr window-reuse fix
