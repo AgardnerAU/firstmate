@@ -1,0 +1,36 @@
+$ bin/fm-bearings-board.sh build payload2.json   # build 4: session open after reopen
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.Ah2Ykc/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4399/session/12357437c5a1e0b9"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+bound: lavish-12357437c5a1e0b9
+already-armed: lavish-12357437c5a1e0b9
+$ wc -l < window-opens.log
+       2
+
+$ lavish-axi end bearings-board.html   # agent ends the session
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.Ah2Ykc/.lavish/bearings-board.html
+  status: ended
+$ lavish-axi   # sessions
+sessions: []
+visual_guidance[5]: "Use visual hierarchy to make the most important decisions, risks, tradeoffs, and next actions obvious at a glance","Show, don't tell: explain concepts, flows, relationships, and comparisons with labeled illustrations - hand-authored inline SVG, per the diagram playbook - and show existing UI or state with screenshots of the real pages (run the app read-only if needed); reserve prose for what cannot be shown, such as rationale, trade-offs, and open questions","Structure the prose that remains with sections, cards, tables, annotated snippets, and side-by-side comparisons instead of long paragraphs","Choose typography, spacing, color, and layout deliberately so the artifact has a clear point of view","Prevent horizontal overflow at every nesting level: nested grid/flex children also need minmax(0, 1fr) tracks and min-width: 0, especially when badges, labels, or status text use wide pixel or monospace fonts; wrap, truncate, or contain long unbreakable text deliberately"
+
+$ bin/fm-bearings-board.sh build payload2.json   # build 5: agent-ended session
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.Ah2Ykc/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4399/session/12357437c5a1e0b9"
+  status: opened
+session: live
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+bound: lavish-12357437c5a1e0b9
+armed: lavish-12357437c5a1e0b9
+
+$ cat window-opens.log
+15:37:28	http://127.0.0.1:4399/session/12357437c5a1e0b9
+15:38:54	http://127.0.0.1:4399/session/12357437c5a1e0b9
+15:39:22	http://127.0.0.1:4399/session/12357437c5a1e0b9

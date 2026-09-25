@@ -1,0 +1,23 @@
+# Captain clicked 'Send & End' in the board window (Playwright).
+$ lavish-axi   # sessions after captain ended
+sessions: []
+playbooks[8]{id,use_when}:
+
+$ bin/fm-bearings-board.sh build payload2.json   # build 3: captain-ended session
+board: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.Ah2Ykc/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4399/session/12357437c5a1e0b9"
+  status: user-ended
+session:
+  file: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.Ah2Ykc/.lavish/bearings-board.html
+  url: "http://127.0.0.1:4399/session/12357437c5a1e0b9"
+  status: opened
+session: reopened
+served: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Ah2Ykc/.lavish/bearings-board.html
+bound: lavish-12357437c5a1e0b9
+armed: lavish-12357437c5a1e0b9
+
+$ cat window-opens.log   # a second launch for the reopened session
+15:37:28	http://127.0.0.1:4399/session/12357437c5a1e0b9
+15:38:54	http://127.0.0.1:4399/session/12357437c5a1e0b9
