@@ -425,6 +425,7 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local session pane recorded_session workspace tab terminal worktree_id surface terminal_count
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
+  fm_backend_bind_task_record "" ""
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
     echo "REFUSED: task $id has no regular endpoint metadata at $meta; preserving task state." >&2
     return 1
