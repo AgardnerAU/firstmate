@@ -521,14 +521,11 @@ EOF
   [ "$(status_seen_offset "$state" symlink-r9)" = 0 ] \
     || fail "a repeated classification failure advanced its position"
 
-  # The first report was delivered, so a repeat can only come from the change;
-  # an identical line still waiting in the buffer would be collapsed into it.
-  : > "$state/.subsuper-escalations"
   printf 'blocked: changed target state with a longer path\n' > "$dir/target-two-longer"
   ln -snf "$dir/target-two-longer" "$state/symlink-r9.status"
   FM_DAEMON_DIR="$fakebin" handle_durable_wakes fallback "$state" \
     || fail "a changed permanent failure retained its wake"
-  [ "$(grep -c 'unreadable status span' "$state/.subsuper-escalations")" = 1 ] \
+  [ "$(grep -c 'unreadable status span' "$state/.subsuper-escalations")" = 2 ] \
     || fail "a changed failure state did not report again exactly once"
   [ "$(status_seen_offset "$state" symlink-r9)" = 0 ] \
     || fail "a changed classification failure advanced its position"
@@ -655,14 +652,9 @@ test_unknown_wake_ack_suppresses_handled_identity() {
   escalate_add "$state" "done: PR https://example.test/pull/9"
   [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 1 ] \
     || fail "an ordinary escalation was swallowed by unknown-wake acknowledgement"
-  PATH="$fakebin:$PATH" FM_FAKE_TMUX_PANE_ALIVE=1 FM_FAKE_TMUX_SENT="$sent" \
-    FM_FAKE_TMUX_CAPTURE="$capture" FM_ESCALATE_BATCH_SECS=0 escalate_flush "$state" \
-    || fail "ordinary escalation flush failed"
-  ! grep -F 'done: PR https://example.test/pull/9' "$state/.subsuper-unknown-acked" >/dev/null \
-    || fail "a delivered ordinary escalation was acknowledged as an unknown wake"
   escalate_add "$state" "done: PR https://example.test/pull/9"
-  [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 1 ] \
-    || fail "a delivered ordinary escalation was suppressed by unknown-wake acknowledgement"
+  [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 2 ] \
+    || fail "an ordinary escalation was deduped by unknown-wake acknowledgement"
 
   bash -c '. "$1"; fm_afk_clear_stale_artifacts "$2"' _ "$AFK_START" "$state" \
     || fail "clearing the away-session artifacts failed"
@@ -1587,11 +1579,12 @@ test_escalate_add_collapses_a_waiting_repeat() {
   escalate_add "$state" "check: procevent lavish lavish-00000000000000aa 68"
   escalate_add "$state" "done: PR 1"
   escalate_add "$state" "check: procevent lavish lavish-00000000000000aa 68"
+  escalate_add "$state" "done: PR 1"
   [ "$(grep -c 'lavish-00000000000000aa 68' "$state/.subsuper-escalations")" = 1 ] \
-    || fail "a repeated item waiting in the buffer was buffered again"
-  [ "$(wc -l < "$state/.subsuper-escalations" | tr -d ' ')" = 2 ] \
-    || fail "collapsing a repeat lost a different buffered item"
-  pass "an escalation already waiting in the buffer is not buffered twice"
+    || fail "a repeated process-event item waiting in the buffer was buffered again"
+  [ "$(grep -cxF 'done: PR 1' "$state/.subsuper-escalations")" = 2 ] \
+    || fail "a repeated ordinary escalation was collapsed"
+  pass "a process-event escalation already waiting in the buffer is not buffered twice"
 }
 
 # One unhandled board result used to be escalated on every watcher cycle: each

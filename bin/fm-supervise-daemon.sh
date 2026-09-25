@@ -13,8 +13,8 @@
 # batch window. That digest is byte-bounded (see escalate_flush); when it cuts
 # or omits anything it names a state/.subsuper-digests/ file holding every
 # buffered event verbatim. A Lavish board answer skips the batch window, a
-# buffered item is never added twice, and a process-event item whose result was
-# handled before delivery is dropped from the digest.
+# buffered process-event item is never added twice, and a process-event item
+# whose result was handled before delivery is dropped from the digest.
 #
 # PRESENCE-GATING (the /afk contract). The daemon is the away-mode engine: it
 # injects ONLY when the durable away-mode flag state/.afk is present. Invoking
@@ -737,18 +737,22 @@ stale_window_is_busy() {  # <window> <state>
   [ "${verdict%% *}" = busy ]
 }
 
-# An item already waiting in the buffer is not added again: the digest would
-# only repeat it, and a result re-announced while delivery waits must not reach
-# the supervisor as many copies.
+# A process-event item already waiting in the buffer is not added again: a
+# result re-announced while delivery waits must not reach the supervisor as
+# many copies.
 escalate_add() {  # <state> <distilled-item>
   local state=$1 item=$2 buf line
   if line=$(unknown_wake_line "$item"); then
     unknown_wake_acknowledged "$state" "$line" && return 0
   fi
   buf="$state/.subsuper-escalations"
-  if [ -s "$buf" ] && grep -qxF -- "$item" "$buf"; then
-    return 0
-  fi
+  case $item in
+    'check: procevent '*)
+      if [ -s "$buf" ] && grep -qxF -- "$item" "$buf"; then
+        return 0
+      fi
+      ;;
+  esac
   [ -s "$buf" ] || _now > "${buf}.since"
   printf '%s\n' "$item" >> "$buf"
 }
