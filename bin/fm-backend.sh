@@ -385,7 +385,7 @@ fm_backend_bind_task_record() {  # <meta-file> <target>
 # identity (bin/backends/herdr.sh's fm_backend_herdr_endpoint_identity).
 # On success, sets FM_BACKEND_VALIDATED_BACKEND and FM_BACKEND_VALIDATED_TARGET,
 # and binds that target to this record (fm_backend_bind_task_record). On
-# failure, prints one refusal and returns 1.
+# failure, prints one refusal, leaves no record bound, and returns 1.
 fm_backend_meta_exact_value() {  # <meta-file> <key>
   local meta=$1 key=$2 count value
   count=$(grep -c "^$key=" "$meta" 2>/dev/null || true)
