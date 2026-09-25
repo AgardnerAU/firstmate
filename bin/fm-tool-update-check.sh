@@ -422,9 +422,9 @@ probe_output() {
 COMMAND_VERSION=
 
 command_findings() {
-  local name=$1 command_name=$2 args_joined=$3 announce=$4 announce_args=$5
+  local name=$1 command_name=$2 args_joined=$3 announce=$4 announce_args=$5 published=$6
   local hit out version matched announce_out status
-  local resolved_path='' resolved_version='' resolved_out=''
+  local resolved_path='' resolved_version='' resolved_out='' resolved_status=0
   local best_path='' best_version='' unreadable='' hits=''
   COMMAND_VERSION=
 
@@ -450,12 +450,12 @@ command_findings() {
     # shellcheck disable=SC2086  # deliberate split on validated space-free tokens
     out=$(probe_output "$hit" $args_joined)
     status=$?
-    version=
-    [ "$status" -ne 0 ] || version=$(parse_version "$out")
+    version=$(parse_version "$out")
     if [ -z "$resolved_path" ]; then
       resolved_path=$hit
       resolved_version=$version
       resolved_out=$out
+      resolved_status=$status
     fi
     if [ -z "$version" ]; then
       [ -n "$unreadable" ] || unreadable=$hit
@@ -513,7 +513,11 @@ EOF
     return 0
   fi
 
-  COMMAND_VERSION=$resolved_version
+  if [ "$resolved_status" -eq 0 ]; then
+    COMMAND_VERSION=$resolved_version
+  elif [ -n "$published" ]; then
+    emit "$name check failed: $resolved_path exited $resolved_status, so its version was not compared with the published release"
+  fi
 
   if [ -n "$best_version" ] && [ "$best_path" != "$resolved_path" ] \
     && version_newer "$best_version" "$resolved_version"; then
@@ -791,7 +795,7 @@ action_check() {
       [ -n "$name" ] || continue
       budget_allows "$name" || break
       COMMAND_VERSION=
-      [ -z "$command_name" ] || command_findings "$name" "$command_name" "$args_joined" "$announce" "$announce_args"
+      [ -z "$command_name" ] || command_findings "$name" "$command_name" "$args_joined" "$announce" "$announce_args" "$source"
       [ -z "$source" ] || published_findings "$name" "$source" "$package" "$COMMAND_VERSION"
       [ -z "$repo" ] || git_findings "$name" "$repo" "$remote" "$branch"
     done < <(config_records)

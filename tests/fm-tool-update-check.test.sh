@@ -202,6 +202,26 @@ test_unreadable_version_is_a_failure_not_a_pass() {
   pass "a copy that reports no version is a check failure, not a pass"
 }
 
+test_a_failing_probe_still_reports_its_version() {
+  local home stale fresh out report
+  # Without a published source, the exit status of a version probe is not read.
+  home=$(make_home failing-probe)
+  stale="$TMP_ROOT/failing-probe/stale/bin"
+  fresh="$TMP_ROOT/failing-probe/fresh/bin"
+  mkdir -p "$stale"
+  printf '#!/bin/sh\nprintf "herdr 0.8.0\\n"\nexit 1\n' > "$stale/$TOOL"
+  chmod 0755 "$stale/$TOOL"
+  make_copy "$fresh" "$TOOL" 'herdr 0.8.2'
+  write_config "$home" "{\"tools\":[{\"name\":\"herdr\",\"command\":\"$TOOL\"}]}"
+  out="$home/out.txt"
+  run_check "$home" "$(fixture_path "$stale:$fresh")" "$out"
+  report=$(cat "$out")
+  assert_contains "$report" "PATH resolves 0.8.0 at $stale/$TOOL" "a probe that exited non-zero lost its reported version"
+  assert_not_contains "$report" "did not report a version" "a probe that printed a version was called unreadable"
+  assert_not_contains "$report" "published release" "an entry without a published source spoke about one"
+  pass "a version probe that exits non-zero still reports its version"
+}
+
 test_missing_command_is_reported() {
   local home out
   home=$(make_home absent)
@@ -951,7 +971,7 @@ EOF
   # Failure output can contain a version, but is not a usable installed answer.
   printf '#!/bin/sh\nprintf "0.8.0\\n"\nexit 1\n' > "$dir/$TOOL"
   run_check "$home" "$(fixture_path "$dir")" "$out" FM_RELEASE_RESPONSE="$home/response" FM_RELEASE_LOG="$home/http.log"
-  assert_contains "$(cat "$out")" 'did not report a version' "failed installed command was treated as usable"
+  assert_contains "$(cat "$out")" "exited 1, so its version was not compared with the published release" "failed installed command was treated as usable"
   assert_not_contains "$(cat "$out")" 'update available' "failed installed command supplied a comparison baseline"
   pass "published versions compare numeric components without overflow and require a successful installed answer"
 }
@@ -1360,6 +1380,7 @@ test_newest_copy_first_on_path_is_silent
 test_identical_versions_are_silent
 test_one_copy_reached_twice_is_probed_once
 test_unreadable_version_is_a_failure_not_a_pass
+test_a_failing_probe_still_reports_its_version
 test_missing_command_is_reported
 test_announced_update_is_reported_from_the_tool_itself
 test_announcement_is_read_from_a_second_command
