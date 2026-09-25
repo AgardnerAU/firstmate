@@ -25,6 +25,8 @@
 #            `board: <path>`, then includes lavish-axi's session output and
 #            the remaining status:
 #              session: live | reopened
+#              window: reused | opened       (reused = the session was already
+#                                             open, so no new browser window)
 #              served: <path>
 #              bound: <source-id>
 #              armed: <source-id>            (first registration)
@@ -45,6 +47,15 @@
 # accepts only the replacement listener as live. A registered board with no
 # live owner also gets a replacement before build returns, because
 # `already-armed` is not the same fact as `listening`.
+#
+# ONE WINDOW PER SESSION. A session already listed open before the build is
+# established with `--no-open`, so a rebuild reuses the captain's open review
+# window, which live-reloads the rewritten board (verified against lavish-axi
+# 0.1.78). A browser window opens only when the session was not open before
+# the build, including a session this build reopens. Lavish exposes no count
+# of connected windows, so a session left open with its window closed is
+# reused too; the printed session URL opens it again. Old sessions are never
+# ended here.
 #
 # CAPTAIN'S CALL HYGIENE. A decision card is dropped when its work item, PR, or
 # structured artifact/version subject appears among the payload's own landed
@@ -245,21 +256,30 @@ lavish_board_live() {  # <establish output> <canonical-board-path>
 # this board, which is exactly the attention `--reopen` exists for - and a
 # session that is still not live after that refuses the build rather than
 # arming a poll that can never attach.
+# Window reuse follows the header's ONE WINDOW PER SESSION contract.
 establish_board_session() {  # <board>
   local board=$1 real out status version
   BOARD_SESSION_REOPENED=0
   real=$(board_realpath "$board") || fail "cannot resolve the board path: $board"
+  if lavish_session_listed_open "$real"; then
+    out=$(lavish-axi "$board" --no-open) || fail "cannot establish the board Lavish session"
+    printf '%s\n' "$out"
+    if lavish_board_live "$out" "$real"; then
+      printf 'session: live\nwindow: reused\n'
+      return 0
+    fi
+  fi
   out=$(lavish-axi "$board") || fail "cannot establish the board Lavish session"
   printf '%s\n' "$out"
   if lavish_board_live "$out" "$real"; then
-    printf 'session: live\n'
+    printf 'session: live\nwindow: opened\n'
     return 0
   fi
   out=$(lavish-axi "$board" --reopen) || fail "cannot reopen the ended board Lavish session"
   printf '%s\n' "$out"
   if lavish_board_live "$out" "$real"; then
     BOARD_SESSION_REOPENED=1
-    printf 'session: reopened\n'
+    printf 'session: reopened\nwindow: opened\n'
     return 0
   fi
   status=$(lavish_status_field "$out")
