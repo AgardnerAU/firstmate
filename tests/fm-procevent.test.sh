@@ -1523,8 +1523,7 @@ LAVISH_REPLY_LOG="$TMP_ROOT/receipt-reply-log"; export LAVISH_REPLY_LOG
 LAVISH_COUNT="$TMP_ROOT/receipt-count"; LAVISH_SCRIPT="open-choice"
 PATH="$LAVISH_SCRIPTED_BIN:$PATH" FM_HOME="$HRECEIPT" \
   "$ROOT/bin/fm-procevent-lavish.sh" arm "$RECEIPT_ART" >/dev/null
-out=$(PATH="$LAVISH_SCRIPTED_BIN:$PATH" pe "$HRECEIPT" start "$receipt_id" 2>&1)
-assert_contains "$out" "receipt-staged: $receipt_id" "a captured board round staged no receipt"
+wait_capture "$HRECEIPT" "$receipt_id" || fail "the armed board's listener captured no round"
 [ ! -s "$LAVISH_REPLY_LOG" ] || fail "the round that carried the answers posted a reply before capture"
 PATH="$LAVISH_SCRIPTED_BIN:$PATH" pe "$HRECEIPT" start "$receipt_id" >/dev/null 2>&1
 receipt=$(cat "$LAVISH_REPLY_LOG" 2>/dev/null || true)

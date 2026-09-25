@@ -655,9 +655,14 @@ test_unknown_wake_ack_suppresses_handled_identity() {
   escalate_add "$state" "done: PR https://example.test/pull/9"
   [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 1 ] \
     || fail "an ordinary escalation was swallowed by unknown-wake acknowledgement"
+  PATH="$fakebin:$PATH" FM_FAKE_TMUX_PANE_ALIVE=1 FM_FAKE_TMUX_SENT="$sent" \
+    FM_FAKE_TMUX_CAPTURE="$capture" FM_ESCALATE_BATCH_SECS=0 escalate_flush "$state" \
+    || fail "ordinary escalation flush failed"
+  ! grep -F 'done: PR https://example.test/pull/9' "$state/.subsuper-unknown-acked" >/dev/null \
+    || fail "a delivered ordinary escalation was acknowledged as an unknown wake"
   escalate_add "$state" "done: PR https://example.test/pull/9"
-  [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 2 ] \
-    || fail "an ordinary escalation was deduped by unknown-wake acknowledgement"
+  [ "$(grep -c 'done: PR https://example.test/pull/9' "$state/.subsuper-escalations")" = 1 ] \
+    || fail "a delivered ordinary escalation was suppressed by unknown-wake acknowledgement"
 
   bash -c '. "$1"; fm_afk_clear_stale_artifacts "$2"' _ "$AFK_START" "$state" \
     || fail "clearing the away-session artifacts failed"
