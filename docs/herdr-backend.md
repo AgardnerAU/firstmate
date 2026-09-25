@@ -224,6 +224,8 @@ A pane that another terminal now holds reads as this task's endpoint gone: liven
 A record written before the field existed matches only while the pane's foreground working directory lies inside the recorded worktree and no other record of the home claims the live terminal.
 That foreground working directory follows the pane's foreground process-group leader, so a legacy record reads its own pane as gone only while that leader (for example the agent process itself, or a command the pane shell runs in the foreground) works outside the recorded worktree, not while the agent's child processes work elsewhere.
 An identity that cannot be read refuses every action and every close.
+Each caller that acts for one task checks that task's own record (`fm_backend_bind_task_record` in `bin/fm-backend.sh`), and spawn trusts the pane it has just created until its record exists.
+So when an old record and a new task's record name the same reissued pane id, the old record reads its endpoint as gone and the new record reads a match.
 
 A finished task whose pane binding was cleared can keep its `backend=herdr`, `endpoint_task_id=`, and other `herdr_*` lines as history with no `window=` line.
 Cleanup accepts that record shape, with or without `spawn_gen=`, makes no Herdr call for it, and still runs its landed-work checks.
@@ -376,7 +378,8 @@ Tests use thin compatibility wrappers in `tests/herdr-test-safety.sh` and never 
 - Only tmux and Herdr can host the away-mode supervisor terminal.
 - A record without `herdr_terminal_id=` reads its own pane as gone while the foreground process works outside the recorded worktree, and could still match a reissued pane that works inside that same worktree.
 - A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup outside restored projection reclaim leaves it open.
-- When two records of one home name the same pane, an identity check without a validated record reads `unknown` and refuses.
+- When two records of one home name the same pane, a read that no task record binds, such as an ad hoc `<session>:<pane>` selector, reads `unknown` and refuses.
+- The stale-pane watcher finds a pane's task by its window, so it reads a pane that two records name through the record it finds first.
 
 ## Regression entry points
 

@@ -957,6 +957,7 @@ EOF
     idle=$((now - observed_at))
     [ "$idle" -ge "$threshold" ] || continue
     w=$(fm_backend_target_of_meta "$meta")
+    fm_backend_bind_task_record "$meta" "$w"
     ! secondmate_in_active_turn "$w" "$idle" || continue
     already_rung=0
     if [ -e "$ring_marker" ] || [ -L "$ring_marker" ]; then
@@ -2869,6 +2870,7 @@ EOF
   while IFS= read -r w; do
     kind=$(window_kind "$w")
     task=$(window_to_task "$w" "$STATE")
+    [ ! -f "$STATE/$task.meta" ] || fm_backend_bind_task_record "$STATE/$task.meta" "$w"
     # Steering-inbox loss detection runs before the secondmate stale
     # exemption below, because a mate's steers land in an inbox too.
     [ -z "$task" ] || inbox_steer_check "$w" "$task"

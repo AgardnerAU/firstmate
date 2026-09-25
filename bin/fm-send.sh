@@ -372,6 +372,7 @@ fm_send_resolve_target() { # <raw-target>
       return 1
     fi
     backend=$(fm_backend_of_meta "$meta")
+    fm_backend_bind_task_record "$meta" "$target"
     RESOLVED_TARGET=$target
     TARGET_BACKEND=$backend
     TARGET_META=$meta
@@ -410,6 +411,7 @@ fm_send_resolve_target() { # <raw-target>
       echo "error: no backend target recorded in $meta (tried explicit target '$raw' via recorded window/terminal; backend=from-meta)" >&2
       return 1
     fi
+    fm_backend_bind_task_record "$meta" "$target"
     RESOLVED_TARGET=$target
     TARGET_BACKEND=$(fm_backend_of_meta "$meta")
     TARGET_META=$meta

@@ -3397,6 +3397,7 @@ EOF
       exit 1
     fi
     T="$HERDR_SES:$HERDR_PANE_ID"
+    FM_BACKEND_HERDR_IDENTITY_PIN=$T
     SES=$HERDR_SES
     WT_TARGET=$T
   fi
@@ -3583,6 +3584,11 @@ EOF
       exit 1
     fi
     T="$HERDR_SES:$HERDR_PANE_ID"
+    # This spawn created the pane, so it is this task's own endpoint even when
+    # an older record names the same reissued pane id. The pin holds only
+    # until this task's record is published below.
+    # shellcheck disable=SC2034 # Read by the sourced Herdr adapter.
+    FM_BACKEND_HERDR_IDENTITY_PIN=$T
     ;;
   zellij)
     ZELLIJ_SES=$(fm_backend_zellij_container_ensure) || exit 1
@@ -4768,6 +4774,12 @@ if [ "$RELAUNCH" -eq 1 ]; then
   RELAUNCH_REPLACEMENT_PENDING=0
   SPAWN_META_PUBLISH_STARTED=0
   SPAWN_META_TMP=
+fi
+# From here every read and action on the endpoint checks it against this
+# task's own published record and the terminal id it recorded.
+if [ "$BACKEND" = herdr ]; then
+  unset FM_BACKEND_HERDR_IDENTITY_PIN
+  fm_backend_bind_task_record "$STATE/$ID.meta" "$META_WINDOW"
 fi
 # A dispatch or relaunch keeps the per-task meta lock through launch delivery.
 # The backlog mutation is deliberately the final fallible commit below, so

@@ -2097,17 +2097,18 @@ fm_backend_herdr_pane_terminal_id() {  # <session> <pane_id>
 }
 
 # fm_backend_herdr_endpoint_record: the task record that binds <target>, for
-# the identity check below. A caller that just validated a record
-# (bin/fm-backend.sh's fm_backend_validate_task_endpoint) binds that exact
-# record; otherwise the record is found by its exact window= line among this
-# home's task records. Prints the record path and returns 0, returns 1 when no
-# record binds the target (not a task endpoint of this home), and returns 2
-# when several records bind it, because a pane can belong to at most one of
-# them and a target alone cannot say which one the caller means.
+# the identity check below. A caller acting for one task binds that task's own
+# record (bin/fm-backend.sh's fm_backend_bind_task_record), and only that
+# record is read, whatever other records name the same pane id. An unbound
+# target falls back to its exact window= line among this home's task records.
+# Prints the record path and returns 0, returns 1 when no record binds the
+# target (not a task endpoint of this home), and returns 2 when several
+# unbound records name it, because a target alone cannot say which task the
+# caller means.
 fm_backend_herdr_endpoint_record() {  # <target>
   local target=$1 state matches
-  if [ -n "${FM_BACKEND_VALIDATED_META:-}" ] && [ "${FM_BACKEND_VALIDATED_TARGET:-}" = "$target" ]; then
-    printf '%s' "$FM_BACKEND_VALIDATED_META"
+  if [ -n "${FM_BACKEND_BOUND_META:-}" ] && [ "${FM_BACKEND_BOUND_TARGET:-}" = "$target" ]; then
+    printf '%s' "$FM_BACKEND_BOUND_META"
     return 0
   fi
   state=${FM_STATE_OVERRIDE:-$FM_HOME/state}
@@ -2153,7 +2154,7 @@ fm_backend_herdr_path_within() {  # <path> <root>
 #   mismatch - another terminal now holds the recorded pane id. The task's own
 #              endpoint is gone, and the live pane belongs to someone else.
 #   unknown  - the pane or the record could not be read, or several records
-#              bind the target. Neither ownership nor absence is claimed.
+#              name an unbound target. Neither ownership nor absence is claimed.
 # A record carrying herdr_terminal_id= is decided by that terminal id alone.
 # A legacy record written before the field existed has only indirect
 # evidence, so it matches only while the pane's foreground working directory
@@ -2162,8 +2163,9 @@ fm_backend_herdr_path_within() {  # <path> <root>
 # primary firstmate or a different task's copy, therefore reads mismatch.
 # teardown pins one target it has already verified
 # (FM_BACKEND_HERDR_IDENTITY_PIN), because returning a legacy task's worktree
-# moves that pane's working directory before its close runs, and restored
-# projection reclaim pins the husk its journal binding confirmed exactly.
+# moves that pane's working directory before its close runs, restored
+# projection reclaim pins the husk its journal binding confirmed exactly, and
+# spawn pins the pane it has just created until that task's record exists.
 fm_backend_herdr_endpoint_identity() {  # <target>
   local target=$1 meta rc expected count out code live worktree cwd other
   fm_backend_herdr_parse_target "$target" || { printf 'unknown'; return 0; }

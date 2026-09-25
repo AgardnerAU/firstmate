@@ -2821,6 +2821,7 @@ printf '%s\n' "$*" >> "$FM_HERDR_LOG"
 case "${1:-} ${2:-}" in
   "status --json") printf '{"client":{"version":"0.9.1","protocol":22},"server":{"running":true}}\n' ;;
   "pane get") printf '%s\n' "$FM_FAKE_PANE_GET" ;;
+  "pane read") printf '%s\n' "${FM_FAKE_PANE_READ:-}" ;;
 esac
 exit 0
 SH
@@ -2928,6 +2929,54 @@ test_endpoint_identity_gates_reads_and_closes() {
   [ "$rc" = 1 ] || fail "gate: an unverifiable pane close must refuse, got $rc"
   assert_not_contains "$(cat "$IDENTITY_LOG")" 'pane close' "gate: a close ran against a pane this task no longer owns"
   pass "herdr endpoint identity gates liveness, existence, reads, actions, and every pane close"
+}
+
+# After a Herdr server restart, a new task's pane can take the pane id an old
+# record still names. Each per-task caller checks its own record: the old
+# record reads its endpoint gone, and the new record reads the live pane.
+test_endpoint_identity_reissued_pane_binds_each_task_record() {
+  local dir fb state wt got neutral live
+  dir="$TMP_ROOT/identity-reissued"; state="$dir/state"; wt="$dir/wt"
+  neutral="$dir/neutral-root"
+  mkdir -p "$state" "$wt" "$neutral"
+  IDENTITY_LOG="$dir/log"; : > "$IDENTITY_LOG"
+  fb=$(make_identity_fakebin "$dir")
+  live=$(identity_pane_json w1:p2 term-after-restart "$wt")
+  run_bound() {  # <snippet>
+    PATH="$fb:$PATH" FM_HERDR_LOG="$IDENTITY_LOG" FM_STATE_OVERRIDE="$state" FM_FAKE_PANE_GET="$live" \
+      bash -c '. "$1/bin/fm-backend.sh"; fm_backend_source herdr; eval "$2"' _ "$ROOT" "$1"
+  }
+  identity_record "$state/oldtask.meta" oldtask w1:p2 "$wt" term-before-restart
+  run_bound "fm_backend_herdr_target_ready default:w1:p2" \
+    && fail "reissue: the old record alone let its reissued pane pass the gate"
+  run_bound "FM_BACKEND_HERDR_IDENTITY_PIN=default:w1:p2; fm_backend_herdr_target_ready default:w1:p2" \
+    || fail "reissue: spawn's own new pane should pass the gate before its record exists"
+  identity_record "$state/newtask.meta" newtask w1:p2 "$wt" term-after-restart
+
+  run_bound "fm_backend_bind_task_record '$state/newtask.meta' default:w1:p2; fm_backend_target_exists herdr default:w1:p2" \
+    || fail "reissue: the new task's own record should read its live pane"
+  run_bound "fm_backend_bind_task_record '$state/oldtask.meta' default:w1:p2; fm_backend_target_exists herdr default:w1:p2" \
+    && fail "reissue: the old record read another task's pane as its endpoint"
+  run_bound "fm_backend_bind_task_record '$state/oldtask.meta' default:w1:p2; fm_backend_herdr_endpoint_confirmed_gone default:w1:p2" \
+    || fail "reissue: the old record's endpoint should be confirmed gone"
+  got=$(run_bound "fm_backend_bind_task_record '$state/oldtask.meta' default:w1:p2; fm_backend_agent_state herdr default:w1:p2")
+  [ "$got" = missing ] || fail "reissue: the old record should read its endpoint missing, got '$got'"
+  run_bound "fm_backend_herdr_target_ready default:w1:p2" \
+    && fail "reissue: a target no task record binds must not pick one of the two records"
+
+  : > "$IDENTITY_LOG"
+  got=$(PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$neutral" FM_STATE_OVERRIDE="$state" \
+    FM_HERDR_LOG="$IDENTITY_LOG" FM_FAKE_PANE_GET="$live" FM_FAKE_PANE_READ="new task pane" \
+    "$ROOT/bin/fm-peek.sh" newtask 5 2>/dev/null) \
+    || fail "reissue: fm-peek could not read the new task through its own record"
+  [ "$got" = "new task pane" ] || fail "reissue: fm-peek read '$got' for the new task"
+  : > "$IDENTITY_LOG"
+  PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$neutral" FM_STATE_OVERRIDE="$state" \
+    FM_HERDR_LOG="$IDENTITY_LOG" FM_FAKE_PANE_GET="$live" FM_FAKE_PANE_READ="new task pane" \
+    "$ROOT/bin/fm-peek.sh" oldtask 5 >/dev/null 2>&1 \
+    && fail "reissue: fm-peek read another task's pane for the old record"
+  assert_not_contains "$(cat "$IDENTITY_LOG")" 'pane read' "reissue: the old record's peek read the new task's pane"
+  pass "herdr endpoint identity: after a restart reissues a pane id, each task reads through its own record"
 }
 
 test_kill_emptying_non_focused_uses_pane_death() {
@@ -5833,6 +5882,7 @@ test_projection_close_failed_removal_rolls_back_the_reposition
 test_kill_emptying_non_focused_uses_pane_death
 test_endpoint_identity_verdicts
 test_endpoint_identity_gates_reads_and_closes
+test_endpoint_identity_reissued_pane_binds_each_task_record
 test_kill_focused_workspace_stays_plain_close
 test_endpoint_confirmed_gone_gates_on_structured_presence
 test_kill_refuses_when_presentation_lock_is_unavailable

@@ -362,6 +362,19 @@ fm_backend_target_of_meta() {  # <meta-file>
   [ -n "$window" ] && printf '%s' "$window"
 }
 
+# fm_backend_bind_task_record: bind <target> to the task record <meta-file> for
+# this shell and its subshells. A backend identity check of that exact target
+# (bin/backends/herdr.sh's fm_backend_herdr_endpoint_identity) then reads this
+# record alone, even when another record names the same target. Every caller
+# that reads or acts on a target for one specific task binds that task's own
+# record first; binding another target replaces the previous binding.
+fm_backend_bind_task_record() {  # <meta-file> <target>
+  # shellcheck disable=SC2034 # Consumed by the sourced backend adapters.
+  FM_BACKEND_BOUND_META=$1
+  # shellcheck disable=SC2034 # Consumed by the sourced backend adapters.
+  FM_BACKEND_BOUND_TARGET=$2
+}
+
 # fm_backend_validate_task_endpoint: validate a task cleanup record entirely
 # from its durable metadata before any runtime command or cleanup mutation.
 # The validation binds the exact task id, selected backend, target, project,
@@ -370,8 +383,9 @@ fm_backend_target_of_meta() {  # <meta-file>
 # valid only when their window name itself is exactly fm-<task-id>.
 # A Herdr record may also carry herdr_terminal_id, the pane's stable terminal
 # identity (bin/backends/herdr.sh's fm_backend_herdr_endpoint_identity).
-# On success, sets FM_BACKEND_VALIDATED_BACKEND, FM_BACKEND_VALIDATED_TARGET,
-# and FM_BACKEND_VALIDATED_META. On failure, prints one refusal and returns 1.
+# On success, sets FM_BACKEND_VALIDATED_BACKEND and FM_BACKEND_VALIDATED_TARGET,
+# and binds that target to this record (fm_backend_bind_task_record). On
+# failure, prints one refusal and returns 1.
 fm_backend_meta_exact_value() {  # <meta-file> <key>
   local meta=$1 key=$2 count value
   count=$(grep -c "^$key=" "$meta" 2>/dev/null || true)
@@ -411,7 +425,6 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local session pane recorded_session workspace tab terminal worktree_id surface terminal_count
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
-  FM_BACKEND_VALIDATED_META=
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
     echo "REFUSED: task $id has no regular endpoint metadata at $meta; preserving task state." >&2
     return 1
@@ -562,10 +575,7 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   FM_BACKEND_VALIDATED_BACKEND=$backend
   # shellcheck disable=SC2034 # Output globals are consumed by sourcing callers.
   FM_BACKEND_VALIDATED_TARGET=$window
-  # The exact record behind the validated target, so a backend identity check
-  # (fm_backend_herdr_endpoint_record) binds this record rather than guessing.
-  # shellcheck disable=SC2034 # Output globals are consumed by sourcing callers.
-  FM_BACKEND_VALIDATED_META=$meta
+  fm_backend_bind_task_record "$meta" "$window"
   return 0
 }
 
