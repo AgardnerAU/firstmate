@@ -1,0 +1,93 @@
+## Live manual drive of bin/fm-captain-hold.sh in lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.JH8iaJ (commit c7d5dc15)
+$ tasks-axi add lab-answered ...; write meta
+ok: added lab-answered (scout, repo sample) -> In flight
+task:
+  id: lab-answered
+  title: Review lab-answered
+  state: in_flight
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: "-"
+  hold_kind: "-"
+  hold_until: "-"
+  kind: scout
+  repo: sample
+  priority: "-"
+  created: 2026-09-25
+  closed: "-"
+  deps: none
+  links: none
+  body: ""
+help[2]:
+  - Run `tasks-axi done lab-answered --pr <url>` when it ships
+  - Run `tasks-axi block lab-answered --by <other>` to record a dependency
+$ tasks-axi add lab-dropped ...; write meta
+ok: added lab-dropped (scout, repo sample) -> In flight
+task:
+  id: lab-dropped
+  title: Review lab-dropped
+  state: in_flight
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: "-"
+  hold_kind: "-"
+  hold_until: "-"
+  kind: scout
+  repo: sample
+  priority: "-"
+  created: 2026-09-25
+  closed: "-"
+  deps: none
+  links: none
+  body: ""
+help[2]:
+  - Run `tasks-axi done lab-dropped --pr <url>` when it ships
+  - Run `tasks-axi block lab-dropped --by <other>` to record a dependency
+
+--- Scenario A: answered call, then pruned into archive
+$ fm-captain-hold.sh hold lab-answered-call
+lab-answered-call
+rc=0
+$ fm-captain-hold.sh complete lab-answered lab-answered-call
+complete: lab-answered captain-call inventory reviewed (lab-answered-call)
+rc=0
+$ fm-captain-hold.sh answer lab-answered-call --decision-file ans.txt
+answered: lab-answered-call
+rc=0
+
+--- Scenario B setup: held call closed without a captain answer
+lab-dropped-call
+complete: lab-dropped captain-call inventory reviewed (lab-dropped-call)
+rc=0
+$ tasks-axi done lab-dropped-call  (outside the answer path)
+ok: done lab-dropped-call -> Done
+help[1]:
+  - Run `tasks-axi ready` to dispatch work unblocked by this
+rc=0
+
+$ tasks-axi prune --keep 0 --state done
+ok: prune done -> archived 2 (kept 0)
+help[1]:
+  - Run `tasks-axi list --state done` to see retained Done items
+rc=0
+$ tasks-axi show lab-answered-call  (live backlog)
+error: "Task \"lab-answered-call\" not found in this backlog"
+code: NOT_FOUND
+help[1]: Run `tasks-axi list` to see existing tasks
+rc=1
+$ grep -c call data/done-archive.md
+lab-answered-call
+lab-dropped-call
+
+$ fm-captain-hold.sh verify lab-answered   # expect PASS (archived answered call)
+verified: lab-answered captain-call inventory
+rc=0
+$ fm-captain-hold.sh complete lab-answered lab-answered-call   # expect PASS
+complete: lab-answered captain-call inventory reviewed (lab-answered-call)
+rc=0
+
+$ fm-captain-hold.sh verify lab-dropped   # expect REFUSE (archived, never answered)
+fm-captain-hold: captain-held task lab-dropped-call is neither held for the captain nor closed with a recorded captain answer
+rc=1
