@@ -1,0 +1,125 @@
+lab: /tmp/fm-carry-lab.CaxRD6
+
+================ SETUP: upstream (origin) main=b42d4fa8a752fad9a5f0235783b02534bce29219; fork main=b42d4fa8a752fad9a5f0235783b02534bce29219; fork carry = upstream + self-update change + simulated PR 5435/3983 ================
+carry tip: 93902c2efa0609dad29acca2c19af20b28249593
+primary HEAD=3da0c6a branch=main origin/main=b42d4fa | sm-alpha HEAD=b42d4fa | fork main=b42d4fa upstream main=b42d4fa
+
+================ S1: config 'fork carry' -> /updatefirstmate follows the carry branch ================
+fork carry
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: updated 3da0c6a..93902c2 (instructions changed: AGENTS.md, bin)
+no watches registered
+secondmate sm-alpha: updated b42d4fa..93902c2 (instructions changed: AGENTS.md, bin, .agents/skills)
+reread-firstmate: yes
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+primary HEAD=93902c2 branch=main origin/main=b42d4fa | sm-alpha HEAD=93902c2 | fork main=b42d4fa upstream main=b42d4fa
+CHECK primary on carry tip: PASS
+CHECK standalone secondmate on carry tip: PASS
+primary remotes:
+fork	/tmp/fm-carry-lab.CaxRD6/fork.git (fetch)
+fork	/tmp/fm-carry-lab.CaxRD6/fork.git (push)
+origin	/tmp/fm-carry-lab.CaxRD6/upstream.git (fetch)
+origin	/tmp/fm-carry-lab.CaxRD6/upstream.git (push)
+CHECK fork main untouched: PASS
+CHECK origin/main still upstream: PASS
+default branch per origin/HEAD: origin/main
+
+================ S2: re-run with nothing new -> already current ================
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: already current
+secondmate sm-alpha: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+primary HEAD=93902c2 branch=main origin/main=b42d4fa | sm-alpha HEAD=93902c2 | fork main=b42d4fa upstream main=b42d4fa
+
+================ S3: carry refreshed on demand (upstream advanced, merged into carry = fast-forward) ================
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: updated 93902c2..a60c87d
+no watches registered
+secondmate sm-alpha: updated 93902c2..a60c87d
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+primary HEAD=a60c87d branch=main origin/main=b42d4fa | sm-alpha HEAD=a60c87d | fork main=b42d4fa upstream main=7931b45
+CHECK primary on refreshed carry: PASS
+
+================ S4 adversarial: malformed / unusable configs refuse before anything moves ================
+--- config: nosuchremote\ carry
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: remote 'nosuchremote' does not exist in /tmp/fm-carry-lab.CaxRD6/primary; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: fork
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: fork\ carry\ extra
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: fork\ bad..branch
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: invalid branch name 'bad..branch'; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: -x\ carry
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: invalid remote name '-x'; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: $'fork carry\norigin main'
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+--- config: symlink
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+error: /tmp/fm-carry-lab.CaxRD6/home/config/self-update-source: not a readable regular file; fix it or remove it to update from origin
+[exit 1]
+CHECK nothing moved: PASS
+
+================ S5 adversarial: carry rewritten (force-pushed, non-fast-forward) -> skipped, never forced ================
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: skipped: diverged from refs/remotes/fork/carry
+secondmate sm-alpha: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+primary HEAD=a60c87d branch=main origin/main=b42d4fa | sm-alpha HEAD=a60c87d | fork main=b42d4fa upstream main=7931b45
+CHECK primary not forced: PASS
+
+================ S6 adversarial: dirty primary with a valid new carry -> skipped, work preserved ================
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: skipped: dirty working tree
+secondmate sm-alpha: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+ M README.md
+
+================ S7: remove the file -> origin path; primary ahead of origin reported diverged, nothing moves ================
+$ /tmp/fm-carry-lab.CaxRD6/primary/bin/fm-update.sh
+firstmate: skipped: diverged from origin/main
+secondmate sm-alpha: skipped: diverged from origin/main; reconciliation required (record: /private/tmp/fm-carry-lab.CaxRD6/home/state/.secondmate-update-reconcile/sm-alpha.pending)
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit 0]
+primary HEAD=a60c87d branch=main origin/main=7931b45 | sm-alpha HEAD=a60c87d | fork main=b42d4fa upstream main=7931b45
+CHECK nothing moved on origin path: PASS
+
+lab removed
