@@ -1,0 +1,9 @@
+$ bash tests/fm-daemon.test.sh   # exit 0
+ok - a process-event escalation already waiting in the buffer is not buffered twice
+ok - an unhandled board result escalates once per re-announcement interval and never after it is handled
+ok - a board answer skips the batch window and still respects the composer guard
+ok - primary busy guard isolates rendered signatures by detected harness
+$ bash tests/fm-afk-return.test.sh   # exit 0
+ok - the away-return catch-up omits process-event results that are already handled
+$ bash tests/fm-captain-hold-lifecycle.test.sh   # exit 0
+ok - a note without a selection keeps its call open, and the receipt names recorded and open calls

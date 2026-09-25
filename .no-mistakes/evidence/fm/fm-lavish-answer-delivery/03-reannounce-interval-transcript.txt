@@ -1,0 +1,29 @@
+$ wc -l state/.wake-queue (after capture)
+       1
+$ fm-procevent.sh reconcile   # cycle 1, default interval
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ fm-procevent.sh reconcile   # cycle 2, default interval
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ fm-procevent.sh reconcile   # cycle 3, default interval
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ wc -l state/.wake-queue
+       1
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile   # control: interval disabled
+reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0
+$ wc -l state/.wake-queue
+       2
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=abc fm-procevent.sh reconcile   # bad value refused
+error: FM_PROCEVENT_REANNOUNCE_SECONDS must be whole seconds from 0 to 86400
+exit=1
+$ fm-procevent.sh handled lavish-1ccd564766f97492 1
+handled: lavish-1ccd564766f97492 1
+$ FM_PROCEVENT_REANNOUNCE_SECONDS=0 fm-procevent.sh reconcile   # after handled
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+$ wc -l state/.wake-queue
+       2
+$ ls state/procevent-inbox (announced marker gone)
+.
+..
+lavish-1ccd564766f97492.1.adapter
+lavish-1ccd564766f97492.1.handled
+lavish-1ccd564766f97492.1.result

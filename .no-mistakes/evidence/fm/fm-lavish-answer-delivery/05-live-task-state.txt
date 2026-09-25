@@ -1,0 +1,14 @@
+# live lab state after one board round (FM_HOME=lab)
+== tasks-axi show lab-pick
+  state: done
+  held: no
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: bac3296b38b585a30171816307a8e8ffc5b7b2e1b0e25dffdce4e3775c8b1b64\nResolution mode: answered\n\nCaptain decision:\nCaptain answered this call through the captured result lavish-1ccd564766f97492 sequence 1.\nTask: lab-pick\nAnswer: north\nAnswer as shown to the captain: Board pick -> north"
+== tasks-axi show lab-question
+  state: queued
+  held: yes
+== tasks-axi show lab-words
+  state: done
+  held: no
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: 2962933838974168fad5de2e7f232eff4894f4e609f519139b358c9802d94bf7\nResolution mode: answered\n\nCaptain decision:\nCaptain answered this call through the captured result lavish-1ccd564766f97492 sequence 1.\nTask: lab-words\nAnswer: use the staging vault\nAnswer as shown to the captain: Credential route -> use the staging vault"
+== captured result wake
+1790322812	1	check	procevent:lavish-1ccd564766f97492:1	check: procevent lavish lavish-1ccd564766f97492 1
