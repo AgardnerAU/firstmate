@@ -1,0 +1,10 @@
+== isolation proof: readonly FM_SUPERVISION_MODEL it cannot clear ==
+fm-test-env: could not clear FM_SUPERVISION_MODEL from the environment
+fm-isolation-proof: refusing to run: the live fleet home is still reachable
+exit=2
+
+== isolation proof: clearable leaked pointers, --list still works ==
+tests/fm-arm-pretool-check.test.sh
+tests/fm-backend-herdr.test.sh
+tests/fm-brief.test.sh
+exit=

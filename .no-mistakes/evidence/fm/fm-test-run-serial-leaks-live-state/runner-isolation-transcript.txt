@@ -1,0 +1,43 @@
+== control: probe run directly with all 15 worker pointers exported (no runner) ==
+LEAKED FM_HOME=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home
+LEAKED FM_ROOT=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home
+LEAKED FM_ROOT_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home
+LEAKED FM_STATE_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/state
+LEAKED FM_DATA_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/data
+LEAKED FM_PROJECTS_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/p
+LEAKED FM_CONFIG_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/config
+LEAKED FM_PENDING_REPLY_DIR_OVERRIDE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/pr
+LEAKED FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home
+LEAKED FM_WAKE_QUEUE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/state/wq
+LEAKED FM_WAKE_QUEUE_LOCK=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/state/wq.lock
+LEAKED FM_BACKEND=tmux
+LEAKED FM_SESSION_START_STAGE_FILE=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3BTA4JZYQ754C4WAT5J2G7P/.probe-sentinel-home/stage
+LEAKED FM_SUPERVISION_MODEL=autoarm
+LEAKED FM_TRACE_CONTEXT=on
+exit=1
+sentinel home state/: [probe-wrote-here]
+
+== serial: bin/fm-test-run.sh --jobs 1 with the same exported pointers ==
+FM_TEST_BEGIN 2026-09-25T08:20:32Z tests/zz-probe-a.test.sh family=unclassified expected_gate_skip=none
+probe zz-probe-a.test.sh: no fleet pointer inherited
+FM_TEST_END 2026-09-25T08:20:32Z tests/zz-probe-a.test.sh exit=0 duration_ms=33 gate_skip=false
+FM_TEST_BEGIN 2026-09-25T08:20:32Z tests/zz-probe-b.test.sh family=unclassified expected_gate_skip=none
+probe zz-probe-b.test.sh: no fleet pointer inherited
+FM_TEST_END 2026-09-25T08:20:32Z tests/zz-probe-b.test.sh exit=0 duration_ms=41 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=190
+FM_TEST_SUMMARY_FAMILY family=unclassified count=2 duration_ms=74 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/zz-probe-b.test.sh duration_ms=41
+FM_TEST_SLOWEST rank=2 script=tests/zz-probe-a.test.sh duration_ms=33
+exit=0
+sentinel home state/ after serial run: []
+
+== concurrent: bin/fm-test-run.sh --jobs 2 with the same exported pointers ==
+fm-test-run: --jobs 2 refused: tests/zz-probe-a.test.sh is not in the proven-isolated set (see bin/fm-test-isolation-proof.sh --list) and its family has no recorded concurrent proof. Unproven stateful scripts stay serial.
+exit=2
+sentinel home state/ after --jobs run: []
+
+== refusal: a pointer the runner cannot clear (readonly FM_HOME in the parent shell) ==
+fm-test-env: could not clear FM_HOME from the environment
+fm-test-run: refusing to run: the live fleet home is still reachable
+exit=2
+sentinel home state/ after refusal: []

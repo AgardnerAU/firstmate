@@ -1,0 +1,20 @@
+== concurrent: fm-test-run.sh --jobs 2 (probes admitted as proven) with all 15 worker pointers exported ==
+FM_TEST_BEGIN 2026-09-25T08:20:57Z tests/zz-probe-a.test.sh family=unclassified expected_gate_skip=none
+FM_TEST_BEGIN 2026-09-25T08:20:57Z tests/zz-probe-b.test.sh family=unclassified expected_gate_skip=none
+probe zz-probe-a.test.sh: no fleet pointer inherited
+FM_TEST_END 2026-09-25T08:20:57Z tests/zz-probe-a.test.sh exit=0 duration_ms=32 gate_skip=false
+probe zz-probe-b.test.sh: no fleet pointer inherited
+FM_TEST_END 2026-09-25T08:20:57Z tests/zz-probe-b.test.sh exit=0 duration_ms=32 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=236
+FM_TEST_SUMMARY_FAMILY family=unclassified count=2 duration_ms=64 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/zz-probe-a.test.sh duration_ms=32
+FM_TEST_SLOWEST rank=2 script=tests/zz-probe-b.test.sh duration_ms=32
+exit=0
+sentinel home state/ after --jobs run: []
+
+== real proven-isolated suites via --jobs 2 with leaked pointers ==
+FM_TEST_END 2026-09-25T08:21:14Z tests/fm-brief.test.sh exit=0 duration_ms=17020 gate_skip=false
+FM_TEST_END 2026-09-25T08:21:26Z tests/fm-cd-pretool-check.test.sh exit=0 duration_ms=28376 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=28553
+exit=0
+sentinel home tree after real suites: [./state ]

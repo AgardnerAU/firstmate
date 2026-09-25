@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+S="$PWD/.probe-sentinel-home"
+rm -f "$S/state/probe-wrote-here"
+LEAK=(FM_HOME=$S FM_ROOT=$S FM_ROOT_OVERRIDE=$S FM_STATE_OVERRIDE=$S/state FM_DATA_OVERRIDE=$S/data FM_PROJECTS_OVERRIDE=$S/p FM_CONFIG_OVERRIDE=$S/config FM_PENDING_REPLY_DIR_OVERRIDE=$S/pr FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=$S FM_WAKE_QUEUE=$S/state/wq FM_WAKE_QUEUE_LOCK=$S/state/wq.lock FM_BACKEND=tmux FM_SESSION_START_STAGE_FILE=$S/stage FM_SUPERVISION_MODEL=autoarm FM_TRACE_CONTEXT=on)
+echo "== control: probe run directly with all 15 worker pointers exported (no runner) =="
+env "${LEAK[@]}" bash tests/zz-probe-a.test.sh; echo "exit=$?"
+echo "sentinel home state/: [$(ls -A "$S/state")]"; rm -f "$S/state/probe-wrote-here"
+echo; echo "== serial: bin/fm-test-run.sh --jobs 1 with the same exported pointers =="
+env "${LEAK[@]}" bin/fm-test-run.sh --jobs 1 tests/zz-probe-a.test.sh tests/zz-probe-b.test.sh; echo "exit=$?"
+echo "sentinel home state/ after serial run: [$(ls -A "$S/state")]"
+echo; echo "== concurrent: bin/fm-test-run.sh --jobs 2 with the same exported pointers =="
+env "${LEAK[@]}" bin/fm-test-run.sh --jobs 2 tests/zz-probe-a.test.sh tests/zz-probe-b.test.sh; echo "exit=$?"
+echo "sentinel home state/ after --jobs run: [$(ls -A "$S/state")]"
+echo; echo "== refusal: a pointer the runner cannot clear (readonly FM_HOME in the parent shell) =="
+env "${LEAK[@]}" bash -c 'readonly FM_HOME; export FM_HOME; source bin/fm-test-run.sh tests/zz-probe-a.test.sh' ; echo "exit=$?"
+echo "sentinel home state/ after refusal: [$(ls -A "$S/state")]"
