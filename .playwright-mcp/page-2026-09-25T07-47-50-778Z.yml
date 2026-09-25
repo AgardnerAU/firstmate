@@ -1,0 +1,101 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - generic [ref=f3e4]: Lavish
+      - generic [ref=f3e5]: Editor
+    - button "Annotate" [pressed] [ref=f3e6] [cursor=pointer]
+    - button "More" [ref=f3e11] [cursor=pointer]
+  - generic [ref=f3e16]:
+    - iframe [ref=f3e18]:
+      - generic [ref=f4e1]:
+        - banner [ref=f4e2]:
+          - generic [ref=f4e3]: bearings
+        - main [ref=f4e10]:
+          - generic [ref=f4e11]:
+            - generic [ref=f4e12]:
+              - generic [ref=f4e13]: "2"
+              - generic [ref=f4e14]: need you
+            - generic [ref=f4e15]:
+              - generic [ref=f4e16]: "0"
+              - generic [ref=f4e17]: underway
+            - generic [ref=f4e18]:
+              - generic [ref=f4e19]: "0"
+              - generic [ref=f4e20]: landed recently
+            - generic [ref=f4e21]:
+              - generic [ref=f4e22]: "1"
+              - generic [ref=f4e23]: charted next
+          - generic [ref=f4e24]:
+            - generic [ref=f4e25]:
+              - generic [ref=f4e26]:
+                - generic [ref=f4e27]: Captain's Call
+                - generic [ref=f4e31]: 2 items wait on you, captain
+              - generic [ref=f4e32]:
+                - generic [ref=f4e35]:
+                  - generic [ref=f4e36]:
+                    - generic [ref=f4e37]: decision
+                    - generic [ref=f4e38]: sample
+                  - 'heading "REBUILT: Perishable-first admission" [level=3] [ref=f4e39]'
+                  - generic [ref=f4e40]:
+                    - generic [ref=f4e41]:
+                      - generic [ref=f4e42]: about
+                      - generic [ref=f4e43]: "A payload string that tries to break out: </script><b>x</b>"
+                    - generic [ref=f4e44]:
+                      - generic [ref=f4e45]: decide
+                      - generic [ref=f4e46]: Adopt it?
+                  - generic [ref=f4e47]:
+                    - generic [ref=f4e48]:
+                      - generic [ref=f4e49] [cursor=pointer]:
+                        - radio "Adopt recommended" [ref=f4e50]
+                        - generic [ref=f4e51]:
+                          - generic [ref=f4e52]: Adopt
+                          - generic [ref=f4e53]: recommended
+                      - generic [ref=f4e54] [cursor=pointer]:
+                        - radio "Keep current" [ref=f4e55]
+                        - generic [ref=f4e56]: Keep current
+                      - generic [ref=f4e58] [cursor=pointer]:
+                        - radio "Reconcile Re-check the latest state, then close this with evidence or keep it open with a note" [ref=f4e59]
+                        - generic [ref=f4e60]:
+                          - generic [ref=f4e61]: Reconcile
+                          - generic [ref=f4e62]: Re-check the latest state, then close this with evidence or keep it open with a note
+                    - textbox "or answer in your own words…" [ref=f4e63]
+                    - button "Queue answer" [ref=f4e65] [cursor=pointer]
+                - generic [ref=f4e66]:
+                  - generic [ref=f4e67]: card 1 of 2
+                  - button "Previous card" [disabled] [ref=f4e68] [cursor=pointer]
+                  - button "Next card" [ref=f4e71] [cursor=pointer]
+            - generic [ref=f4e74]:
+              - generic [ref=f4e75]: Charted Next
+              - generic [ref=f4e80]:
+                - generic [ref=f4e82]:
+                  - checkbox "Pick sample-queued for dispatch" [ref=f4e83] [cursor=pointer]
+                  - generic [ref=f4e84]:
+                    - generic [ref=f4e85]: Queued work
+                    - generic [ref=f4e86]: sample
+                - generic [ref=f4e87]:
+                  - generic [ref=f4e88]: pick queued work to dispatch
+                  - button "Queue dispatch order" [disabled] [ref=f4e89] [cursor=pointer]
+          - generic [ref=f4e90]:
+            - generic [ref=f4e91]:
+              - generic [ref=f4e92]: Underway
+              - generic [ref=f4e98]: Nothing is underway.
+            - generic [ref=f4e101]:
+              - generic [ref=f4e102]: Recently Landed
+              - generic [ref=f4e107]: No recent completions are in the current baseline.
+          - generic [ref=f4e110]: fm-bearings-board.v1 · 2026-09-25T07:48Z
+    - complementary [ref=f3e19]:
+      - heading "Conversation" [level=2] [ref=f3e22]
+      - generic [ref=f3e23]:
+        - generic [ref=f3e24]: Agent hasn't sent a message yet. Click an element in the artifact to annotate, or type below to start.
+        - text: Agent hasn't sent a message yet. Click an element in the artifact to annotate, or type below to start.
+      - generic [ref=f3e25]:
+        - textbox "Write a message for the agent..." [ref=f3e26]
+        - generic [ref=f3e27]:
+          - button "Attach images" [ref=f3e28] [cursor=pointer]
+          - status
+        - generic [ref=f3e29]:
+          - button "Send & End" [ref=f3e30] [cursor=pointer]
+          - button "Send to Agent" [ref=f3e35] [cursor=pointer]
+  - generic [ref=f3e37]:
+    - generic [ref=f3e38]: Checking layout.One moment.
+    - paragraph [ref=f3e39]: Lavish is waiting for fonts and final geometry before revealing this artifact.
+    - button "Show anyway" [ref=f3e40] [cursor=pointer]
