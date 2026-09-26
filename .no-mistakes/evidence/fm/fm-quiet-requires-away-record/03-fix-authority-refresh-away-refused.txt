@@ -1,0 +1,14 @@
+== merge authority while quiet ==
+authority=attended
+== bare refresh (FM_AFK_MODE unset) of running quiet daemon ==
+fm-afk-launch: daemon already running; refreshed away-mode flag (no new terminal)
+rc=0
+.afk=quiet
+== adversarial: FM_AFK_MODE=away over running quiet daemon, no record ==
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+.afk=quiet
+no .afk-contract
+lab$

@@ -1,0 +1,13 @@
+== FIX (fe50ee37): /quiet entry via start (tmux backend, real daemon) ==
+fm-afk-launch: daemon launched in detached tmux session 'fm-afk-daemon-4183140103-45031-14291-1790399457', supervising %0
+rc=0
+-- state:
+.					.inactive-outcome-reconcile		.secondmate-liveness-tick		.supervise-daemon.lock.owner.MDFnma	.watch.lock
+..					.last-check				.subsuper-last-housekeep		.supervise-daemon.log			.watch.lock.owner.tjFm0M
+.afk					.last-heartbeat				.subsuper-last-scan			.supervise-daemon.pid			home-summary.json
+.afk-daemon-terminal			.last-watcher-beat			.supervise-daemon.lock			.supervise-daemon.watcher.err		terminal-outcomes
+-- .afk line1: quiet
+no .afk-contract (no away record)
+fm-afk-daemon-4183140103-45031-14291-1790399457: 1 windows (created Sat Sep 26 13:10:58 2026)
+primary: 1 windows (created Sat Sep 26 13:10:28 2026)
+lab$

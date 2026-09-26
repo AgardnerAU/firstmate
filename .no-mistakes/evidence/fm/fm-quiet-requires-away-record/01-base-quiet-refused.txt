@@ -1,0 +1,7 @@
+== BASE (ea7c7f70): /quiet entry, no away record ==
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+.	..
+lab$

@@ -1,0 +1,10 @@
+== FIX: /quiet entry via start-native (claude/grok path) ==
+rc=0
+.afk=quiet
+no .afk-contract
+== adversarial: away start-native with no record, fresh ==
+fm-afk-launch: away mode stopped; no daemon terminal was running and .afk cleared
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+no .afk (away refused)
+lab$

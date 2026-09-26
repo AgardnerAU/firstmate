@@ -1,0 +1,44 @@
+== merge authority while quiet ==
+authority=attended
+== bare refresh (FM_AFK_MODE unset) of running quiet daemon ==
+fm-afk-launch: daemon already running; refreshed away-mode flag (no new terminal)
+rc=0
+.afk=quiet
+== adversarial: FM_AFK_MODE=away over running quiet daemon, no record ==
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+fm-afk-launch: an away-posture record is required; run enter before starting the daemon
+rc=1
+.afk=quiet
+no .afk-contract
+lab$ clear; echo '== /quiet off: bin/fm-afk-return.sh =='; bin/fm-afk-return.sh 2>&1 | tail -25; echo rc=${PIPESTATUS[0]}; echo -- after:; ls -a $FM_HOME/state | tr '\n' ' '; echo; test -e $FM_HOME/st
+ate/.afk && echo AFK-STILL || echo '.afk cleared'; ls $FM_HOME/state/afk-contracts 2>/dev/null || echo 'no afk-contracts archive'; tmux list-sessions
+== /quiet off: bin/fm-afk-return.sh ==
+fm-afk-launch: terminal close command failed, but exact absence was confirmed
+fm-afk-launch: away mode stopped; daemon terminal torn down and .afk cleared
+=== Return brief (away 2026-09-26T05:11:19Z -> 2026-09-26T05:11:39Z, 20s) ===
+Supervisor health:
+  - supervision ran through the away window with no detected gap (watcher beat 6s old at return)
+Your instructions:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  (nothing)
+Tried and failed, or could not be fixed:
+  (nothing)
+Landed, cleanup due:
+  (nothing)
+Handled while away:
+  0 outcome(s) handled by the away session (0 routine, 0 escalated above)
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+catch-up health: supervision ran through the away window with no detected gap (watcher beat 6s old at return)
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 99112.1790399497.1emcE0
+fm-afk-return: catch-up clear; ordinary captain work may proceed
+rc=0
+-- after:
+. .. .inactive-outcome-reconcile .last-check .last-heartbeat .last-watcher-beat .secondmate-liveness-tick .subsuper-last-housekeep .subsuper-last-scan .supervise-daemon.log .supervise-daemon.watcher.e
+rr .wake-queue .watcher-down home-summary.json terminal-outcomes
+.afk cleared
+no afk-contracts archive
+primary: 1 windows (created Sat Sep 26 13:10:28 2026)
+lab$
