@@ -1,0 +1,5 @@
+00:08:02 claude mid-turn in sleep 40
+00:08:02 daemon started
+00:09:50 first daemon key sent only after Claude replied BUSYDONE
+00:09:50 observed 4 busy deferrals, keys sent:        1
+00:09:59 delivered=1 after busy turn

@@ -1,0 +1,40 @@
+
+ ▐▛███▛█   Claude Code v2.1.283
+▝▜██████▀  Opus 5.5 · Claude Max
+ ▝▝   ▝▝   /…/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-base.ZPW7xQ/.afk-claude-live.HEfgP3/project · /rc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Ctx: 0 | Ctx(u) Used: 0.0% | In: 0 | Out: 0
+  𖠰 no git | ⎇ no git | Model: Opus 5.5 | Session: <1m
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← 1 agent
