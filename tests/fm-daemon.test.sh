@@ -676,6 +676,23 @@ test_seed_malformed_cursor_manifest_logs_once_and_starts() {
   pass "a malformed presentation cursor manifest is logged once and startup continues"
 }
 
+test_seed_legacy_cursor_failure_does_not_blame_missing_manifest() {
+  local dir state log_file
+  dir=$(make_supercase seed-legacy-cursor-fails)
+  state="$dir/state"
+  printf 'done: old completion\n' > "$state/legacy.status"
+  mkdir -p "$(_fm_open_decisions_cursor_path "$state/legacy.status")"
+  log_file="$dir/daemon.log"
+
+  LOG="$log_file" seed_presented_status_at_start "$state" \
+    || fail "a legacy cursor failure stopped away startup"
+  grep -q 'presented status seed skipped for legacy: could not read their presentation cursor' "$log_file" \
+    || fail "the legacy cursor failure was not logged neutrally: $(cat "$log_file" 2>/dev/null)"
+  ! grep -q 'status-presentation-cursor' "$log_file" \
+    || fail "the log blamed a presentation cursor manifest that does not exist"
+  pass "a legacy cursor failure is logged without blaming a missing manifest"
+}
+
 test_herdr_claude_busy_guard_uses_target_identity_when_daemon_identity_is_unknown() {
   local dir state sent
   dir=$(make_supercase herdr-claude-busy-unknown)
@@ -3343,6 +3360,7 @@ test_catchall_scan_surfaces_a_masked_event
 test_fresh_away_entry_skips_previously_presented_status
 test_seed_duplicate_cursor_row_skips_only_that_task
 test_seed_malformed_cursor_manifest_logs_once_and_starts
+test_seed_legacy_cursor_failure_does_not_blame_missing_manifest
 test_classify_stale_dedup_against_signal
 test_afk_nonterminal_working_merged_keeps_wedge_aging
 test_afk_genuine_done_still_terminal_stale

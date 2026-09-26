@@ -660,8 +660,13 @@ seed_presented_status_at_start() {  # <state>
       log "presented status seed skipped for $task: could not record its position"
     fi
   done
-  [ -z "$unseeded" ] \
-    || log "error: presented status seed skipped for${unseeded}: malformed or unreadable $state/.status-presentation-cursor"
+  if [ -n "$unseeded" ]; then
+    if [ -e "$state/.status-presentation-cursor" ] || [ -L "$state/.status-presentation-cursor" ]; then
+      log "error: presented status seed skipped for${unseeded}: malformed or unreadable $state/.status-presentation-cursor"
+    else
+      log "error: presented status seed skipped for${unseeded}: could not read their presentation cursor"
+    fi
+  fi
   tmp="$marker.tmp.$$"
   printf '%s\n' "$(_now)" > "$tmp" && mv -f "$tmp" "$marker"
 }
