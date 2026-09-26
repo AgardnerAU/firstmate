@@ -583,6 +583,75 @@ test_catchall_scan_surfaces_a_masked_event() {
   pass "the away-mode catch-all scan surfaces a masked event once"
 }
 
+test_fresh_away_entry_skips_previously_presented_status() {
+  local dir state f ident old_end new_end out
+  dir=$(make_supercase previously-presented)
+  state="$dir/state"
+  f="$state/finished.status"
+  printf 'done: old PR already reported\npaused: old external wait\n' > "$f"
+  ident=$(_fm_open_decisions_file_ident "$f")
+  old_end=$(log_size "$f")
+  printf 'finished\t%s\t%s\t0\n' "$ident" "$old_end" > "$state/.status-presentation-cursor"
+
+  seed_presented_status_at_start "$state" || fail "could not seed the previously presented status"
+  [ "$(status_seen_offset "$state" finished)" = "$old_end" ] \
+    || fail "fresh away entry did not inherit main's presented status endpoint"
+  FM_HEARTBEAT_SCAN_SECS=0 FM_STATE_OVERRIDE="$state" housekeeping "$state"
+  [ ! -s "$state/.subsuper-escalations" ] \
+    || fail "catch-all replayed a previously presented done line"
+
+  printf 'done: new completion while away\n' >> "$f"
+  rm -f "$state/.subsuper-last-scan"
+  FM_HEARTBEAT_SCAN_SECS=0 FM_STATE_OVERRIDE="$state" housekeeping "$state"
+  out=$(cat "$state/.subsuper-escalations" 2>/dev/null || true)
+  case "$out" in *'done: new completion while away'*) ;;
+    *) fail "catch-all missed a new completion after the presented endpoint: $out" ;;
+  esac
+  case "$out" in *'old PR already reported'*) fail "new digest included an old completion" ;; esac
+
+  : > "$state/.subsuper-escalations"
+  new_end=$(log_size "$f")
+  printf 'finished\t%s\t%s\t0\n' "$ident" "$new_end" > "$state/.status-presentation-cursor"
+  rm -f "$state/.subsuper-last-scan"
+  seed_presented_status_at_start "$state" || fail "daemon restart could not retain its baseline"
+  FM_HEARTBEAT_SCAN_SECS=0 FM_STATE_OVERRIDE="$state" housekeeping "$state"
+  [ ! -s "$state/.subsuper-escalations" ] || fail "daemon restart replayed an already handled completion"
+
+  printf 'done: attended completion already reported\n' >> "$f"
+  new_end=$(log_size "$f")
+  printf 'finished\t%s\t%s\t0\n' "$ident" "$new_end" > "$state/.status-presentation-cursor"
+  rm -f "$state/.subsuper-session-seeded"
+  seed_presented_status_at_start "$state" || fail "next away entry could not inherit attended progress"
+  [ "$(status_seen_offset "$state" finished)" = "$new_end" ] \
+    || fail "next away entry re-read an attended completion"
+  pass "fresh away entries inherit presented status; restarts and new appends keep distinct positions"
+}
+
+test_herdr_claude_target_uses_doorbell_when_daemon_identity_is_unknown() {
+  local dir state sent body
+  dir=$(make_supercase herdr-claude-doorbell)
+  state="$dir/state"
+  sent="$dir/sent"
+  body=$(awk 'BEGIN { for (i = 0; i < 6000; i++) printf "d" }')
+  afk_enter "$state"
+  (
+    FM_DAEMON_PRIMARY_HARNESS=unknown
+    FM_SUPERVISOR_BACKEND=herdr
+    FM_SUPERVISOR_TARGET='lab:w1:p1'
+    fm_backend_target_exists() { return 0; }
+    pane_is_busy() { return 1; }
+    fm_backend_composer_state() { printf 'empty'; }
+    fm_backend_herdr_composer_identity() { printf 'claude\tidle'; }
+    fm_backend_send_text_submit() { printf '%s' "$3" > "$sent"; printf 'empty'; }
+    inject_msg "$body" "$state"
+  ) || fail "Claude target injection with unknown daemon identity did not confirm"
+  [ -s "$sent" ] || fail "Claude target received no typed doorbell"
+  ! grep -Fq "$body" "$sent" || fail "Claude target received the full long digest instead of a doorbell"
+  message_is_injection "$(cat "$sent")" "$state" \
+    || fail "the short doorbell did not resolve to this home's operational record"
+  pass "Herdr Claude's native target identity selects record-backed delivery despite lost daemon ancestry"
+}
+
 test_classify_routine_signal_self() {
   local dir state out
   dir=$(make_supercase classify-routine)
@@ -3197,6 +3266,7 @@ test_transient_unreadable_signal_recovers_without_advancing
 test_permission_recovery_reclassifies_catchall_status
 test_permanent_classification_failure_is_reported_and_acknowledged
 test_catchall_scan_surfaces_a_masked_event
+test_fresh_away_entry_skips_previously_presented_status
 test_classify_stale_dedup_against_signal
 test_afk_nonterminal_working_merged_keeps_wedge_aging
 test_afk_genuine_done_still_terminal_stale
@@ -3248,5 +3318,6 @@ test_inject_msg_herdr_busy_guard_defers
 test_inject_msg_herdr_composer_guard_defers
 test_inject_msg_herdr_pane_gone_defers
 test_inject_msg_herdr_submits_through_backend_dispatch
+test_herdr_claude_target_uses_doorbell_when_daemon_identity_is_unknown
 test_inject_msg_defers_on_dead_shell_unknown
 test_inject_msg_defers_on_unrecognized_composer_state

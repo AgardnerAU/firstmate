@@ -524,6 +524,8 @@ unknown_wake_acknowledge_flushed() {  # <state> <buffer>
 # Seen:     state/.subsuper-seen-status-<task>  last reported file signature and
 #           classified byte offset, so failures and events do not re-fire while
 #           unread bytes remain recoverable.
+# Baseline: state/.subsuper-session-seeded marks this away entry's one-time
+#           inheritance of status positions already presented to main.
 
 _stale_key() { printf '%s' "$1" | tr ':/.' '___'; }
 
@@ -629,6 +631,27 @@ _seen_status_path() {  # <state> <task>
 # whole log is classified and uncertainty prefers a duplicate over event loss.
 status_seen_offset() {  # <state> <task>
   status_presentation_marker_offset "$(_seen_status_path "$1" "$2")" "$1/$2.status"
+}
+
+# On a fresh away entry, inherit the status bytes already presented to main.
+# The daemon's own marker then owns later progress, including an undelivered
+# buffer across a daemon restart. A new task or append after this snapshot has
+# no presented offset and remains visible to the catch-all scan.
+seed_presented_status_at_start() {  # <state>
+  local state=$1 f task presented seen ident marker tmp
+  marker="$state/.subsuper-session-seeded"
+  [ -e "$marker" ] && return 0
+  for f in "$state"/*.status; do
+    [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || continue
+    task=${f##*/}; task=${task%.status}
+    presented=$(status_presentation_cursor_offset "$f") || return 1
+    seen=$(status_seen_offset "$state" "$task")
+    [ "$presented" -gt "$seen" ] || continue
+    ident=$(_fm_open_decisions_file_ident "$f") || return 1
+    mark_status_seen "$state" "$task" "$presented" "$ident" || return 1
+  done
+  tmp="$marker.tmp.$$"
+  printf '%s\n' "$(_now)" > "$tmp" && mv -f "$tmp" "$marker"
 }
 
 # Commit <task>'s successfully classified endpoint, so the heartbeat catch-all
@@ -1461,7 +1484,18 @@ inject_msg() {  # <message> [state]
   #      the owner's record-backed doorbell instead of the typed envelope, so
   #      the away-mode return check can still tell this escalation from the
   #      captain. The record is written only once every guard has passed.
-  if fm_operational_harness_needs_record "$(fm_daemon_primary_harness)"; then
+  # A harness-native background process can lose its Claude ancestry or
+  # marker. Herdr's agent identity belongs to the target pane and is the
+  # authoritative delivery choice here. Never type a long digest into a
+  # Claude composer because Herdr can leave only a suffix of that paste.
+  local target_harness
+  target_harness=$(fm_daemon_primary_harness)
+  if [ "$backend" = herdr ]; then
+    local native_identity
+    native_identity=$(fm_backend_herdr_composer_identity "$target" 2>/dev/null) || native_identity=
+    [ -z "${native_identity%%$'\t'*}" ] || target_harness=${native_identity%%$'\t'*}
+  fi
+  if fm_operational_harness_needs_record "$target_harness"; then
     if ! fm_operational_record_write "$state" away-supervisor "$body" msg; then
       INJECT_LAST_FAILURE="could not publish the away-supervisor record under $state"
       log "inject failed: $INJECT_LAST_FAILURE"
@@ -1856,6 +1890,13 @@ fm_super_main() {
   local afk_status="off"
   afk_active "$STATE" && afk_status="on"
   log "daemon starting (pid $$); target=$TARGET; target_source=$target_source; backend=$BACKEND; backend_source=$backend_source; afk=$afk_status; inject_skip='${FM_INJECT_SKIP:-$INJECT_SKIP_DEFAULT}'; stale_escalate=${FM_STALE_ESCALATE_SECS:-$STALE_ESCALATE_SECS_DEFAULT}s; batch=${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}s"
+  if ! seed_presented_status_at_start "$STATE"; then
+    echo "error: could not seed away-mode status positions from presented status" >&2
+    log "startup failed: presented status seed"
+    fm_lock_release "$LOCK" 2>/dev/null || true
+    rm -f "$PIDFILE" 2>/dev/null || true
+    exit 1
+  fi
   migrate_watcher_pause_markers "$STATE"
 
   # --- shutdown: flush buffered escalations, reap child, release lock -------
