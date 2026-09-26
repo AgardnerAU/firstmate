@@ -627,6 +627,60 @@ test_fresh_away_entry_skips_previously_presented_status() {
   pass "fresh away entries inherit presented status; restarts and new appends keep distinct positions"
 }
 
+test_seed_failure_for_one_task_keeps_other_tasks_and_startup() {
+  local dir state good bad good_end bad_ident good_ident log_file
+  dir=$(make_supercase seed-one-task-fails)
+  state="$dir/state"
+  good="$state/good.status"
+  bad="$state/bad.status"
+  printf 'done: good old completion\n' > "$good"
+  printf 'done: bad old completion\n' > "$bad"
+  good_ident=$(_fm_open_decisions_file_ident "$good")
+  bad_ident=$(_fm_open_decisions_file_ident "$bad")
+  good_end=$(log_size "$good")
+  printf 'bad\t%s\t%s\t0\nbad\t%s\t%s\t0\ngood\t%s\t%s\t0\n' \
+    "$bad_ident" "$(log_size "$bad")" "$bad_ident" "$(log_size "$bad")" \
+    "$good_ident" "$good_end" > "$state/.status-presentation-cursor"
+  log_file="$dir/daemon.log"
+
+  LOG="$log_file" seed_presented_status_at_start "$state" \
+    || fail "one task's malformed presentation cursor stopped away startup"
+  [ "$(status_seen_offset "$state" good)" = "$good_end" ] \
+    || fail "the good task did not inherit its presented endpoint"
+  [ "$(status_seen_offset "$state" bad)" = 0 ] \
+    || fail "the malformed task moved its seen position"
+  [ -e "$state/.subsuper-session-seeded" ] \
+    || fail "the session marker was not written after one task failed"
+  grep -q 'presented status seed skipped for bad' "$log_file" \
+    || fail "the failed task seed was not logged"
+  pass "a malformed presentation cursor row skips only that task; other tasks seed and startup continues"
+}
+
+test_herdr_claude_busy_guard_uses_target_identity_when_daemon_identity_is_unknown() {
+  local dir state sent
+  dir=$(make_supercase herdr-claude-busy-unknown)
+  state="$dir/state"
+  sent="$dir/sent"
+  afk_enter "$state"
+  (
+    FM_DAEMON_PRIMARY_HARNESS=unknown
+    FM_SUPERVISOR_BACKEND=herdr
+    FM_SUPERVISOR_TARGET='lab:w1:p1'
+    fm_backend_target_exists() { return 0; }
+    fm_backend_busy_state() { printf 'idle'; }
+    fm_backend_capture() { printf '✻ Pontificating… (esc to interrupt)\n'; }
+    fm_backend_composer_state() { printf 'empty'; }
+    fm_backend_herdr_composer_identity() { printf 'claude\tidle'; }
+    fm_backend_send_text_submit() { printf '%s' "$3" > "$sent"; printf 'empty'; }
+    if inject_msg "digest while busy" "$state"; then
+      fail "inject_msg delivered into a rendered-busy Claude pane"
+    fi
+    case "$INJECT_LAST_FAILURE" in *busy*) ;; *) fail "unexpected inject failure: $INJECT_LAST_FAILURE" ;; esac
+  ) || fail "Claude busy guard with unknown daemon identity subshell failed"
+  [ ! -e "$sent" ] || fail "a busy Claude pane received typed input"
+  pass "Herdr Claude's native target identity drives the rendered busy guard despite lost daemon ancestry"
+}
+
 test_herdr_claude_target_uses_doorbell_when_daemon_identity_is_unknown() {
   local dir state sent body
   dir=$(make_supercase herdr-claude-doorbell)
@@ -3267,6 +3321,7 @@ test_permission_recovery_reclassifies_catchall_status
 test_permanent_classification_failure_is_reported_and_acknowledged
 test_catchall_scan_surfaces_a_masked_event
 test_fresh_away_entry_skips_previously_presented_status
+test_seed_failure_for_one_task_keeps_other_tasks_and_startup
 test_classify_stale_dedup_against_signal
 test_afk_nonterminal_working_merged_keeps_wedge_aging
 test_afk_genuine_done_still_terminal_stale
@@ -3319,5 +3374,6 @@ test_inject_msg_herdr_composer_guard_defers
 test_inject_msg_herdr_pane_gone_defers
 test_inject_msg_herdr_submits_through_backend_dispatch
 test_herdr_claude_target_uses_doorbell_when_daemon_identity_is_unknown
+test_herdr_claude_busy_guard_uses_target_identity_when_daemon_identity_is_unknown
 test_inject_msg_defers_on_dead_shell_unknown
 test_inject_msg_defers_on_unrecognized_composer_state

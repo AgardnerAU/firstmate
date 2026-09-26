@@ -637,6 +637,9 @@ status_seen_offset() {  # <state> <task>
 # The daemon's own marker then owns later progress, including an undelivered
 # buffer across a daemon restart. A new task or append after this snapshot has
 # no presented offset and remains visible to the catch-all scan.
+# A task that cannot be seeded is logged and keeps its own position, so the
+# scan may repeat its lines but away supervision still starts. The marker is
+# written regardless, so the same failure does not repeat on each restart.
 seed_presented_status_at_start() {  # <state>
   local state=$1 f task presented seen ident marker tmp
   marker="$state/.subsuper-session-seeded"
@@ -644,11 +647,16 @@ seed_presented_status_at_start() {  # <state>
   for f in "$state"/*.status; do
     [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || continue
     task=${f##*/}; task=${task%.status}
-    presented=$(status_presentation_cursor_offset "$f") || return 1
+    if ! presented=$(status_presentation_cursor_offset "$f"); then
+      log "presented status seed skipped for $task: unreadable presentation cursor"
+      continue
+    fi
     seen=$(status_seen_offset "$state" "$task")
     [ "$presented" -gt "$seen" ] || continue
-    ident=$(_fm_open_decisions_file_ident "$f") || return 1
-    mark_status_seen "$state" "$task" "$presented" "$ident" || return 1
+    if ! ident=$(_fm_open_decisions_file_ident "$f") \
+      || ! mark_status_seen "$state" "$task" "$presented" "$ident"; then
+      log "presented status seed skipped for $task: could not record its position"
+    fi
   done
   tmp="$marker.tmp.$$"
   printf '%s\n' "$(_now)" > "$tmp" && mv -f "$tmp" "$marker"
@@ -715,9 +723,22 @@ fm_daemon_primary_harness() {
   printf '%s' "$FM_DAEMON_PRIMARY_HARNESS"
 }
 
-pane_is_busy() {  # <target> [backend]
-  local target=$1 backend=${2:-tmux} native tail40 harness
-  harness=$(fm_daemon_primary_harness)
+# A harness-native background process can lose its Claude ancestry or
+# marker. Herdr's agent identity belongs to the target pane, so it is the
+# authoritative harness for both the busy guard and the delivery choice.
+fm_supervisor_target_harness() {  # <target> <backend>
+  local identity
+  if [ "$2" = herdr ]; then
+    identity=$(fm_backend_herdr_composer_identity "$1" 2>/dev/null) || identity=
+    identity=${identity%%$'\t'*}
+    [ -z "$identity" ] || { printf '%s' "$identity"; return 0; }
+  fi
+  fm_daemon_primary_harness
+}
+
+pane_is_busy() {  # <target> [backend] [harness]
+  local target=$1 backend=${2:-tmux} harness=${3:-} native tail40
+  [ -n "$harness" ] || harness=$(fm_daemon_primary_harness)
   native=$(fm_backend_busy_state "$backend" "$target" 2>/dev/null)
   case "$native" in
     busy) return 0 ;;
@@ -1459,8 +1480,10 @@ inject_msg() {  # <message> [state]
   backend="${FM_SUPERVISOR_BACKEND:-tmux}"
   fm_backend_target_exists "$backend" "$target" \
     || { INJECT_LAST_FAILURE="supervisor target $target not found on $backend"; return 1; }
+  local target_harness
+  target_harness=$(fm_supervisor_target_harness "$target" "$backend")
   # (3) Busy-guard: never inject into an in-use supervisor pane.
-  if pane_is_busy "$target" "$backend"; then
+  if pane_is_busy "$target" "$backend" "$target_harness"; then
     INJECT_LAST_FAILURE="deferred: supervisor pane busy (agent mid-turn)"
     log "inject $INJECT_LAST_FAILURE"
     return 1
@@ -1484,17 +1507,8 @@ inject_msg() {  # <message> [state]
   #      the owner's record-backed doorbell instead of the typed envelope, so
   #      the away-mode return check can still tell this escalation from the
   #      captain. The record is written only once every guard has passed.
-  # A harness-native background process can lose its Claude ancestry or
-  # marker. Herdr's agent identity belongs to the target pane and is the
-  # authoritative delivery choice here. Never type a long digest into a
-  # Claude composer because Herdr can leave only a suffix of that paste.
-  local target_harness
-  target_harness=$(fm_daemon_primary_harness)
-  if [ "$backend" = herdr ]; then
-    local native_identity
-    native_identity=$(fm_backend_herdr_composer_identity "$target" 2>/dev/null) || native_identity=
-    [ -z "${native_identity%%$'\t'*}" ] || target_harness=${native_identity%%$'\t'*}
-  fi
+  # Never type a long digest into a Claude composer because Herdr can leave
+  # only a suffix of that paste.
   if fm_operational_harness_needs_record "$target_harness"; then
     if ! fm_operational_record_write "$state" away-supervisor "$body" msg; then
       INJECT_LAST_FAILURE="could not publish the away-supervisor record under $state"
@@ -1890,13 +1904,8 @@ fm_super_main() {
   local afk_status="off"
   afk_active "$STATE" && afk_status="on"
   log "daemon starting (pid $$); target=$TARGET; target_source=$target_source; backend=$BACKEND; backend_source=$backend_source; afk=$afk_status; inject_skip='${FM_INJECT_SKIP:-$INJECT_SKIP_DEFAULT}'; stale_escalate=${FM_STALE_ESCALATE_SECS:-$STALE_ESCALATE_SECS_DEFAULT}s; batch=${FM_ESCALATE_BATCH_SECS:-$ESCALATE_BATCH_SECS_DEFAULT}s"
-  if ! seed_presented_status_at_start "$STATE"; then
-    echo "error: could not seed away-mode status positions from presented status" >&2
-    log "startup failed: presented status seed"
-    fm_lock_release "$LOCK" 2>/dev/null || true
-    rm -f "$PIDFILE" 2>/dev/null || true
-    exit 1
-  fi
+  seed_presented_status_at_start "$STATE" \
+    || log "presented status seed: could not write the session marker"
   migrate_watcher_pause_markers "$STATE"
 
   # --- shutdown: flush buffered escalations, reap child, release lock -------

@@ -11,7 +11,7 @@ set -u
 fm_live_gate opt-in FM_AFK_INJECT_CLAUDE_LIVE herdr jq claude
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-HERDR_LAB_HELPER='/Users/agardner/Documents/firstmate/bin/fm-herdr-lab.sh'
+HERDR_LAB_HELPER=${HERDR_LAB_HELPER:-$ROOT/bin/fm-herdr-lab.sh}
 [ -x "$HERDR_LAB_HELPER" ] || { echo "not ok - missing guarded Herdr lab helper" >&2; exit 1; }
 HERDR_LAB_SESSION=$("$HERDR_LAB_HELPER" name fm-afk-inject-flicker)
 ORIGINAL_PATH=$PATH
