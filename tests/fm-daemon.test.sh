@@ -627,7 +627,7 @@ test_fresh_away_entry_skips_previously_presented_status() {
   pass "fresh away entries inherit presented status; restarts and new appends keep distinct positions"
 }
 
-test_seed_failure_for_one_task_keeps_other_tasks_and_startup() {
+test_seed_duplicate_cursor_row_skips_only_that_task() {
   local dir state good bad good_end bad_ident good_ident log_file
   dir=$(make_supercase seed-one-task-fails)
   state="$dir/state"
@@ -651,9 +651,29 @@ test_seed_failure_for_one_task_keeps_other_tasks_and_startup() {
     || fail "the malformed task moved its seen position"
   [ -e "$state/.subsuper-session-seeded" ] \
     || fail "the session marker was not written after one task failed"
-  grep -q 'presented status seed skipped for bad' "$log_file" \
-    || fail "the failed task seed was not logged"
-  pass "a malformed presentation cursor row skips only that task; other tasks seed and startup continues"
+  grep -q 'presented status seed skipped for bad: malformed or unreadable .*/.status-presentation-cursor' "$log_file" \
+    || fail "the failed task seed was not logged with the cursor manifest"
+  pass "a duplicate presentation cursor row skips only that task; other tasks seed and startup continues"
+}
+
+test_seed_malformed_cursor_manifest_logs_once_and_starts() {
+  local dir state log_file
+  dir=$(make_supercase seed-malformed-manifest)
+  state="$dir/state"
+  printf 'done: first old completion\n' > "$state/first.status"
+  printf 'done: second old completion\n' > "$state/second.status"
+  printf 'first\tID\tx\t0\n' > "$state/.status-presentation-cursor"
+  log_file="$dir/daemon.log"
+
+  LOG="$log_file" seed_presented_status_at_start "$state" \
+    || fail "a malformed presentation cursor manifest stopped away startup"
+  [ -e "$state/.subsuper-session-seeded" ] \
+    || fail "the session marker was not written after a malformed manifest"
+  [ "$(grep -c 'presented status seed' "$log_file")" = 1 ] \
+    || fail "a malformed manifest was not logged exactly once: $(cat "$log_file")"
+  grep -q 'skipped for first second: malformed or unreadable .*/.status-presentation-cursor' "$log_file" \
+    || fail "the malformed manifest log did not name the tasks and the manifest"
+  pass "a malformed presentation cursor manifest is logged once and startup continues"
 }
 
 test_herdr_claude_busy_guard_uses_target_identity_when_daemon_identity_is_unknown() {
@@ -3321,7 +3341,8 @@ test_permission_recovery_reclassifies_catchall_status
 test_permanent_classification_failure_is_reported_and_acknowledged
 test_catchall_scan_surfaces_a_masked_event
 test_fresh_away_entry_skips_previously_presented_status
-test_seed_failure_for_one_task_keeps_other_tasks_and_startup
+test_seed_duplicate_cursor_row_skips_only_that_task
+test_seed_malformed_cursor_manifest_logs_once_and_starts
 test_classify_stale_dedup_against_signal
 test_afk_nonterminal_working_merged_keeps_wedge_aging
 test_afk_genuine_done_still_terminal_stale

@@ -637,18 +637,20 @@ status_seen_offset() {  # <state> <task>
 # The daemon's own marker then owns later progress, including an undelivered
 # buffer across a daemon restart. A new task or append after this snapshot has
 # no presented offset and remains visible to the catch-all scan.
-# A task that cannot be seeded is logged and keeps its own position, so the
-# scan may repeat its lines but away supervision still starts. The marker is
-# written regardless, so the same failure does not repeat on each restart.
+# A task that cannot be seeded keeps its own position, so the scan may repeat
+# its lines but away supervision still starts. A duplicate cursor row skips only
+# that task; a structurally malformed or unreadable cursor manifest skips
+# seeding for every task and is logged once. The marker is written regardless,
+# so the same failure does not repeat on each restart.
 seed_presented_status_at_start() {  # <state>
-  local state=$1 f task presented seen ident marker tmp
+  local state=$1 f task presented seen ident marker tmp unseeded=
   marker="$state/.subsuper-session-seeded"
   [ -e "$marker" ] && return 0
   for f in "$state"/*.status; do
     [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || continue
     task=${f##*/}; task=${task%.status}
     if ! presented=$(status_presentation_cursor_offset "$f"); then
-      log "presented status seed skipped for $task: unreadable presentation cursor"
+      unseeded="$unseeded $task"
       continue
     fi
     seen=$(status_seen_offset "$state" "$task")
@@ -658,6 +660,8 @@ seed_presented_status_at_start() {  # <state>
       log "presented status seed skipped for $task: could not record its position"
     fi
   done
+  [ -z "$unseeded" ] \
+    || log "error: presented status seed skipped for${unseeded}: malformed or unreadable $state/.status-presentation-cursor"
   tmp="$marker.tmp.$$"
   printf '%s\n' "$(_now)" > "$tmp" && mv -f "$tmp" "$marker"
 }
