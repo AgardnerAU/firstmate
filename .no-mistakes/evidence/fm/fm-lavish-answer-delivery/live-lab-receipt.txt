@@ -1,0 +1,24 @@
+$ fm-captain-hold.sh hold (5 calls), answer lab-done with "south"
+lab-pick
+lab-question
+lab-words
+lab-done
+answered: lab-done
+
+$ fm-procevent.sh register lavish + fm-captain-hold.sh bind + fm-procevent.sh start
+registered: lavish-1ab0000000000001 (lavish)
+bound: lavish-1ab0000000000001 -> (any)
+reconciles-fed: lavish-1ab0000000000001
+receipt-staged: lavish-1ab0000000000001
+not-autohandled: lavish-1ab0000000000001 (left for the handler; still unacknowledged)
+captured: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.NAW0NU/state/procevent-inbox/lavish-1ab0000000000001.1.result
+
+--- staged receipt (what the board shows the captain):
+Firstmate received this at 16:43. Recorded: Board pick (north); Credential route (your own words). Still open: Export tab (your comment). Already recorded earlier, this answer not applied: Closed call. Firstmate will follow up.
+--- task states:
+lab-pick:   state: done   held: no 
+lab-question:   state: queued   held: yes 
+lab-words:   state: done   held: no 
+lab-done:   state: done   held: no 
+--- wake queue:
+1790498598	1	check	procevent:lavish-1ab0000000000001:1	check: procevent lavish lavish-1ab0000000000001 1
