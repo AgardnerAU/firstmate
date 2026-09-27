@@ -520,10 +520,10 @@ fm_lock_remove_stray_owner_link() {
   fi
 }
 
-# Depth bound for the reclaim-mutex chain below. Healthy operation reaches
-# depth 1: a second level exists only while a crashed reclaimer's own mutex is
-# being reclaimed, so the spare levels are pure crash headroom and the marker
-# path can never grow by more than this many suffixes.
+# Depth bound for the reclaim-mutex chain below. Current code creates only
+# depth 1: fm_lock_try_acquire_steal_mutex never nests, and only reaps a
+# leftover second level. The spare levels are headroom for markers already on
+# disk, and the marker path can never grow by more than this many suffixes.
 FM_LOCK_STEAL_MAX_DEPTH=4
 
 # fm_lock_steal_path <lockdir>: single owner of a lock's reclaim-mutex path,
