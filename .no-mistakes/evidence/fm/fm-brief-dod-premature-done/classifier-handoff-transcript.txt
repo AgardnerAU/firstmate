@@ -1,0 +1,8 @@
+WAKE     FM_CAPTAIN_RE=<default>    working [at=1758528000]: implemented, ready for the pipeline
+WAKE     FM_CAPTAIN_RE=<default>    working: implemented, ready for the pipeline
+absorb   FM_CAPTAIN_RE=<default>    working: implemented, ready for the pipeline review
+absorb   FM_CAPTAIN_RE=<default>    working: ordinary progress
+absorb   FM_CAPTAIN_RE=<default>    working: rebased onto merged #76
+WAKE     FM_CAPTAIN_RE=<default>    done [at=1758528000]: PR https://github.com/o/r/pull/1 checks green
+WAKE     FM_CAPTAIN_RE=custom-verb: working [at=1758528000]: implemented, ready for the pipeline
+absorb   FM_CAPTAIN_RE=custom-verb: working: ordinary progress
