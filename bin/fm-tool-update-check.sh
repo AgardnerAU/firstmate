@@ -434,8 +434,8 @@ COMMAND_VERSION=
 command_findings() {
   local name=$1 command_name=$2 args_joined=$3 announce=$4 announce_args=$5 published=$6
   local hit out version matched announce_out status matched_line announced_version
-  local resolved_path='' resolved_version='' resolved_out='' resolved_status=0
-  local best_path='' best_version='' unreadable='' hits=''
+  local resolved_path='' resolved_version='' resolved_out=''
+  local best_path='' best_version='' best_status=0 unreadable='' hits=''
   COMMAND_VERSION=
 
   # This tool's announcement source is dead if its pattern cannot be used, which
@@ -465,7 +465,6 @@ command_findings() {
       resolved_path=$hit
       resolved_version=$version
       resolved_out=$out
-      resolved_status=$status
     fi
     if [ -z "$version" ]; then
       [ -n "$unreadable" ] || unreadable=$hit
@@ -474,6 +473,7 @@ command_findings() {
     if [ -z "$best_version" ] || version_newer "$version" "$best_version"; then
       best_version=$version
       best_path=$hit
+      best_status=$status
     fi
   done <<EOF
 $hits
@@ -530,10 +530,10 @@ EOF
     return 0
   fi
 
-  if [ "$resolved_status" -eq 0 ]; then
-    COMMAND_VERSION=$resolved_version
+  if [ "$best_status" -eq 0 ]; then
+    COMMAND_VERSION=$best_version
   elif [ -n "$published" ]; then
-    emit "$name check failed: $resolved_path exited $resolved_status, so its version was not compared with the published release"
+    emit "$name check failed: $best_path exited $best_status, so its version was not compared with the published release"
   fi
 
   if [ -n "$best_version" ] && [ "$best_path" != "$resolved_path" ] \

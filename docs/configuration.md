@@ -1338,7 +1338,7 @@ A `published` object selects one public release source:
 - `{"source":"github","repo":"herdrdev/herdr"}` reads the `tag_name` of GitHub's latest published release for that public repository; draft releases, prereleases, and tags without a release are not selected.
 
 `published` accepts only the fields shown for its source, and requires a package name or `owner/repo`, without a URL, query, or credentials.
-It compares that source with the version from the command that `PATH` resolves, and reports an update only when the published version is numerically newer.
+It compares that source with the newest installed copy found, and reports an update only when the published version is numerically newer; a published version already installed is reported only as `update not in effect`.
 For this comparison, the installed version is the first dotted number in the output of a version command that exits successfully, so `0.1.49`, `v0.8.2`, and `herdr 0.8.2` work; a version command that fails is reported as a check failure.
 The published version must be a dotted numeric version with an optional leading `v`; other formats, including prerelease suffixes, produce a check failure.
 Components are compared numerically, with leading zeroes and missing trailing zero components ignored.
