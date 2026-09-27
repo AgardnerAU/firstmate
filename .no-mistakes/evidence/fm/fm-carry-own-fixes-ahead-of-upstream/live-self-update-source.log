@@ -1,0 +1,86 @@
+== setup: primary=84c0af7; carry = upstream main + carried fix (PR-5435-like); upstream then moves on
+carry=c517816 upstream-main=59004ad
+
+== S2 adversarial: malformed / unknown remote / bad branch refuse, nothing moves
+-- config/self-update-source = 'nosuchremote carry'
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+error: $LAB/config/self-update-source: remote 'nosuchremote' does not exist in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-selfupd.6nUUd7/primary; fix it or remove it to update from origin
+(exit 1)
+primary=84c0af7 sm1=84c0af7
+-- config/self-update-source = 'fork'
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+error: $LAB/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+(exit 1)
+primary=84c0af7 sm1=84c0af7
+-- config/self-update-source = 'fork carry extra'
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+error: $LAB/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+(exit 1)
+primary=84c0af7 sm1=84c0af7
+-- config/self-update-source = 'fork bad..branch'
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+error: $LAB/config/self-update-source: invalid branch name 'bad..branch'; fix it or remove it to update from origin
+(exit 1)
+primary=84c0af7 sm1=84c0af7
+-- config/self-update-source = '-x carry'
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+error: $LAB/config/self-update-source: invalid remote name '-x'; fix it or remove it to update from origin
+(exit 1)
+primary=84c0af7 sm1=84c0af7
+
+== S1: config 'fork carry' -> primary and standalone secondmate land on carry, not upstream main
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: updated 84c0af7..c517816 (instructions changed: AGENTS.md)
+no watches registered
+secondmate sm1: updated 84c0af7..c517816 (instructions changed: AGENTS.md)
+reread-firstmate: yes
+restart-secondmates: none
+nudge-secondmates: none
+(exit 0)
+primary=c517816 branch=main sm1=c517816 (expect c517816)
+primary origin/main=84c0af7 (origin ref untouched by carry update; still tracks upstream)
+primary remote.origin.url=$W/upstream.git
+
+== S3: carry refreshed on demand (upstream main merged + fix) fast-forwards
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: updated c517816..4101beb
+no watches registered
+secondmate sm1: updated c517816..4101beb
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+(exit 0)
+primary=4101beb sm1=4101beb (expect 4101beb)
+
+== S4 adversarial: carry force-rewritten -> skipped, never forced
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+self-update source: fork carry (config/self-update-source)
+firstmate: skipped: diverged from refs/remotes/fork/carry
+secondmate sm1: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+(exit 0)
+primary=4101beb sm1=4101beb (expect unchanged 4101beb)
+
+== S5: file removed -> origin path used; primary ahead of origin reported diverged, not moved
+$ FM_HOME=$LAB primary/bin/fm-update.sh
+firstmate: skipped: diverged from origin/main
+secondmate sm1: skipped: diverged from origin/main; reconciliation required (record: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.McQTLK/state/.secondmate-update-reconcile/sm1.pending)
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+(exit 0)
+primary=4101beb (expect unchanged 4101beb)
+
+== S6: fresh home with no file behaves exactly as origin path
+firstmate: updated 84c0af7..5e1d5aa
+no watches registered
+secondmate sm1: skipped: diverged from origin/main; reconciliation required (record: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.McQTLK/state/.secondmate-update-reconcile/sm1.pending)
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+primary2=5e1d5aa (expect upstream main 5e1d5aa)
+== lab removed
