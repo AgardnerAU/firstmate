@@ -1,0 +1,28 @@
+$ fm-control.sh t1 exit   (ordinary exit, no hold declared)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr
+stopped t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/wt-t1
+rc=0
+$ agent state
+dead
+
+$ fm-crew-state.sh t1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+
+$ fm-control.sh t1 stand-down   (dead agent, no paused:/captain-held: declaration)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr
+error: task t1's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/t1.status, then re-run stand-down
+rc=1
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/t1.worker-state: No such file or directory
+
+$ echo "paused: captain holding t1 for upstream review" >> state/t1.status
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/wt-t1
+rc=0
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down

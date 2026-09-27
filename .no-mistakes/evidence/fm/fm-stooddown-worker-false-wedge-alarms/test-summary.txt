@@ -1,0 +1,6 @@
+fm-send-inbox rc=0
+fm-task-inbox rc=0
+fm-contributions rc=0
+fm-control rc=0
+fm-crew-state rc=0
+fm-control-relaunch rc=0

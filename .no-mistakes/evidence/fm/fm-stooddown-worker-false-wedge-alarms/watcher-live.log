@@ -1,0 +1,31 @@
+# real bin/fm-watch.sh against lab home; endpoint fmses:fm-t1 is a stood-down shell (agent-state dead), record state=stood-down
+$ watcher output after 12s (held):
+signal: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/t1.status
+$ ls state/.hash-* state/.wake-queue
+(eval):6: no matches found: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/.hash-*
+
+# second run: status signal already seen, wake queue moved aside; poll every 1s for 15s
+watcher after 15s: exited
+$ watcher output (held):
+check: rearm-resurface
+$ pane-hash files for fm-t1:
+(none)
+$ wake queue:
+cat: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/.wake-queue: No such file or directory
+
+# third run: poll every 1s for 20s (the earlier run exited on a startup re-arm, not on a stale wake)
+watcher after 20s: exited
+$ watcher output (held):
+check: rearm-resurface
+$ pane-hash files for fm-t1:
+(none)
+$ wake queue:
+cat: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/.wake-queue: No such file or directory
+
+# fourth run: FM_WATCH_HANDLING_SUCCESSOR=1 so startup does not re-announce downtime; poll every 1s for 20s
+watcher after 20s: running
+$ watcher output (held):
+$ pane-hash files for fm-t1:
+(none)
+$ wake queue:
+cat: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr/state/.wake-queue: No such file or directory

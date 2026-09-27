@@ -1,0 +1,27 @@
+$ fm-crew-state.sh (before)
+usage: fm-crew-state.sh <id>
+rc=2
+
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr
+error: exit-delivered t1 interrupt=not-needed exit-command=delivered agent-state=missing exit=unconfirmed; the agent did not stop within 30s
+error: task t1's stand-down exit reported ''; refusing to publish an intentional no-worker state
+rc=1
+
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=standing-down
+
+$ worker pane foreground
+zsh
+
+$ fm-crew-state.sh (after)
+usage: fm-crew-state.sh <id>
+rc=2
+
+$ fm-control.sh t1 stand-down (repeat)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.2bspgr
+error: task t1's interrupted stand-down reads 'missing'; it remains under ordinary supervision until the endpoint can be reconciled
+rc=1
