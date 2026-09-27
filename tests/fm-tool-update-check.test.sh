@@ -967,7 +967,7 @@ test_published_dedupe_and_composition() {
   fresh="$home/fresh"
   out="$home/out.txt"
   make_release_transport "$dir"
-  make_copy "$dir" "$TOOL" 'herdr 0.8.0 (update to 0.8.2)'
+  make_copy "$dir" "$TOOL" 'herdr 0.8.0 (update to 0.8.4)'
   make_copy "$fresh" "$TOOL" 'herdr 0.8.2'
   write_release_config "$home" herdr npm '@scope/tool'
   jq '.tools[0] += {announce_pattern:"update to [0-9.]+",git:{repo:"/fm-absent-release-fixture"}}' "$home/config/watched-tools.json" > "$home/config-next"
@@ -976,7 +976,7 @@ test_published_dedupe_and_composition() {
   path=$(fixture_path "$dir:$fresh")
   run_check "$home" "$path" "$out" FM_RELEASE_RESPONSE="$home/response" FM_RELEASE_LOG="$home/http.log"
   assert_contains "$(cat "$out")" 'update not in effect:' "published source replaced PATH skew"
-  assert_contains "$(cat "$out")" 'update available: update to 0.8.2' "published source replaced the announcement"
+  assert_contains "$(cat "$out")" 'update available: update to 0.8.4' "published source replaced the announcement"
   assert_contains "$(cat "$out")" 'update available: installed 0.8.0, published 0.8.2' "published source did not compare the resolved copy"
   assert_contains "$(cat "$out")" 'is not a directory' "published source replaced the git probe"
   assert_grep 'https://registry.npmjs.org/%40scope%2Ftool/latest' "$home/http.log" "scoped npm package was not encoded"
