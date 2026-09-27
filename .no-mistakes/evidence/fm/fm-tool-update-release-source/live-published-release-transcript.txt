@@ -1,0 +1,26 @@
+== S1: example registry entries (herdr github, tasks-axi npm, gnhf npm), installed 0.0.1 ==
+{"name":"herdr","command":"herdr","version_args":["--version"],"published":{"source":"github","repo":"herdrdev/herdr"}}
+{"name":"tasks-axi","command":"tasks-axi","published":{"source":"npm","package":"tasks-axi"}}
+{"name":"gnhf","command":"gnhf","published":{"source":"npm","package":"gnhf"}}
+tool updates: herdr update available: installed 0.0.1, published 0.9.1 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.0.1, published 0.2.6 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.0.1, published 0.1.50 at https://registry.npmjs.org/gnhf/latest
+[exit=0]
+== S2: installed far ahead (99.0.0) -> expect silence ==
+[exit=0]
+== S3: learn real published versions from S1 output, then install exactly those -> expect silence ==
+published: herdr=0.9.1 tasks-axi=0.2.6 gnhf=0.1.50
+[exit=0]
+== S4 (adversarial, #5786 rule): PATH resolves 0.0.1, newer copy at published 0.1.50 also installed -> only 'not in effect' ==
+tool updates: gnhf update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-pub.TY6oY9/old/gnhf but 0.1.50 is installed at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-pub.TY6oY9/new/gnhf
+[exit=0]
+== S5 (adversarial): installed command exits non-zero -> published comparison refused with check failure ==
+tool updates: gnhf check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-pub.TY6oY9/old/gnhf exited 3, so its version was not compared with the published release
+[exit=0]
+== S6 (adversarial): nonexistent npm package / github repo -> per-tool check failure, sweep continues ==
+tool updates: ghost check failed: published source https://api.github.com/repos/kunchenguid/fm-no-such-repo-zz9/releases/latest could not be reached or read (exit 56); ghost-npm check failed: published source https://registry.npmjs.org/fm-no-such-pkg-zz9-qq/latest could not be reached or read (exit 56); gnhf update available: installed 0.0.1, published 0.1.50 at https://registry.npmjs.org/gnhf/latest
+[exit=0]
+== S7 (adversarial): malformed published entry refuses whole registry ==
+tool updates: watched tool registry: tool bad published.repo must be a GitHub owner/repo
+[exit=0]
+== S8: entry without published: non-zero-exit probe still reports version (PATH skew) and never touches network ==
+tool updates: gnhf update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-pub.TY6oY9/old/gnhf but 0.0.5 is installed at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live-pub.TY6oY9/new/gnhf
+[exit=0]
