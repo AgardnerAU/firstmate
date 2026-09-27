@@ -477,9 +477,13 @@ test_no_mistakes_hands_off_the_implementation_commit_without_done() {
 
   # A PR-delivering mode is never complete at a commit. local-only is excluded
   # deliberately: its terminal condition really is the committed branch.
-  for mode in no-mistakes direct-PR; do
-    id="brief-premature-$mode"
-    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1 \
+  for mode in no-mistakes direct-PR direct-PR:gerrit; do
+    id="brief-premature-${mode/:/-}"
+    case "$mode" in
+      *:gerrit) set -- --mode "${mode%%:*}" --forge gerrit ;;
+      *) set -- --mode "$mode" ;;
+    esac
+    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj "$@" >/dev/null 2>&1 \
       || fail "$mode: scaffold should exit 0"
     assert_present "$home/data/$id/brief.md" "$mode: brief was not scaffolded"
     assert_no_grep "The task is complete only when committed on your branch" "$home/data/$id/brief.md" \

@@ -356,7 +356,6 @@ Ship branch: $branch
 Terminal condition: \`done [at=<epoch>]: PR {change url} published for review\`. A commit without a published change is not done.
 This task ships **direct-PR** to a Gerrit review server: you publish the change yourself, without the no-mistakes pipeline.
 Gerrit has no pull requests, so there is nothing to open; publishing creates the change.
-The task is complete only when committed on your branch.
 When it is implemented and committed, publish it.
 EOF
       fm_gerrit_publish_block
