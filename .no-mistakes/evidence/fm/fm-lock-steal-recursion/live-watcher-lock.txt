@@ -1,0 +1,30 @@
+## S1: first watcher arms on a fresh lab home
+watcher (lock holder) pid=38828 alive=yes lock-pid=38828
+.watch.lock
+.watch.lock.owner.ZIHlNa
+## S2: a second watcher reports the live holder and exits 0
+watcher: already running pid 38828
+rc=0
+## S3: holder killed -9, next watcher reclaims the dead-pid lock
+old holder alive=no
+dead lock-pid=38828
+new lock-pid= alive=n/a (watcher exited after acquiring)
+w2 output:
+check: rearm-resurface
+## S4 (adversarial): dead-pid lock plus dead nested reclaim-marker chain from an interrupted reclaim
+before:
+  .watch.lock pid=
+  .watch.lock.steal pid=68156
+  .watch.lock.steal.steal pid=68370
+  .watch.lock.steal.steal.steal pid=68550
+new lock-pid= alive=n/a (watcher exited after acquiring)
+w3 output:
+check: rearm-resurface
+after:
+.watch.lock.steal.steal.steal
+.watch.lock.steal.steal.steal.owner.rVAOFn
+## S5 (adversarial): lock creation refused by the environment (state dir read-only), no holder on disk
+watcher: already running
+rc=0
+after:
+(no marker lines above = no reclaim marker published)

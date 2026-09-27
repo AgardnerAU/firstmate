@@ -1,0 +1,11 @@
+## S4b (adversarial): dead-pid watch lock AND dead nested reclaim-marker chain (depths 1-3)
+  .watch.lock pid=24697 alive=no
+  .watch.lock.steal pid=24798 alive=no
+  .watch.lock.steal.steal pid=24904 alive=no
+  .watch.lock.steal.steal.steal pid=24984 alive=no
+watcher output:
+check: rearm-resurface
+watcher rc=0
+markers after:
+.watch.lock.steal.steal.steal
+.watch.lock.steal.steal.steal.owner.XWY1wj
