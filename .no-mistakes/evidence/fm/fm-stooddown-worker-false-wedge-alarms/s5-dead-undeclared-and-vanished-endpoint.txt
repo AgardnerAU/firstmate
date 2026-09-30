@@ -1,0 +1,32 @@
+## ordinary exit (not stand-down)
+stopped lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+lab zsh
+fm-lab91c427bfe522-worker zsh
+## crew-state after ordinary exit (absent worker, no declaration -> still a problem)
+state: unknown · source: pane · harness state unavailable (unknown missing)
+## $ fm-control lab91c427bfe522-worker stand-down on an already-dead, undeclared worker (must refuse)
+error: task lab91c427bfe522-worker's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.status, then re-run stand-down
+ rc=1
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory
+## $ fm-control lab91c427bfe522-worker repair-worker-state (dead endpoint, no record: must NOT create a hold)
+no-record agent-state=dead lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory
+## declare the hold, then stand-down
+stood-down lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+schema=1
+task_id=lab91c427bfe522-worker
+endpoint=firstmate:fm-lab91c427bfe522-worker
+state=stood-down
+## crew-state
+state: parked · source: worker-state · worker deliberately stood down
+## the endpoint vanishes (tmux window killed)
+lab zsh
+## crew-state (must be unknown and name the lost endpoint, not a healthy park)
+state: unknown · source: worker-state · stood down but its endpoint is gone: firstmate:fm-lab91c427bfe522-worker (relaunch cannot restore it in place)
+## fm-send to vanished endpoint (record must not be what refuses)
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+fm-send: doorbell not typed because the agent in firstmate:fm-lab91c427bfe522-worker has exited; the steer is durably recorded at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+ rc=

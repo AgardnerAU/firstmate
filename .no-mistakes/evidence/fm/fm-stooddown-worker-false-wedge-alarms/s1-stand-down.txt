@@ -1,0 +1,46 @@
+## before: pane process
+lab zsh
+fm-lab91c427bfe522-worker 2.1.285
+## crew-state before
+state: paused · source: status-log · waiting for gate file /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/home/data/lab91c427bfe522-worker/gate and resume message
+## $ fm-control lab91c427bfe522-worker stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+stood-down lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+$R bin/fm-control.sh $ID stand-down 2>&1  0.31s user 0.40s system 16% cpu 4.384 total
+ rc=0
+## record state/lab91c427bfe522-worker.worker-state
+-rw-------@ 1 agardner  staff  102 Oct  1 00:43 /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state
+schema=1
+task_id=lab91c427bfe522-worker
+endpoint=firstmate:fm-lab91c427bfe522-worker
+state=stood-down
+## after: pane process
+lab zsh
+fm-lab91c427bfe522-worker zsh
+## crew-state after
+state: parked · source: worker-state · worker deliberately stood down
+## $ fm-control lab91c427bfe522-worker stand-down (repeat)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+already-stood-down lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+## $ fm-send lab91c427bfe522-worker 'hello'
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task lab91c427bfe522-worker deliberately has no worker; relaunch it before sending an instruction
+ rc=1
+## inbox
+handled
+## $ fm-control lab91c427bfe522-worker repair-worker-state (dead endpoint, valid record)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+intact agent-state=dead lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+schema=1
+task_id=lab91c427bfe522-worker
+endpoint=firstmate:fm-lab91c427bfe522-worker
+state=stood-down

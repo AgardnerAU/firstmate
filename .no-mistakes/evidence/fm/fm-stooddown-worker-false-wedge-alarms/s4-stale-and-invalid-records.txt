@@ -1,0 +1,34 @@
+## plant a STALE stood-down record while the relaunched agent is alive
+lab zsh
+fm-lab91c427bfe522-worker 2.1.285
+## crew-state (must NOT report parked/worker-state)
+state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+## $ fm-control lab91c427bfe522-worker stand-down (must refuse: record claims no worker but agent alive)
+error: task lab91c427bfe522-worker is recorded as stood down but its agent is alive; refusing to hide a live worker from wedge detection (repair it with 'fm-control lab91c427bfe522-worker repair-worker-state')
+ rc=1
+## $ fm-control lab91c427bfe522-worker repair-worker-state (must clear toward supervision)
+warning: task lab91c427bfe522-worker declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory
+## repeat repair (no-op)
+no-record agent-state=alive lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+
+## plant an INVALID record (endpoint does not match the task) while the agent is alive
+## $ fm-control lab91c427bfe522-worker relaunch (must refuse BEFORE stopping the live agent)
+error: task lab91c427bfe522-worker has an invalid worker-state record; refusing to relaunch until it is reconciled with 'fm-control lab91c427bfe522-worker repair-worker-state'
+ rc=1
+## pane after refused relaunch (agent must still be alive)
+lab zsh
+fm-lab91c427bfe522-worker 2.1.285
+## $ fm-control lab91c427bfe522-worker stand-down with invalid record (must refuse)
+error: task lab91c427bfe522-worker has an invalid worker-state record; run 'fm-control lab91c427bfe522-worker repair-worker-state' to reconcile it against the endpoint before declaring a hold
+ rc=1
+## $ fm-control lab91c427bfe522-worker repair-worker-state
+warning: task lab91c427bfe522-worker had a worker-state record that no longer describes this task and endpoint; it was cleared and the task is back under ordinary supervision
+cleared-invalid agent-state=alive lab91c427bfe522-worker harness=claude backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory
+## crew-state
+state: paused · source: status-log · relaunched; waiting for gate file /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/home/data/lab91c427bfe522-worker/gate and resume message

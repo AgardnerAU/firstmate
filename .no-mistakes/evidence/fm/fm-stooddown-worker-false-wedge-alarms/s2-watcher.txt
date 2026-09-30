@@ -1,0 +1,7 @@
+## Live watcher (bin/fm-watch.sh, FM_POLL=2) against lab home; task lab91c427bfe522-worker stood down, pane shell only, last status 'working:' (not a declared wait)
+### A) with state/lab91c427bfe522-worker.worker-state (stood-down) present:
+Terminated: 15             sleep "$POLL"
+[watcher still blocking after 60s - no wake; stopped by test]
+### B) counterfactual: same dead pane with the record moved aside (an ordinary unexplained exit):
+stale: firstmate:fm-lab91c427bfe522-worker
+[watcher exited itself rc=0 after 7s]

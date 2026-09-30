@@ -1,0 +1,12 @@
+## before teardown
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state
+## $ fm-teardown lab91c427bfe522-worker
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+A new version of treehouse is available: v2.3.0 → v3.1.0
+Run "treehouse update" to update
+
+🌳 Worktree returned to pool.
+teardown lab91c427bfe522-worker complete (window firstmate:fm-lab91c427bfe522-worker, worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes)
+Backlog: lab91c427bfe522-worker is closed in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/home/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+## after
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory

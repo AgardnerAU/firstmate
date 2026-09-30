@@ -1,0 +1,20 @@
+## before: record + pane
+schema=1
+task_id=lab91c427bfe522-worker
+endpoint=firstmate:fm-lab91c427bfe522-worker
+state=stood-down
+lab zsh
+fm-lab91c427bfe522-worker zsh
+## $ fm-control lab91c427bfe522-worker relaunch --note 'resume after stand-down test'
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+relaunched lab91c427bfe522-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+ rc=0
+## record after relaunch
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmlab.b018sS/home/state/lab91c427bfe522-worker.worker-state: No such file or directory
+## pane after
+lab zsh
+fm-lab91c427bfe522-worker 2.1.285
+## crew-state after
+state: working · source: pane · harness busy (fm-spawn)

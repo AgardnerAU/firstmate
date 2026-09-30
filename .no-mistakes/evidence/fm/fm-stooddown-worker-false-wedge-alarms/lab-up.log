@@ -1,0 +1,5 @@
+lab: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS (tear down with: bin/fm-live-lab.sh down /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS)
+tree: 9c15ae1253538161595af709e4879d5eaa92a442 from /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3SK031QFBFA2ZMQ0GKVNZST
+spawned lab91c427bfe522-worker harness=claude kind=ship mode=local-only yolo=on window=firstmate:fm-lab91c427bfe522-worker worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmlab.b018sS/treehouse/.treehouse/notes-7dd104/1/notes
+fm-live-lab: cannot record lab process: missing or invalid PID ''
+exit=1
