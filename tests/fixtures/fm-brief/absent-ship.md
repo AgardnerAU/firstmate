@@ -38,10 +38,15 @@ If the top-level path is the primary checkout or not the worktree you were launc
    copies that URL from your line rather than assembling one.
    A mid-task `working:` line (including setup complete) is nonterminal: do not end the
    turn after it; continue the same stage until a defined `done:` gate under Definition of done.
-   Use `paused: {why}` - distinct from `blocked:` - ONLY when you are deliberately idling on a
-   known external wait you expect to clear on its own (an upstream release, a rate-limit reset, a scheduled window, or your own validation round):
-   firstmate then leaves your idle pane alone and rechecks it on a long
-   cadence instead of treating it as a possible wedge. Use `blocked:` when you are stuck and need help.
+   Use `paused: {why}` - distinct from `blocked:` - when deliberately waiting for work or an external condition expected to clear on its own, including your own validation round.
+   Before ending your turn with your own background shell or monitor still running, or before waiting on your own pipeline run or a long foreground command, append `paused [at=<epoch>]: {job and completion condition}` to the status file.
+   Name what you are waiting for and what will let you resume; do not repeat the declaration on every poll.
+   Do not declare active implementation or reasoning as a wait.
+   Firstmate may still raise one first-sight alert; the declared wait then uses the existing long recheck cadence instead of repeated possible-wedge alarms.
+   When you know when the wait clears, include `until <YYYY-MM-DDTHH:MMZ>` (UTC) for a recheck at that time.
+   Follow the resolution rule below when the wait clears, then resume the task.
+   Use `blocked:` when you are stuck and need help.
+
 5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
    append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
@@ -86,7 +91,7 @@ Ship branch: fm/absent-ship
 This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
 The task is complete only when committed on your branch.
 When it is implemented and committed, push your branch and open a PR with `gh-axi` that is ready for review, not a draft.
-Before you report done, read the PR back from the forge and confirm it is not a draft (`gh pr view <url> --json isDraft` must print false); if it is a draft, mark it ready with `gh-axi pr ready`.
+Before you report done, read the PR back from the forge and confirm it is not a draft (`gh-axi pr view <number>` must print `draft: no`, where <number> is the PR number from your PR URL); if it is a draft, mark it ready with `gh-axi pr ready <number>`.
 A draft cannot be merged, so a done report on one leaves the merge unasked.
 Then append `done [at=<epoch>]: PR {url}` to the status file and stop.
 That `done:` is accepted only when this copy's HEAD - your latest commit - is pushed to your PR branch; the check tests that commit, not merely that a branch moved.
