@@ -1,0 +1,94 @@
+lab home: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.RuEktg  (real tmux pane on private socket, head 80a1a5a8)
+earlier task's run id: 01M3SG0VPRABCDEFGHJKMNPQRS (created 23:48:07); task_started=1790786887 (00:48:07)
+
+== S1 refresh worker busy over an earlier task's passed run on the same branch+head ==
+
+### busy refresh worker
+$ fm-crew-state.sh refresh
+state: working · source: pane · harness busy (claude-hook) · run 01M3SG0VPRABCDEFGHJKMNPQRS predates this task: not attributed
+
+== S2 refresh worker idle, status log says it is resolving conflicts ==
+
+### idle refresh worker with status log
+$ fm-crew-state.sh refresh
+state: working · source: status-log · resolving merge conflicts · run 01M3SG0VPRABCDEFGHJKMNPQRS predates this task: not attributed
+
+== S2b legacy runs ledger route: earlier row only ==
+
+### coarse ledger, earlier row
+$ fm-crew-state.sh refresh
+state: working · source: status-log · resolving merge conflicts
+
+== S3 control: this task's own run created after it started ==
+
+### own run
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: run PR open (forge) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+== S4 relaunched task keeps its earlier-incarnation run (task_started carried) ==
+
+### relaunch
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: run PR open (forge) · run: 01M3SJWDCRABCDEFGHJKMNPQRS
+
+== S5 merged claim needs the recorded pr= identity checked against the forge ==
+
+### forge says PR 1 merged, no recorded pr=
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: run PR merge unconfirmed (no recorded PR identity) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+### recorded pr=2 (open), run PR is 1 (merged)
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: PR state unknown (run PR https://github.com/o/r/pull/1 differs from recorded PR https://github.com/o/r/pull/2) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+### recorded pr=1 merged on forge
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: recorded PR merged (forge) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+### recorded pr=1 open on forge (AGFloorPlanner 3000 shape)
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: recorded PR open (forge) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+== S6 newer worker status line vs a finished run ==
+
+### status written after run start
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: run PR open (forge) · status-log since run start: working: rebasing after upstream conflict · run: 01M3SJWDCRABCDEFGHJKMNPQRS
+
+### status written before run start
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed: run PR open (forge) · run: 01M3SJWDCRABCDEFGHJKMNPQRS
+
+== S7 deliberate abort vs failure ==
+
+### aborted by user
+$ fm-crew-state.sh refresh
+state: unknown · source: run-step · run cancelled: no verdict (deliberately aborted, not a failure)
+
+### superseded by new push
+$ fm-crew-state.sh refresh
+state: unknown · source: run-step · run cancelled: no verdict (superseded by new push)
+
+### genuine failure
+$ fm-crew-state.sh refresh
+state: failed · source: run-step · run failed
+
+== S8 Greptile-only checks pass / CI held at action_required: never green ==
+
+### run outcome checks-passed
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run reports CI checks passed (required checks not verified) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+### ci log: all CI checks passed (only Greptile Review reported)
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run ci log reports CI checks passed (required checks not verified; still monitoring for merge/close): https://github.com/o/r/pull/2
+
+### ci log: no CI checks reported (CI held at action_required)
+$ fm-crew-state.sh refresh
+state: working · source: run-step · ci running: no CI checks reported (waiting for checks, not green)
+
+### passed-with-override, no checks reported
+$ fm-crew-state.sh refresh
+state: done · source: run-step · run passed-with-override (approved exception, not green: live checks for https://github.com/o/r/pull/1: no checks reported): run PR open (forge) · run: 01M3SKGHXRABCDEFGHJKMNPQRS
+
+lab torn down on exit
