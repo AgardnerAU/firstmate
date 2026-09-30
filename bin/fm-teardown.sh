@@ -98,7 +98,10 @@
 # cleanup step, teardown verifies record exclusivity: no OTHER task record in
 # this home or any locally registered Firstmate home may name the same live path
 # in its worktree= or home=. One live path with two task records is the reuse
-# collision itself, whichever record is stale.
+# collision itself, whichever record is stale. The one exception is a slot whose
+# owner claim (below) names another task: this teardown is then records-only and
+# touches nothing under the slot, so the scan is skipped rather than stranding
+# the stale record and, with it, the claimant's own teardown.
 # That scan alone cannot prove THIS record is the current owner, because the task
 # that took the slot next may leave no record it can reach - its own worker may
 # have exited and its record been cleaned up, or it may live in a home this
@@ -115,12 +118,7 @@
 # never the other task's claim. Skipping the inspection discards nothing of this
 # task's: whatever unlanded work it had in that slot was already destroyed when
 # the pool handed the slot on, and its landed-work gate is proved from the
-# record instead (see the absent-worktree paragraph below). The claim is read
-# before the record scan, so this
-# holds even while another task's record also names the slot - the shape a live
-# task that took the slot leaves behind: a slot this cleanup never returns is not
-# endangered by a second record, and the scan still refuses whenever the claim
-# names this task or is absent, since either record may then be the stale one.
+# record instead (see the absent-worktree paragraph below).
 # A claim that cannot be read proves nothing either way and refuses; inspect or
 # repair the claim file at the printed path and re-run - never remove it, since
 # an absent claim proceeds and would return a slot that may be another task's. An
@@ -2439,6 +2437,12 @@ require_exclusive_worktree_slot_record() {
   local record_meta=$1 record_id=$2 record_state=$3 worktree=$4
   local slot state_dir other other_id field other_path other_slot
   slot=$(canonical_existing_dir "$worktree") || return 0
+  # A slot whose owner claim names another task was reassigned, so this record's
+  # teardown is records-only and touches nothing under it; another record naming
+  # the slot is then no hazard, and refusing would strand this stale record and
+  # block the claimant's own teardown behind it.
+  fm_treehouse_slot_owner_state "$slot" "$record_id"
+  [ "$FM_TREEHOUSE_SLOT_OWNER" != other ] || return 0
   collect_local_firstmate_states "$record_state" || return 1
   for state_dir in "${TREEHOUSE_OWNER_STATES[@]}"; do
     for other in "$state_dir"/*.meta; do
@@ -2472,11 +2476,11 @@ require_exclusive_task_worktree_slot() {
 # Positive slot ownership, read from the claim the task that took the slot wrote
 # into the slot itself (bin/fm-wake-lib.sh owns the claim and its states).
 #
-# The record scan above proves that no OTHER task record names this slot. It
-# cannot prove that THIS record is not the stale one, because the task that took
-# the slot next may leave no record this scan can reach: its own worker may have
-# exited and its record been cleaned up, or it may belong to a home this machine
-# does not register. The claim closes that gap from the other side - it names the
+# For a slot this task still claims, or one with no claim, the record scan above
+# proves that no OTHER task record names it. It cannot prove that THIS record is
+# not the stale one, because the task that took the slot next may leave no record
+# this scan can reach: its own worker may have exited and its record been cleaned
+# up, or it may belong to a home this machine does not register. The claim closes that gap from the other side - it names the
 # task that actually took the slot, and it is written under the same project lock
 # that allocates it - so a claim naming another task is proof the slot was
 # reassigned after this record was written.
@@ -3408,14 +3412,8 @@ remove_secondmate_registry_entry() {
 if [ -z "$WT" ]; then
   echo "warning: task $ID's record names no worktree, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
 fi
-# The claim is read first: a slot claimed by another task is never returned, so
-# a second record naming it is no hazard to that cleanup and the record scan -
-# which protects a slot teardown would return - applies only to a slot this
-# task still owns.
+require_exclusive_task_worktree_slot || exit 1
 require_owned_task_worktree_slot || exit 1
-if [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ]; then
-  require_exclusive_task_worktree_slot || exit 1
-fi
 
 validate_pr_poll_cleanup "$STATE" "$ID" || exit 1
 
