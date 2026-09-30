@@ -198,6 +198,7 @@ Each key is reported as follows:
 | Names no task, names a task that is not captain-held, or names a task already closed | Reported as `skipped:` and feeds nothing. |
 | A replay whose answer and requested close mode match the newest record | An idempotent `closed:`. |
 | A replay with a mode mismatch | Skipped. |
+| Resolves to a different task id (a legacy or migrated hold) | First reported as `resolved: <key> <task-id>`; the lines that follow name that task id. |
 
 The command exits nonzero when any key was skipped.
 `--source` is provenance text recorded in the durable decision, never a behavior switch, and the command carries no per-channel branch.

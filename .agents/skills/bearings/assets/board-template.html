@@ -345,7 +345,7 @@ a { color: inherit; text-decoration: none; }
         <span class="bb-dispatch__count" id="bb-dispatch-count">nothing picked</span>
         <span class="bb-queued" id="bb-dispatch-queued">
           <svg class="fm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          <span class="bb-queued__text">queued - not sent yet</span>
+          <span class="bb-queued__text">queued - use Send to deliver</span>
         </span>
         <button type="button" class="fm-btn fm-btn--sm fm-btn--gold" id="bb-dispatch-btn">Queue dispatch order</button>
       </div>
@@ -564,7 +564,7 @@ __FM_BEARINGS_BOARD_DATA__
     foot.appendChild(btn);
     var q = el("span", "bb-queued");
     q.innerHTML = CHECK_SVG;
-    q.appendChild(el("span", "bb-queued__text", "queued - not sent yet"));
+    q.appendChild(el("span", "bb-queued__text", "queued - use Send to deliver"));
     foot.appendChild(q);
     var answerLimit = el("span", "bb-limit");
     answerLimit.setAttribute("role", "alert");
@@ -640,7 +640,7 @@ __FM_BEARINGS_BOARD_DATA__
     var waiting = document.querySelectorAll(".is-queued:not(.is-sent)").length;
     sendBar.hidden = !document.querySelector(".is-queued");
     sendCount.textContent = waiting
-      ? waiting + (waiting === 1 ? " answer" : " answers") + " queued - not sent yet"
+      ? waiting + (waiting === 1 ? " answer" : " answers") + " queued - use Send to deliver"
       : "sent - watch the Lavish panel for firstmate's receipt";
     sendBtn.disabled = !waiting;
   }
@@ -648,7 +648,7 @@ __FM_BEARINGS_BOARD_DATA__
     node.classList.add("is-queued");
     node.classList.remove("is-sent");
     var text = node.querySelector(".bb-queued__text");
-    if (text) text.textContent = "queued - not sent yet";
+    if (text) text.textContent = "queued - use Send to deliver";
     refreshSendBar();
   }
   sendBtn.addEventListener("click", function () {

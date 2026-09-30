@@ -725,11 +725,12 @@ cmd_choice_rows() {
       };
     }
     if ($selection eq "receipt") {
-      my (%closed, %skipped);
+      my (%closed, %skipped, %resolved);
       if (defined $report && open my $rh, "<", $report) {
         while (my $line = <$rh>) {
           chomp $line;
-          if ($line =~ /\Aclosed: (\S+)\z/) { $closed{$1} = 1 }
+          if ($line =~ /\Aresolved: (\S+) (\S+)\z/) { $resolved{$1} = $2 }
+          elsif ($line =~ /\Aclosed: (\S+)\z/) { $closed{$1} = 1 }
           elsif ($line =~ /\A(?:skipped|refused): (\S+) \((.*)\)\z/) { $skipped{$1} = $2 }
         }
         close $rh;
@@ -755,8 +756,8 @@ cmd_choice_rows() {
           $follow = 1;
           next;
         }
-        my ($id) = grep { $_ eq $key || $_ =~ /-decision-\Q$key\E\z/ } sort keys %closed;
-        if (defined $id) {
+        my $id = defined $resolved{$key} ? $resolved{$key} : $key;
+        if ($closed{$id}) {
           my $what = length($choice->{selection}) ? $choice->{selection} : "your own words";
           if (length($choice->{selection}) && length($choice->{note})) {
             $what .= ", with your note";
@@ -765,13 +766,12 @@ cmd_choice_rows() {
           push @recorded, "$title ($what)";
           next;
         }
-        ($id) = grep { $_ eq $key || $_ =~ /-decision-\Q$key\E\z/ } sort keys %skipped;
         $follow = 1;
-        if (defined $id && $skipped{$id} eq "already closed") {
+        if (defined $skipped{$id} && $skipped{$id} eq "already closed") {
           push @unapplied, $title;
           next;
         }
-        if (defined $id && $skipped{$id} ne "no captain-held task with that id" && $skipped{$id} ne "absent") {
+        if (defined $skipped{$id} && $skipped{$id} ne "no captain-held task with that id" && $skipped{$id} ne "absent") {
           push @unrecorded, "$title (" . $short->($skipped{$id}) . ")";
         } else {
           push @sent, $title;

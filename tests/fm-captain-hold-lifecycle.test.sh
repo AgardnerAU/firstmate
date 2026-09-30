@@ -2222,6 +2222,8 @@ test_legacy_identities_keep_working() {
   out=$(printf 'fourth-choice\toption c\t\n' \
     | run_captain "$home" answers "$id" --source "legacy replay") \
     || fail "an identical pre-collapse keyed answer was not idempotent"
+  assert_contains "$out" "resolved: fourth-choice $id-decision-fourth-choice" \
+    "the intake did not report which task a legacy key resolved to"
   assert_contains "$out" "closed: $id-decision-fourth-choice" \
     "the pre-collapse keyed answer digest was treated as drift"
   out=$(printf '%s-decision-fourth-choice\toption c\t\n' "$id" \
@@ -2389,6 +2391,36 @@ SH
   assert_contains "$receipt" "Firstmate will follow up." \
     "a lone changed resend that was not applied got no follow-up: $receipt"
   pass "a note without a selection keeps its call open, and the receipt names recorded and open calls"
+}
+
+# A board key that names a hold migrated to Beads resolves to the migrated row,
+# and the intake reports that row's id. The receipt must read the intake's
+# `resolved:` line so the closed call reads as recorded, not merely sent.
+test_board_receipt_records_a_migrated_hold() {
+  local home sid result out receipt
+  home=$(make_home board-migrated-receipt)
+  sid=lavish-m1gra0000000f1e2
+  mkdir -p "$home/state/procevent"
+  result="$home/board-result.txt"
+  cat > "$result" <<'OUT'
+session:
+  status: feedback
+  session_ended: false
+prompts[2]{tag,text,prompt}:
+  "choice","Herald delete -> confirm","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"herald-github-delete\",\"selection\":\"confirm\",\"note\":\"\",\"intent\":\"answer\"}"
+  "choice","Herald archive -> keep","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"herald-archive\",\"selection\":\"keep\",\"note\":\"\",\"intent\":\"answer\"}"
+OUT
+  out=$(printf 'resolved: herald-github-delete fm-herald-github-delete\nclosed: fm-herald-github-delete\nresolved: herald-archive fm-herald-archive\nskipped: fm-herald-archive (already closed)\nanswers: closed=1 skipped=1\n' \
+    | run_lavish "$home" receipt "$sid" "$result") \
+    || fail "the receipt seam staged nothing for a migrated hold: $out"
+  receipt=$(cat "$home/state/procevent/.$sid.lavish-receipt" 2>/dev/null || true)
+  assert_contains "$receipt" "Recorded: Herald delete (confirm)." \
+    "a closed migrated hold did not read as recorded: $receipt"
+  assert_contains "$receipt" "Already recorded earlier, this answer not applied: Herald archive." \
+    "a skipped migrated hold was not matched to its reported id: $receipt"
+  assert_not_contains "$receipt" "Sent to firstmate" \
+    "a migrated hold the intake reported was left as merely sent: $receipt"
+  pass "the receipt matches a migrated hold through the id the intake reported"
 }
 
 # The intake is channel-agnostic, so chat must reach it the same way a captured
@@ -4161,6 +4193,7 @@ test_unbound_source_closes_no_hold
 test_legacy_identities_keep_working
 test_board_answer_reaches_the_keyed_answer_intake
 test_board_note_without_selection_keeps_the_call_open
+test_board_receipt_records_a_migrated_hold
 test_chat_channel_feeds_the_same_keyed_answer_intake
 test_origin_slug_validation_precedes_path_construction
 test_status_resolution_over_an_open_hold_is_signalled
