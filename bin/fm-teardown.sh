@@ -2483,8 +2483,8 @@ require_exclusive_task_worktree_slot() {
 #
 # A claim naming another task does not refuse: it means the slot is no longer
 # this task's, so the record's own cleanup proceeds and every slot step is
-# skipped (see the script header for why refusing would strand the record and
-# why skipping discards nothing). Returns TEARDOWN_SLOT_REASSIGNED_RC for that
+# skipped (see the script header for why skipping discards nothing and how the
+# landed-work gate is proved from the record instead). Returns TEARDOWN_SLOT_REASSIGNED_RC for that
 # state so each caller gates its slot steps on one determination; the claimant
 # stays in FM_TREEHOUSE_SLOT_OWNER_ID and FM_TREEHOUSE_SLOT_OWNER_HOME.
 #
