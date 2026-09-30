@@ -2255,6 +2255,9 @@ test_herdr_rebind_refuses_a_terminal_identity_the_create_did_not_return() {
     "a refused rebind recorded a terminal id it could not establish"
   [ ! -e "$dir/fake/launched-command" ] \
     || fail "a refused rebind launched an agent into the unverified pane"
+  # The pane id now names another terminal, so this spawn's own pane is gone
+  # and the refusal cleanup must leave the live one alone.
+  assert_not_contains "$log" "pane close" "a refused rebind closed a pane that reads back another terminal"
   pass "reclaim: a herdr rebind refuses to publish a record whose pane reads back another terminal than the create returned"
 }
 

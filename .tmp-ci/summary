@@ -1,9 +1,0 @@
-fm-backend exit=1
-fm-afk-launch exit=0
-fm-remote-secondmate-parent-binding exit=0
-fm-secondmate-sync exit=0
-fm-backend-herdr exit=0
-fm-control exit=0
-fm-remote-secondmate-trace-context exit=0
-fm-control-relaunch exit=1
-fm-session-start exit=0
