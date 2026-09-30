@@ -1,0 +1,6 @@
+t-nm: Delivery contract: mode=no-mistakes|Ship branch: fm/t-nm|Terminal condition: `done [at=<epoch>]: PR {url} checks gree
+t-dpr: Delivery contract: mode=direct-PR|Ship branch: fm/t-dpr|Terminal condition: `done [at=<epoch>]: PR {url}`. That is t
+t-lo: Delivery contract: mode=local-only|Ship branch: fm/t-lo|Terminal condition: `done [at=<epoch>]: ready in branch fm/t
+t-dpr-gerrit: Delivery contract: mode=direct-PR forge=gerrit shape=squash|Ship branch: fm/t-dpr-gerrit|Terminal condition: `done [at=<epoch>]: PR {change url} publ
+t-nm-gerrit: Delivery contract: mode=no-mistakes forge=gerrit shape=squas|Ship branch: fm/t-nm-gerrit|Terminal condition: `done [at=<epoch>]: PR {change url} publ
+t-scout: Terminal condition: `done [at=<epoch>]: {one-line conclusion|Write your findings to `/var/folders/41/64hrmnwx11q5lw3l9d7z|The report must stand alone: what you did, what you found, t

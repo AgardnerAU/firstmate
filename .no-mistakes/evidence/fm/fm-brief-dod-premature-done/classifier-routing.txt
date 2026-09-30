@@ -1,0 +1,10 @@
+FM_CAPTAIN_RE='' | working [at=1758528000]: implemented, ready for the pipeline => WAKE
+FM_CAPTAIN_RE='custom-verb:' | working [at=1758528000]: implemented, ready for the pipeline => WAKE
+FM_CAPTAIN_RE='' | working: implemented, ready for the pipeline review => absorb
+FM_CAPTAIN_RE='custom-verb:' | working: implemented, ready for the pipeline review => absorb
+FM_CAPTAIN_RE='' | working: ordinary progress => absorb
+FM_CAPTAIN_RE='custom-verb:' | working: ordinary progress => absorb
+FM_CAPTAIN_RE='' | working: rebased onto merged #76 => absorb
+FM_CAPTAIN_RE='custom-verb:' | working: rebased onto merged #76 => absorb
+FM_CAPTAIN_RE='' | done: PR https://x/pr/1 checks green => WAKE
+FM_CAPTAIN_RE='custom-verb:' | done: PR https://x/pr/1 checks green => absorb
