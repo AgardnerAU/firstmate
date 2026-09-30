@@ -1262,6 +1262,10 @@ test_windowless_legacy_record_with_gone_worktree_tears_down() {
   local case_dir out
   case_dir=$(make_case windowless-gone)
   write_windowless_legacy_meta "$case_dir" no-mistakes ship "$case_dir/missing-wt"
+  # With no copy of its own to inspect, the leftover proves its work landed from
+  # the record: here its recorded PR is merged.
+  add_gh_pr_merged_for_head "$case_dir" "$(git -C "$case_dir/wt" rev-parse HEAD)"
+  printf 'pr=https://github.com/example/repo/pull/7\n' >> "$case_dir/state/task-x1.meta"
   seed_backlog_in_flight "$case_dir"
 
   out=$(run_teardown "$case_dir") \
@@ -1281,6 +1285,8 @@ test_windowless_legacy_record_tears_down_with_the_legacy_flag() {
   local case_dir out
   case_dir=$(make_case windowless-flag)
   write_windowless_legacy_meta "$case_dir" no-mistakes ship "$case_dir/missing-wt"
+  add_gh_pr_merged_for_head "$case_dir" "$(git -C "$case_dir/wt" rev-parse HEAD)"
+  printf 'pr=https://github.com/example/repo/pull/7\n' >> "$case_dir/state/task-x1.meta"
   seed_backlog_in_flight "$case_dir"
 
   out=$(run_teardown "$case_dir" --legacy-record) \
@@ -1389,7 +1395,10 @@ test_windowless_leftover_retries_its_retained_legacy_stamp_without_the_flag() {
   local case_dir rc out
   case_dir=$(make_case windowless-retry)
   write_windowless_legacy_meta "$case_dir" no-mistakes ship "$case_dir/missing-wt"
-  printf '%s\n' 'pr=not-a-valid-url' >> "$case_dir/state/task-x1.meta"
+  # The recorded branch is on a remote, so the leftover's work is proven pushed
+  # without consulting the deliberately invalid pr= below.
+  add_fork_with_pushed_branch "$case_dir"
+  printf '%s\n' 'branch=fm/task-x1' 'pr=not-a-valid-url' >> "$case_dir/state/task-x1.meta"
   seed_backlog_in_flight "$case_dir"
   add_failing_truncate_perl "$case_dir"
 
@@ -2056,7 +2065,7 @@ test_absent_worktree_unpushed_branch_refuses_unless_forced() {
   set -e
 
   expect_code 1 "$rc" "absent-wt-unpushed: teardown should refuse unlanded branch commits"
-  assert_grep "REFUSED: task task-x1 has no worktree to inspect" "$case_dir/stderr" \
+  assert_grep "REFUSED: task task-x1 has no worktree of its own to inspect" "$case_dir/stderr" \
     "absent-wt-unpushed: the refusal should name the task"
   assert_grep "unlanded feature" "$case_dir/stderr" \
     "absent-wt-unpushed: the refusal should list the unpushed commit"

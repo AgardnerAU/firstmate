@@ -114,7 +114,9 @@
 # inspection of it, no branch or hook removal in it, no Treehouse return, and
 # never the other task's claim. Skipping the inspection discards nothing of this
 # task's: whatever unlanded work it had in that slot was already destroyed when
-# the pool handed the slot on. The claim is read before the record scan, so this
+# the pool handed the slot on, and its landed-work gate is proved from the
+# record instead (see the absent-worktree paragraph below). The claim is read
+# before the record scan, so this
 # holds even while another task's record also names the slot - the shape a live
 # task that took the slot leaves behind: a slot this cleanup never returns is not
 # endangered by a second record, and the scan still refuses whenever the claim
@@ -135,8 +137,10 @@
 # from an ambiguous identity: two or more worktree= lines still refuse. Every
 # step that would read or touch the copy is already skipped when no directory
 # is there, so teardown finishes only the task's own cleanup - endpoint, status,
-# records, checks, backlog. The landed-work gate stays in force for a ship that
-# names no worktree: it is proved from the record itself - every commit on the
+# records, checks, backlog. The landed-work gate stays in force for every ship
+# whose own copy is not inspected - one naming no worktree, one whose recorded
+# path is no directory, and one whose slot another task claims (above): it is
+# proved from the record itself - every commit on the
 # recorded branch= in the project repository is reachable from a remote-tracking
 # branch (a fork counts), or the recorded (or branch-discovered) PR is merged
 # and holds that branch's work, or the branch's content is already in the
@@ -1478,16 +1482,16 @@ remove_pr_poll_artifacts() {
     "$state_dir/$id.merge-authority" "$state_dir/$id.check-trust" || return 1
 }
 
-# Resolve the PR number for a worktree branch via gh-axi. Echoes the number on a
-# single match and returns 0; returns non-zero on no match or any lookup failure,
-# so the caller treats it as "no PR found" (fail-safe).
 # The repository and revision the landed-work proofs below inspect: the task's
-# own copy and its HEAD, or - for a record that names no worktree - the project
+# own copy and its HEAD, or - when that copy is not inspected - the project
 # repository and the recorded branch (validate_recorded_work_landed). An empty
 # revision means no local commit is left to prove.
 LANDED_REPO=$WT
 LANDED_REV=HEAD
 
+# Resolve the PR number for a worktree branch via gh-axi. Echoes the number on a
+# single match and returns 0; returns non-zero on no match or any lookup failure,
+# so the caller treats it as "no PR found" (fail-safe).
 pr_number_from_branch() {
   local branch=$1 out n
   [ -n "$branch" ] && [ "$branch" != HEAD ] || return 1
@@ -1964,8 +1968,9 @@ validate_worktree_teardown_safety() {
   fi
 }
 
-# The landed-work gate for a ship record that names no worktree, proved from the
-# record itself (see the header's absent-worktree paragraph).
+# The landed-work gate for a ship whose own copy is not inspected - none
+# recorded, no directory at the recorded path, or a slot another task claims -
+# proved from the record itself (see the header's absent-worktree paragraph).
 validate_recorded_work_landed() {
   local branch unpushed_raw unpushed=
   [ "$FORCE" != "--force" ] || return 0
@@ -1986,7 +1991,7 @@ validate_recorded_work_landed() {
     [ -n "$unpushed" ] || return 0
   fi
   work_is_landed "$branch" && return 0
-  echo "REFUSED: task $ID has no worktree to inspect, and its recorded work cannot be proven landed or pushed." >&2
+  echo "REFUSED: task $ID has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed." >&2
   if [ -z "$branch" ]; then
     echo "recorded branch: none" >&2
   elif [ -z "$LANDED_REV" ]; then
@@ -3527,7 +3532,7 @@ if teardown_owns_worktree && [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
       exit 1
     fi
   fi
-elif [ -z "$WT" ]; then
+elif ! teardown_owns_worktree || [ ! -d "$WT" ]; then
   validate_recorded_work_landed || exit 1
 fi
 

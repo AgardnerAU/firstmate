@@ -939,9 +939,11 @@ test_reassigned_pool_slot_finishes_own_cleanup_without_touching_the_slot() {
   rm -f "$dir/worktree/sentinel"
   [ -z "$(git -C "$dir/worktree" status --porcelain)" ] \
     || fail "clean-slot fixture is not clean: $(git -C "$dir/worktree" status --porcelain)"
+  fake_merged_pr "$dir"
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=firstmate:fm-$id" "endpoint_task_id=$id" \
-    "worktree=$dir/worktree" "project=$dir/project" "kind=ship"
+    "worktree=$dir/worktree" "project=$dir/project" "kind=ship" \
+    "pr=https://github.com/example/repo/pull/3035"
   claim_pool_slot "$dir" "$other" "$dir/other-home"
   ( cd "$dir/worktree" && exec sleep 30 ) &
   worker=$!
@@ -1129,9 +1131,11 @@ test_gone_worktree_retires_records_only() {
   # task's live worker and copy, which must stay exactly as they are.
   dir=$(make_case worktree-gone)
   mark_case_as_treehouse_pool "$dir"
+  fake_merged_pr "$dir"
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=firstmate:fm-$id" "endpoint_task_id=$id" \
-    "worktree=$dir/pool/2/project" "project=$dir/project" "kind=ship"
+    "worktree=$dir/pool/2/project" "project=$dir/project" "kind=ship" \
+    "pr=https://github.com/example/repo/pull/3035"
   fm_write_meta "$dir/home/state/$other.meta" \
     "window=firstmate:fm-$other" "endpoint_task_id=$other" \
     "worktree=$dir/worktree" "project=$dir/project" "kind=ship"
@@ -1152,11 +1156,11 @@ test_gone_worktree_retires_records_only() {
   kill "$worker" 2>/dev/null || true
   wait "$worker" 2>/dev/null || true
 
-  pass "fm-teardown: a task whose recorded worktree no longer exists retires records-only"
+  pass "fm-teardown: a landed task whose recorded worktree no longer exists retires records-only"
 }
 
 test_slot_held_by_another_live_task_retires_records_only() {
-  local dir id=stale-task other=live-task worker rc before
+  local dir id=stale-task other=live-task worker rc before blob tree
 
   # The five stranded records: the stale record and a live task's record both
   # name one slot, and the slot's owner claim - written when the live task
@@ -1165,9 +1169,21 @@ test_slot_held_by_another_live_task_retires_records_only() {
   # the pool return away from the live task's copy.
   dir=$(make_case slot-held-by-live-task)
   mark_case_as_treehouse_pool "$dir"
+  # The retiring task's own work lives on its recorded branch in the project
+  # repository, since its copy of the slot is gone with the reassignment.
+  git -C "$dir/project" branch fm/stale
+  blob=$(printf 'stale task work\n' | git -C "$dir/project" hash-object -w --stdin)
+  tree=$( { git -C "$dir/project" ls-tree fm/stale
+            printf '100644 blob %s\tstale-work\n' "$blob"; } | git -C "$dir/project" mktree)
+  git -C "$dir/project" update-ref refs/heads/fm/stale "$(
+    git -C "$dir/project" -c user.name=test -c user.email=test@example.invalid \
+      commit-tree -p fm/stale -m "stale task work" "$tree")"
+  # No PR exists for the branch, so the lookup finds nothing without the network.
+  printf '#!/usr/bin/env bash\nexit 1\n' > "$dir/fakebin/gh-axi"
+  chmod +x "$dir/fakebin/gh-axi"
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=firstmate:fm-$id" "endpoint_task_id=$id" \
-    "worktree=$dir/worktree" "project=$dir/project" "kind=ship"
+    "worktree=$dir/worktree" "project=$dir/project" "kind=ship" "branch=fm/stale"
   fm_write_meta "$dir/home/state/$other.meta" \
     "window=firstmate:fm-$other" "endpoint_task_id=$other" \
     "worktree=$dir/worktree" "project=$dir/project" "kind=ship"
@@ -1177,6 +1193,29 @@ test_slot_held_by_another_live_task_retires_records_only() {
   ( cd "$dir/worktree" && exec sleep 30 ) &
   worker=$!
 
+  # While the retiring task's branch holds a commit on no remote, its work is
+  # neither landed nor pushed, so the records-only cleanup refuses by name.
+  set +e
+  run_plain_case "$dir" "$id" > "$dir/stdout" 2> "$dir/stderr"
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] || fail "teardown retired a record whose branch holds unpushed commits"
+  assert_contains "$(cat "$dir/stderr")" "cannot be proven landed or pushed" \
+    "the refusal should say the recorded work is not proven landed or pushed"
+  assert_contains "$(cat "$dir/stderr")" "stale task work" \
+    "the refusal should list the unpushed commit"
+  assert_present "$dir/home/state/$id.meta" "the refusal removed the stale task's record"
+  ! grep -Fq "<kill-window>" "$dir/runtime.log" \
+    || fail "the refusal closed an endpoint: $(cat "$dir/runtime.log")"
+  kill -0 "$worker" 2>/dev/null || fail "the refusal killed the live task's worker"
+  [ "$(git -C "$dir/worktree" status --porcelain)" = "$before" ] \
+    || fail "the refusal changed the live task's copy"
+
+  # Once that branch is on a remote, the work is pushed and the record retires.
+  git init -q --bare "$dir/fork.git"
+  git -C "$dir/project" remote add fork "$dir/fork.git"
+  git -C "$dir/project" push -q fork fm/stale
+  : > "$dir/runtime.log"
   set +e
   run_plain_case "$dir" "$id" > "$dir/stdout" 2> "$dir/stderr"
   rc=$?
@@ -1212,7 +1251,7 @@ test_slot_held_by_another_live_task_retires_records_only() {
   assert_contains "$(cat "$dir/stderr")" "$other" \
     "the refusal should name the other task recording the slot"
 
-  pass "fm-teardown: a record whose slot another live task holds retires records-only and never touches that task"
+  pass "fm-teardown: a record whose slot another live task holds refuses while its branch is unpushed, retires records-only once pushed, and never touches that task"
 }
 
 # The tmux shim used by the endpoint-close tests below: every subcommand
@@ -1251,14 +1290,15 @@ SH
   chmod +x "$dir/fakebin/tmux"
 }
 
-# write_endpoint_close_meta: a task record whose worktree and project do not
-# exist, which keeps the cases below on the endpoint close itself - the pool
-# return and its own refusals are covered elsewhere in this file.
+# write_endpoint_close_meta: a landed task record (its PR merged) whose worktree
+# does not exist, which keeps the cases below on the endpoint close itself - the
+# pool return and its own refusals are covered elsewhere in this file.
 write_endpoint_close_meta() {  # <case-dir> <id> <window>
+  fake_merged_pr "$1"
   fm_write_meta "$1/home/state/$2.meta" \
     "window=$3" "endpoint_task_id=$2" \
-    "worktree=$1/nonexistent-worktree" "project=$1/nonexistent-project" \
-    "kind=ship" "mode=no-mistakes"
+    "worktree=$1/nonexistent-worktree" "project=$1/project" \
+    "kind=ship" "mode=no-mistakes" "pr=https://github.com/example/repo/pull/3035"
 }
 
 test_failed_endpoint_close_refuses_before_removing_the_record() {
