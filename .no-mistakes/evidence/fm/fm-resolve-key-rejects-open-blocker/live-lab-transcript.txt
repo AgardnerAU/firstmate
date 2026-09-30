@@ -1,0 +1,100 @@
+=== LAB FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ  TMUX=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ/tmux/tmux-501/fm-lab,75945,1
+##### S1 drain listing
+
+$ bin/fm-wake-drain.sh
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t1 [key=default] blocked: axi run hung without registering a branch run [key=no-mistakes-start]
+t2 [key=alpha] needs-decision: A or B
+t2 [key=beta] needs-decision: C or D
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  2 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[exit 0]
+##### S2 listed key closes the trailing-token blocker
+
+$ env FM_SEND_SETTLE=0 bin/fm-send.sh t1 --resolve-key default restart the run
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+[exit 0]
+--- t1.status
+blocked: axi run hung without registering a branch run [key=no-mistakes-start]
+resolved [key=default] [at=1790764432]: answered: restart the run
+--- t1 inbox
+schema=fm-task-inbox.v1
+at=2026-09-30T10:33:51Z
+--
+restart the run##### S3 decoy token (inside note) refuses, message preserved
+
+$ env FM_SEND_SETTLE=0 bin/fm-send.sh t2 --resolve-key decoy-token don't restart; $RUN live
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'decoy-token': no open decision or blocker with that key in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ/state/t2.status, and no captain-held task 'decoy-token' or 't2-decision-decoy-token' still open (already closed or mistyped); nothing was sent.
+  open on t2: alpha beta default
+  resend, your message preserved:
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 --resolve-key '<key>' don\'t\ restart\;\ \$RUN\ live
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 don\'t\ restart\;\ \$RUN\ live   # deliver without closing anything
+[exit 1]
+inbox exists? no
+##### S4 refused key before open key keeps order
+
+$ env FM_SEND_SETTLE=0 bin/fm-send.sh t2 --resolve-key bta --resolve-key alpha A, and C
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'bta': no open decision or blocker with that key in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ/state/t2.status, and no captain-held task 'bta' or 't2-decision-bta' still open (already closed or mistyped); nothing was sent.
+  open on t2: alpha beta default
+  resend, your message preserved:
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 --resolve-key '<key>' --resolve-key alpha A\,\ and\ C
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 A\,\ and\ C   # deliver without closing anything
+[exit 1]
+inbox exists? no
+##### S5 verbatim paste of keyed resend (placeholder) fails through fm-send
+pasting: FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 --resolve-key '<key>' --resolve-key alpha A\,\ and\ C
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key '<key>' is not a valid decision key (allowed: A-Z a-z 0-9 . _ -)
+[exit 1]
+inbox exists? no
+##### S6 operator fills <key>=beta, run from / : both decisions close
+running: FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t2 --resolve-key beta --resolve-key alpha A\,\ and\ C
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+[exit 0]
+--- t2.status
+needs-decision [key=alpha]: A or B
+needs-decision [key=beta]: C or D
+blocked: axi run hung [key=decoy-token]
+resolved [key=beta] [at=1790764435]: answered: A, and C
+resolved [key=alpha] [at=1790764435]: answered: A, and C
+--- t2 inbox
+schema=fm-task-inbox.v1
+at=2026-09-30T10:33:55Z
+--
+A, and C
+$ bin/fm-wake-drain.sh
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+t2 [key=default] blocked: axi run hung [key=decoy-token]
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+OPEN DECISIONS: <key> is the [key=...] printed before the verb; a token inside a note is prose, not a key.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+[exit 0]
+##### S7 empty status open set (captain-held) still offers keyed resend
+
+$ env FM_SEND_SETTLE=0 bin/fm-send.sh t3 --resolve-key migratoin after the freeze
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: --resolve-key 'migratoin': no open decision or blocker with that key in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ/state/t3.status, and no captain-held task 'migratoin' or 't3-decision-migratoin' still open (already closed or mistyped); nothing was sent.
+  no decision or blocker is open in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.6ykBKZ/state/t3.status.
+  resend, your message preserved:
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t3 --resolve-key '<key>' after\ the\ freeze
+    FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3RXSF7NCNY5Q1GJSZW2PCBG/bin/fm-send.sh t3 after\ the\ freeze   # deliver without closing anything
+[exit 1]
+=== worker pane fm-t1 contents:
+: Firstmate instruction waiting: list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/
+var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ/state/t1.inbox'/handled/.
+: Firstmate instruction waiting: list '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/
+var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.6ykBKZ/state/t1.inbox'/handled/.
+DRIVER-DONE
