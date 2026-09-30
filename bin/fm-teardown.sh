@@ -1972,7 +1972,7 @@ validate_worktree_teardown_safety() {
 # recorded, no directory at the recorded path, or a slot another task claims -
 # proved from the record itself (see the header's absent-worktree paragraph).
 validate_recorded_work_landed() {
-  local branch unpushed_raw unpushed=
+  local branch unpushed_raw unpushed= default unmerged_raw
   [ "$FORCE" != "--force" ] || return 0
   case "$KIND" in
     secondmate|scout) return 0 ;;
@@ -1989,6 +1989,11 @@ validate_recorded_work_landed() {
     fi
     unpushed=$(printf '%s\n' "$unpushed_raw" | head -5)
     [ -n "$unpushed" ] || return 0
+    if [ "$MODE" = local-only ] && default=$(default_branch) \
+      && unmerged_raw=$(git -C "$PROJ" log --oneline "$LANDED_REV" --not "$default" -- 2>/dev/null) \
+      && [ -z "$unmerged_raw" ]; then
+      return 0
+    fi
   fi
   work_is_landed "$branch" && return 0
   echo "REFUSED: task $ID has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed." >&2

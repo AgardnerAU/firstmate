@@ -2081,6 +2081,26 @@ test_absent_worktree_unpushed_branch_refuses_unless_forced() {
   pass "a record naming no worktree refuses unpushed branch commits, and --force overrides"
 }
 
+test_absent_worktree_local_only_merged_to_local_main_retires() {
+  local case_dir rc meta
+  case_dir=$(make_case absent-wt-local-main)
+  wt_commit_file "$case_dir" feature.txt hello "merged feature"
+  git -C "$case_dir/project" update-ref refs/heads/main "$(git -C "$case_dir/wt" rev-parse HEAD)"
+  write_absent_worktree_meta "$case_dir" ""
+  meta="$case_dir/state/task-x1.meta"
+  sed 's/^mode=no-mistakes$/mode=local-only/' "$meta" > "$meta.tmp" && mv "$meta.tmp" "$meta"
+
+  set +e
+  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+
+  expect_code 0 "$rc" "absent-wt-local-main: teardown should retire local-only work merged into local main"
+  ! grep -q REFUSED "$case_dir/stderr" || fail "absent-wt-local-main: teardown printed a REFUSED line"
+  assert_absent "$meta" "absent-wt-local-main: the task record was not removed"
+  pass "a local-only record naming no worktree whose branch is merged into local main retires without --force"
+}
+
 # Mark the case's home as a secondmate home bound to a parent: teardown and
 # fm-pr-check run with FM_HOME="$case_dir/home" so the parent-channel
 # publishers resolve that binding while the task state stays in $case_dir/state.
@@ -4362,6 +4382,7 @@ test_local_only_force_overrides_unpushed
 test_absent_worktree_merged_pr_retires
 test_absent_worktree_open_pr_pushed_branch_retires
 test_absent_worktree_unpushed_branch_refuses_unless_forced
+test_absent_worktree_local_only_merged_to_local_main_retires
 test_secondmate_pr_registration_publishes_ready_line
 test_secondmate_home_teardown_delivers_final_line_or_refuses
 test_teardown_missing_busy_sidecar_completes
