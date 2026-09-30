@@ -1,0 +1,55 @@
+## Scenario A setup: captain call held, inventoried, answered
+$ tasks-axi add live-origin Origin --kind scout --repo sample --start
+[exit 0]
+$ fm-captain-hold.sh hold live-call --title Pick a route --reason captain choice --repo sample
+live-call
+[exit 0]
+$ fm-captain-hold.sh complete live-origin live-call
+complete: live-origin captain-call inventory reviewed (live-call)
+[exit 0]
+$ fm-captain-hold.sh answer live-call --decision-file /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-archive-live.R8IuLt/ans.txt
+answered: live-call
+[exit 0]
+
+## Scenario B setup: captain call held, inventoried, closed with no answer
+$ tasks-axi add drop-origin Origin2 --kind scout --repo sample --start
+[exit 0]
+$ fm-captain-hold.sh hold drop-call --title Pick another --reason captain choice --repo sample
+drop-call
+[exit 0]
+$ fm-captain-hold.sh complete drop-origin drop-call
+complete: drop-origin captain-call inventory reviewed (drop-call)
+[exit 0]
+$ tasks-axi done drop-call
+[exit 0]
+
+## Prune both closed calls into the archive
+$ tasks-axi prune --keep 0 --state done
+[exit 0]
+--- live backlog rows naming the calls: 0
+--- archive rows:
+- [x] drop-call - Pick another (repo: sample) (kind: captain) (done 2026-09-30) (hold: captain choice) (hold-k
+- [x] live-call - Pick a route (repo: sample) (kind: captain) (done 2026-09-30) (hold: captain choice) (hold-k
+
+## Scenario A: answered, archived call passes verify and complete
+$ fm-captain-hold.sh verify live-origin
+verified: live-origin captain-call inventory
+[exit 0]
+$ fm-captain-hold.sh complete live-origin live-call
+complete: live-origin captain-call inventory reviewed (live-call)
+[exit 0]
+
+## Scenario B: archived call closed with no answer still fails
+$ fm-captain-hold.sh verify drop-origin
+fm-captain-hold: captain-held task drop-call is neither held for the captain nor closed with a recorded captain answer
+[exit 1]
+
+## Scenario C: unreadable archive stops the gate by name
+$ fm-captain-hold.sh verify live-origin
+fm-captain-hold: cannot read the closed-task archive /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-archive-live.R8IuLt/data/done-archive.md; refusing to resolve captain calls against an archive this home cannot read
+[exit 1]
+
+## Scenario D: erroring backlog backend stops the gate by name (no archive fallback)
+$ fm-captain-hold.sh verify live-origin
+fm-captain-hold: simulated live backlog read failure
+[exit 3]
