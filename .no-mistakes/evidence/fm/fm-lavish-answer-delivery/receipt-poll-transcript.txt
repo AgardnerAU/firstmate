@@ -1,0 +1,39 @@
+source-id: lavish-6bc54fae618b902a
+=== firstmate-owned receipt, lavish-axi mode=accept ===
+exit=0
+output:
+session:
+  status: ended
+calls seen by lavish-axi:
+reply(Recorded: Call A (south). Firstmate will follow up.)
+poll()
+receipt consumed
+=== firstmate-owned receipt, lavish-axi mode=refuse ===
+exit=0
+output:
+session:
+  status: ended
+calls seen by lavish-axi:
+poll(Recorded: Call A (south). Firstmate will follow up.)
+receipt consumed
+=== firstmate-owned receipt, lavish-axi mode=unknown ===
+exit=0
+output:
+session:
+  status: ended
+calls seen by lavish-axi:
+poll(Recorded: Call A (south). Firstmate will follow up.)
+receipt consumed
+=== task-owned --agent-reply-file, lavish-axi mode=refuse (must stay fail-closed) ===
+exit=1
+output:
+error: Lavish did not accept the staged reply: session is gone
+calls:
+(no poll ran)
+task reply still staged
+=== firstmate-owned poll with no staged receipt, mode=accept ===
+exit=0
+session:
+  status: ended
+calls:
+poll()
