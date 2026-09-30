@@ -42,7 +42,8 @@
 #            best-effort `poll --agent-reply` path. A task-owned arm stages its
 #            reply file; a firstmate-owned arm passes no reply file, so its
 #            listener consumes this source's staged receipt (see `receipt`)
-#            the same way.
+#            the same way, except that a refused or unconfirmed `reply` falls
+#            back to the legacy path instead of stopping the listener.
 # receipt    The generic runner's receipt seam for a firstmate-owned source.
 #            Given a captured `feedback` round that does not end the session,
 #            and the keyed-answer intake's report on stdin, it stages one
@@ -412,7 +413,7 @@ poll_iteration_floor_wait() {
 
 cmd_poll() {
   local artifact=${1-} delay attempt=0 response cleanup_command rc filter_rc iteration_started
-  local pipeline_status reply_file=''
+  local pipeline_status reply_file='' receipt=0
   local reply_text='' reply_pending=0
   [ -n "$artifact" ] || usage
   if [ "$#" -eq 3 ] && [ "${2-}" = --agent-reply-file ]; then
@@ -420,6 +421,7 @@ cmd_poll() {
   elif [ "$#" -eq 1 ]; then
     reply_file=$(cmd_source_id "$artifact") || exit 1
     reply_file=$(receipt_path "$reply_file")
+    receipt=1
   else
     usage
   fi
@@ -446,9 +448,15 @@ cmd_poll() {
     # Newer Lavish builds expose a one-shot reply command whose success is the
     # server's acceptance receipt. Consume the staged file only after that
     # confirmation; older compatible builds retain the published poll reply
-    # behavior and its best-effort delivery boundary.
+    # behavior and its best-effort delivery boundary. A firstmate-owned receipt
+    # stays best effort: an unconfirmed or refused reply falls back to the
+    # legacy poll reply so the board keeps listening.
     if [ -f "$reply_file" ] && [ ! -L "$reply_file" ]; then
-      if lavish_reply_compatible; then
+      if [ "$receipt" -eq 1 ] \
+        && "$FM_ROOT/bin/fm-bootstrap.sh" lavish-reply-compatible >/dev/null 2>&1 \
+        && lavish-axi reply "$artifact" --agent-reply-file "$reply_file" >/dev/null 2>&1; then
+        rm -f -- "$reply_file" || die "cannot consume agent reply file: $reply_file"
+      elif [ "$receipt" -eq 0 ] && lavish_reply_compatible; then
         post_lavish_reply "$artifact" "$reply_file"
         rm -f -- "$reply_file" || die "cannot consume agent reply file: $reply_file"
       else

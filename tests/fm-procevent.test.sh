@@ -4886,6 +4886,52 @@ PATH="$UNKNOWN/bin:$PATH" "$ROOT/bin/fm-procevent-lavish.sh" poll "$unknown_art"
   || fail "a reply-carrying poll consumed its staged reply with an unknown Lavish version"
 pass "an unknown Lavish version fails arm and poll closed, keeping the staged reply"
 
+# A firstmate-owned receipt is best effort: a supported Lavish posts it through
+# `reply`, while a refused reply or an unconfirmed version falls back to the
+# legacy poll reply and the listener still polls the board.
+RECEIPT_POST="$TMP_ROOT/receipt-post"
+mkdir -p "$RECEIPT_POST/bin" "$RECEIPT_POST/home/state/procevent"
+export RECEIPT_POST
+cat > "$RECEIPT_POST/bin/lavish-axi" <<'SH'
+#!/usr/bin/env bash
+case "${1-}" in
+  --version)
+    [ "$RECEIPT_POST_MODE" != unknown ] || exit 1
+    printf '0.1.80\n' ;;
+  reply)
+    [ "$RECEIPT_POST_MODE" = accept ] || { printf 'session is gone\n' >&2; exit 1; }
+    printf 'reply %s\n' "$(cat -- "$4")" >> "$RECEIPT_POST/calls" ;;
+  poll)
+    printf 'poll %s\n' "${4-}" >> "$RECEIPT_POST/calls"
+    printf 'session:\n  status: ended\n' ;;
+  *) exit 2 ;;
+esac
+SH
+chmod +x "$RECEIPT_POST/bin/lavish-axi"
+receipt_post_art="$RECEIPT_POST/board.html"
+printf '<h1>receipt post</h1>\n' > "$receipt_post_art"
+lavish_session "$receipt_post_art"
+receipt_post_id=$("$ROOT/bin/fm-procevent-lavish.sh" source-id "$receipt_post_art")
+receipt_post_file="$RECEIPT_POST/home/state/procevent/.$receipt_post_id.lavish-receipt"
+for mode in accept refuse unknown; do
+  rm -f "$RECEIPT_POST/calls"
+  printf 'receipt for %s\n' "$mode" > "$receipt_post_file"
+  receipt_post_rc=0
+  receipt_post_out=$(RECEIPT_POST_MODE=$mode PATH="$RECEIPT_POST/bin:$PATH" FM_HOME="$RECEIPT_POST/home" \
+    "$ROOT/bin/fm-procevent-lavish.sh" poll "$receipt_post_art" 2>&1) || receipt_post_rc=$?
+  [ "$receipt_post_rc" -eq 0 ] || fail "a $mode receipt post stopped the listener (status $receipt_post_rc): $receipt_post_out"
+  assert_contains "$receipt_post_out" 'status: ended' "a $mode receipt post did not print the board's poll response"
+  [ ! -e "$receipt_post_file" ] || fail "a $mode receipt post left the receipt staged"
+  if [ "$mode" = accept ]; then
+    expected=$(printf 'reply receipt for accept\npoll ')
+  else
+    expected="poll receipt for $mode"
+  fi
+  [ "$(cat "$RECEIPT_POST/calls")" = "$expected" ] \
+    || fail "a $mode receipt post reached the board as: $(cat "$RECEIPT_POST/calls")"
+done
+pass "a firstmate-owned receipt posts through reply and falls back to the legacy poll reply"
+
 # A worker re-arms as soon as its round is published, which can land while the
 # earlier generation's runner is still finishing and holding the claim. The
 # Lavish 0.1.80 stand-in records synchronous reply acceptance before its poll.
