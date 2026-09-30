@@ -3083,25 +3083,25 @@ test_pane_is_busy_terminal_hosted_native_busy_stays_conclusive() {
 # away mode is active, on a self-hosted daemon whose target reports native busy,
 # is DELIVERED rather than buffered forever.
 test_inject_msg_delivers_while_self_hosted_native_busy() {
-  local dir state
+  local dir state sent
   dir=$(make_supercase inject-self-hosted-native-busy)
   state="$dir/state"
+  sent="$dir/sent.log"; : > "$sent"
   afk_enter "$state"
   (
     fm_backend_target_exists() { return 0; }
     fm_backend_busy_state() { printf 'busy'; }
     fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
     fm_backend_composer_state() { printf 'empty'; }
-    fm_backend_send_text_submit() {
-      case "$3" in *"three jobs parked"*) : ;; *) fail "digest text missing from submit: $3" ;; esac
-      printf 'empty'
-    }
+    fm_backend_send_text_submit() { printf '%s\n' "$3" >> "$sent"; printf 'empty'; }
     TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
       FM_STATE_OVERRIDE="$state" FM_DAEMON_PRIMARY_HARNESS=claude \
       FM_SUPERVISOR_BACKEND=herdr FM_SUPERVISOR_TARGET="default:w1:p2" \
       inject_msg "three jobs parked awaiting decisions" "$state" \
       || fail "an escalation must be delivered while away mode is active and the daemon is self-hosted"
   ) || fail "self-hosted delivery inject_msg subshell failed"
+  delivered_digest "$sent" | grep -F "three jobs parked awaiting decisions" >/dev/null \
+    || fail "digest text missing from the self-hosted submit: $(cat "$sent")"
   pass "inject_msg: delivers an away-mode escalation whose target reads native busy only because the daemon hosts it"
 }
 
@@ -3136,14 +3136,14 @@ test_self_hosted_delivery_preserves_actionable_wait_contracts() {
     fm_backend_busy_state() { printf 'busy'; }
     fm_backend_capture() { printf '%s\n' '* Churned for 2m 17s' '> ' ; }
     fm_backend_composer_state() { printf 'empty'; }
-    fm_backend_send_text_submit() { printf '%s' "$3" > "$sent"; printf 'empty'; }
+    fm_backend_send_text_submit() { printf '%s\n' "$3" > "$sent"; printf 'empty'; }
     TMUX_PANE='' HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
       FM_STATE_OVERRIDE="$state" FM_DAEMON_PRIMARY_HARNESS=claude \
       FM_SUPERVISOR_BACKEND=herdr FM_SUPERVISOR_TARGET="default:w1:p2" \
       escalate_flush "$state" \
       || fail "the actionable wait digest was not delivered from the self-hosted native-busy pane"
   ) || fail "self-hosted actionable-wait delivery subshell failed"
-  grep -F "blocked [key=release]: need captain approval" "$sent" >/dev/null \
+  delivered_digest "$sent" | grep -F "blocked [key=release]: need captain approval" >/dev/null \
     || fail "the delivered digest omitted the actionable status hidden behind later routine lines"
   [ ! -s "$state/.subsuper-escalations" ] \
     || fail "the delivered actionable wait remained in the escalation buffer"

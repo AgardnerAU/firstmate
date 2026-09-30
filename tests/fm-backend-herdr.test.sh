@@ -4643,6 +4643,7 @@ test_send_text_submit_self_hosted_swallowed_enter_stays_pending() {
   # which is the honest answer - nothing here says the agent is generating.
   printf '{"result":{"agent":{"agent_status":"working"}}}\n' > "$resp/6.out"
   printf '{"result":{"agent":{"agent_status":"working"}}}\n' > "$resp/7.out"
+  herdr_submit_identity_prefix "$resp" codex
   fb=$(make_herdr_fakebin "$dir")
   out=$( PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" \
     HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
@@ -4661,6 +4662,7 @@ test_send_text_submit_self_hosted_uses_the_rendered_transition() {
   printf '  ready\n' > "$resp/3.out"
   printf '  \xe2\x9d\xaf hello captain\n' > "$resp/5.out"
   printf 'thinking... esc to interrupt\n' > "$resp/6.out"
+  herdr_submit_identity_prefix "$resp" codex
   fb=$(make_herdr_fakebin "$dir")
   out=$( PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" \
     HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
@@ -4677,6 +4679,7 @@ test_send_text_submit_self_hosted_cleared_composer_still_confirms() {
   printf '{"result":{"agent":{"agent_status":"working"}}}\n' > "$resp/2.out"
   printf '  ready\n' > "$resp/3.out"
   printf '  \xe2\x9d\xaf\n' > "$resp/5.out"
+  herdr_submit_identity_prefix "$resp" codex
   fb=$(make_herdr_fakebin "$dir")
   out=$( PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" \
     HERDR_ENV=1 HERDR_PANE_ID=w1:p2 HERDR_SESSION=default \
