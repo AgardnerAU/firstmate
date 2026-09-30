@@ -114,9 +114,11 @@
 # inspection of it, no branch or hook removal in it, no Treehouse return, and
 # never the other task's claim. Skipping the inspection discards nothing of this
 # task's: whatever unlanded work it had in that slot was already destroyed when
-# the pool handed the slot on. Refusing instead would strand the record, because
-# bin/fm-backend.sh's endpoint validation refuses an empty or missing worktree=
-# unconditionally, so there is no line an operator could clear to get past it.
+# the pool handed the slot on. The claim is read before the record scan, so this
+# holds even while another task's record also names the slot - the shape a live
+# task that took the slot leaves behind: a slot this cleanup never returns is not
+# endangered by a second record, and the scan still refuses whenever the claim
+# names this task or is absent, since either record may then be the stale one.
 # A claim that cannot be read proves nothing either way and refuses; inspect or
 # repair the claim file at the printed path and re-run - never remove it, since
 # an absent claim proceeds and would return a slot that may be another task's. An
@@ -126,6 +128,22 @@
 # Why Treehouse's own state cannot answer this for crewmate slots, and why the
 # claim file sits on top of it, is owned by bin/fm-wake-lib.sh's slot-owner
 # claim comment.
+# Absent worktree (records-only cleanup): a ship or scout record that names no
+# worktree - no worktree= line, or exactly one empty one, left when an operator
+# cleared a reassigned slot from the record - or whose recorded path provably no
+# longer exists has no copy to inspect, reset, or return. That is a different
+# case from an ambiguous identity: two or more worktree= lines still refuse, and
+# a path that cannot be proven absent (a dangling symlink, an unsearchable or
+# non-directory ancestor, a relative or dotted path) keeps the ordinary flow.
+# Teardown then warns and finishes only the task's own cleanup - endpoint,
+# status, records, checks, backlog - exactly as for a reassigned slot, and never
+# reads, resets, kills under, or returns that path or deletes a branch through
+# it. Nothing of the task's is discarded, so --force is neither needed nor
+# relevant, and the landed-work checks still run on every copy that exists and
+# is this task's. bin/fm-backend.sh's endpoint validator accepts an unrecorded
+# worktree only through teardown's explicit opt-in, never for Orca (whose
+# removal is keyed on its own worktree identity) or a secondmate (whose home is
+# its worktree), and every control or relaunch caller keeps refusing it.
 # The recorded endpoint's exact task identity and the record's spawn incarnation
 # are validated separately
 # before cleanup. Its current working directory is only incidental process
@@ -512,6 +530,11 @@ fm_backlog_record_present "$META" "task record" "$STATE" || {
 }
 TEARDOWN_META_KIND=$(fm_meta_get "$META" kind)
 [ -n "$TEARDOWN_META_KIND" ] || TEARDOWN_META_KIND=ship
+# A ship or scout record that names no worktree validates for a records-only
+# cleanup (see the header's absent-worktree paragraph); a secondmate's home is
+# its worktree, so it never does.
+TEARDOWN_ENDPOINT_WORKTREE_OPT=
+[ "$TEARDOWN_META_KIND" = secondmate ] || TEARDOWN_ENDPOINT_WORKTREE_OPT=--allow-unrecorded-worktree
 # Retiring a persistent secondmate is main's alone in both postures; the kind
 # is read under the metadata lock (role partition: bin/fm-lease-lib.sh).
 [ "$TEARDOWN_META_KIND" != secondmate ] || fm_lease_forbid_branch "secondmate retirement (fm-teardown)"
@@ -552,7 +575,7 @@ case "$TEARDOWN_WINDOW_COUNT:$(fm_meta_get "$META" window)" in
           TEARDOWN_SHAPE_META=$(umask 077; mktemp "${TMPDIR:-/tmp}/fm-teardown-shape.XXXXXX") || exit 1
           { LC_ALL=C grep -v '^window=' "$META" || true; printf 'window=leftover:fm-%s\n' "$ID"; } \
             > "$TEARDOWN_SHAPE_META"
-          if fm_backend_validate_task_endpoint "$TEARDOWN_SHAPE_META" "$ID" 2>/dev/null; then
+          if fm_backend_validate_task_endpoint "$TEARDOWN_SHAPE_META" "$ID" $TEARDOWN_ENDPOINT_WORKTREE_OPT 2>/dev/null; then
             TEARDOWN_WINDOWLESS_SHAPE=1
           fi
           rm -f "$TEARDOWN_SHAPE_META"
@@ -1110,7 +1133,7 @@ if [ "$TEARDOWN_WINDOWLESS" = 1 ]; then
   BACKEND=tmux
   T=
 else
-  fm_backend_validate_task_endpoint "$META" "$ID" || exit 1
+  fm_backend_validate_task_endpoint "$META" "$ID" $TEARDOWN_ENDPOINT_WORKTREE_OPT || exit 1
   BACKEND=$FM_BACKEND_VALIDATED_BACKEND
   T=$FM_BACKEND_VALIDATED_TARGET
   [ "$BACKEND" != orca ] || T_ORCA=$T
@@ -2450,7 +2473,45 @@ require_owned_task_worktree_slot() {
 }
 
 teardown_owns_worktree() {
-  [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ]
+  [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ] && [ -z "$TEARDOWN_WORKTREE_ABSENT" ]
+}
+
+# True only when <path> provably names nothing on disk: an absolute path with
+# no . or .. component, not even a dangling symlink, whose nearest existing
+# ancestor is a searchable directory, so the failed lookup below it is a
+# genuine absence rather than a permission error or an unreadable mount.
+# Anything short of that proof returns false and keeps the ordinary flow.
+path_provably_absent() {  # <path>
+  local path=$1 ancestor
+  case "$path" in
+    /*) ;;
+    *) return 1 ;;
+  esac
+  case "/$path/" in */./*|*/../*) return 1 ;; esac
+  [ ! -e "$path" ] && [ ! -L "$path" ] || return 1
+  ancestor=$(dirname "$path")
+  while [ ! -e "$ancestor" ] && [ ! -L "$ancestor" ]; do
+    ancestor=$(dirname "$ancestor")
+  done
+  [ -d "$ancestor" ] && [ ! -L "$ancestor" ] && [ -x "$ancestor" ]
+}
+
+# The absent-worktree determination (see the header's absent-worktree
+# paragraph): a ship or scout record that names no worktree, or whose recorded
+# path provably no longer exists, has no copy teardown could inspect, reset,
+# or return, so only its records-only cleanup runs. Orca removes its worktree
+# by its own id and a secondmate's home is its worktree, so neither takes this
+# path.
+TEARDOWN_WORKTREE_ABSENT=
+determine_absent_task_worktree() {
+  [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ] || return 0
+  if [ -z "$WT" ]; then
+    TEARDOWN_WORKTREE_ABSENT=unrecorded
+    echo "warning: task $ID's record names no worktree, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
+  elif path_provably_absent "$WT"; then
+    TEARDOWN_WORKTREE_ABSENT=gone
+    echo "warning: task $ID's recorded worktree $WT no longer exists, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
+  fi
 }
 
 firstmate_home_has_treehouse_slot() {
@@ -3323,8 +3384,15 @@ remove_secondmate_registry_entry() {
   return "$rc"
 }
 
-require_exclusive_task_worktree_slot || exit 1
+determine_absent_task_worktree
+# The claim is read first: a slot claimed by another task is never returned, so
+# a second record naming it is no hazard to that cleanup and the record scan -
+# which protects a slot teardown would return - applies only to a slot this
+# task still owns.
 require_owned_task_worktree_slot || exit 1
+if [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ]; then
+  require_exclusive_task_worktree_slot || exit 1
+fi
 
 validate_pr_poll_cleanup "$STATE" "$ID" || exit 1
 
@@ -3841,6 +3909,10 @@ if [ "$TEARDOWN_LEGACY_ACCEPTED" = 1 ]; then
   echo "teardown $ID complete (window ${T:-none}, worktree $WT, legacy record accepted without spawn_gen: endpoint $TEARDOWN_LEGACY_ENDPOINT, incarnation $TEARDOWN_META_SPAWN_GEN)"
 elif teardown_owns_worktree; then
   echo "teardown $ID complete (window ${T:-none}, worktree $WT)"
+elif [ "$TEARDOWN_WORKTREE_ABSENT" = unrecorded ]; then
+  echo "teardown $ID complete (window ${T:-none}; no worktree recorded, records-only cleanup)"
+elif [ "$TEARDOWN_WORKTREE_ABSENT" = gone ]; then
+  echo "teardown $ID complete (window ${T:-none}; recorded worktree $WT already gone, records-only cleanup)"
 else
   echo "teardown $ID complete (window ${T:-none}; pool slot $WT left to task $TEARDOWN_SLOT_REASSIGNED_TO${TEARDOWN_SLOT_REASSIGNED_HOME:+ (home $TEARDOWN_SLOT_REASSIGNED_HOME)}, which it was reassigned to)"
 fi
