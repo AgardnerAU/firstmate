@@ -1,0 +1,122 @@
+ok - reclaim: a herdr rebind is created in the session the record names, never the ambient one
+ok - reclaim: a herdr rebind refuses to publish a record whose pane reads back another terminal than the create returned
+ok - reclaim: a herdr rebind that cannot read its pane identity leaves the pane open and names it
+ok - reclaim: a herdr pane that outlived its stopped server is adopted, never orphaned beside a new tab
+ok - reclaim: a herdr agent that came back with its server refuses, so one worktree keeps one agent
+ok - reclaim: a herdr reclaim rebinds the endpoint and leaves the whole rest of the task alone
+ok - fm-control relaunch: a same-harness relaunch replaces the agent in the same endpoint and worktree
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state/rl77.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-unreadable-30541: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state/rl76.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-identity-15683: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state/rl68.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-3982: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state/rl1.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/same-21973: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state/rl75.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-work-13594: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-rebase: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-auto-gc: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-merge-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/post-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/sendemail-validate: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/applypatch-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/prepare-commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/post-checkout: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/post-applypatch: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/post-rewrite: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/commit-msg: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-push: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/post-merge: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks/pre-commit: Permission denied
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state/rl73.git-hooks: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home/state: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666/home: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0/gone-herdr-pin-24666: Directory not empty
+rm: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.CiyGD0: Directory not empty
