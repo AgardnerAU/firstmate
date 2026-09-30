@@ -4863,18 +4863,17 @@ if [ "$BACKEND" = herdr ]; then
   HERDR_READ_TERMINAL_ID=$(fm_backend_herdr_pane_terminal_id "$HERDR_SES" "$HERDR_PANE_ID") || HERDR_READ_TERMINAL_ID=
   if [ -z "$HERDR_READ_TERMINAL_ID" ] || { [ -n "$HERDR_TERMINAL_ID" ] && [ "$HERDR_READ_TERMINAL_ID" != "$HERDR_TERMINAL_ID" ]; }; then
     echo "error: could not establish the terminal identity of herdr pane $HERDR_SES:$HERDR_PANE_ID for $ID; refusing to publish its record" >&2
-    # The abort cleanup closes a pane this spawn created (pinned above), flat
-    # or projected, only when its terminal identity was read. An unreadable
-    # identity grants no close by pane id alone, so that pane is left open for
-    # the operator.
+    # A pane this spawn created (pinned above) is closed by the abort cleanup,
+    # flat or projected, unless it now reads back another terminal: that pane
+    # id was reissued, so this spawn's own pane is already gone and the live
+    # one belongs to someone else.
     if [ "${FM_BACKEND_HERDR_IDENTITY_PIN:-}" = "$T" ]; then
-      if [ -n "$HERDR_READ_TERMINAL_ID" ]; then
+      if [ -z "$HERDR_READ_TERMINAL_ID" ]; then
         HERDR_PROJECTION_ABORT_CLEANUP=1
         HERDR_PROJECTION_ABORT_SESSION=$HERDR_SES
         HERDR_PROJECTION_ABORT_TASK_PANE=$HERDR_PANE_ID
       else
         HERDR_PROJECTION_ABORT_TASK_PANE=
-        echo "error: herdr pane $HERDR_SES:$HERDR_PANE_ID was left open; close it by hand" >&2
       fi
     fi
     exit 1
