@@ -1,0 +1,127 @@
+
+=================== S1 slot held by another live task: stale record, unpushed branch ===================
+$ fm-teardown.sh stale-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  2 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task stale-task's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/fx/pool/1/project was reassigned to task live-task (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3), which claimed that pool slot after this record was written; that slot is no longer stale-task's, so its processes, copy, and claim are left untouched and only stale-task's own cleanup runs.
+REFUSED: task stale-task has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/stale not on any remote:
+b66f2df stale task unpushed work
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+record stale-task: present
+record live-task: present
+window fm-stale-task: present
+window fm-live-task: present
+live worker pid 89444: alive
+live copy status: unchanged (?? live-work)
+
+=================== S1b same record after its branch is pushed to a fork ===================
+$ fm-teardown.sh stale-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task stale-task's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/fx/pool/1/project was reassigned to task live-task (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3), which claimed that pool slot after this record was written; that slot is no longer stale-task's, so its processes, copy, and claim are left untouched and only stale-task's own cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/project: already current
+teardown stale-task complete (window firstmate:fm-stale-task; pool slot /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/pool/1/project left to task live-task (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3), which it was reassigned to)
+Backlog: stale-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md - move stale-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record stale-task: removed
+record live-task: present
+window fm-stale-task: closed
+window fm-live-task: present
+live worker pid 89444: alive
+live copy status: unchanged (?? live-work)
+slot claim: task=live-task home=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3 
+
+=================== S2 recorded worktree directory no longer exists, branch pushed ===================
+$ fm-teardown.sh gone-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/project: already current
+teardown gone-task complete (window firstmate:fm-gone-task, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/pool/2/project)
+Backlog: gone-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md - move gone-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record gone-task: removed
+window fm-gone-task: closed
+
+=================== S3 cleared worktree= line, branch has unpushed commits: refuse, then --force ===================
+$ fm-teardown.sh cleared-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task cleared-task's record names no worktree, so there is no copy to inspect, reset, or return; only cleared-task's own records-only cleanup runs.
+REFUSED: task cleared-task has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/cleared not on any remote:
+1ca5733 cleared task unlanded work
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+record cleared-task: present
+window fm-cleared-task: present
+$ fm-teardown.sh cleared-task --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task cleared-task's record names no worktree, so there is no copy to inspect, reset, or return; only cleared-task's own records-only cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/project: already current
+teardown cleared-task complete (window firstmate:fm-cleared-task; no worktree recorded, records-only cleanup)
+Backlog: cleared-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md - move cleared-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record cleared-task: removed
+window fm-cleared-task: closed
+
+=================== S4 no worktree= line at all, branch pushed with PR open ===================
+$ fm-teardown.sh nowt-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task nowt-task's record names no worktree, so there is no copy to inspect, reset, or return; only nowt-task's own records-only cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3/fx/project: already current
+teardown nowt-task complete (window firstmate:fm-nowt-task; no worktree recorded, records-only cleanup)
+Backlog: nowt-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md - move nowt-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record nowt-task: removed
+window fm-nowt-task: closed
+
+=================== S5 local-only record with no worktree, branch fast-forwarded into local main (origin exists) ===================
+$ fm-teardown.sh local-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task local-task's record names no worktree, so there is no copy to inspect, reset, or return; only local-task's own records-only cleanup runs.
+teardown local-task complete (window firstmate:fm-local-task; no worktree recorded, records-only cleanup)
+Backlog: local-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/data/backlog.md - move local-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record local-task: removed
+window fm-local-task: closed
+
+=================== S6 adversarial: two worktree= lines (ambiguous) refuse even with --force ===================
+$ fm-teardown.sh amb-task --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+REFUSED: task amb-task has a missing, empty, or ambiguous worktree identity; preserving task state.
+[exit 1]
+record amb-task: present
+window fm-amb-task: present
+
+=================== S7 adversarial: slot claim names THIS task while another record names it: collision still refuses ===================
+$ fm-teardown.sh mine-task --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.PPqAo3
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: task mine-task's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.PPqAo3/fx/pool/1/project is also task amb-task's recorded worktree.
+Returning that pool slot would kill amb-task's processes and reset its copy, so nothing was changed - not even with --force.
+Reconcile whichever record is wrong (bin/fm-crew-state.sh mine-task; bin/fm-crew-state.sh amb-task), then re-run teardown.
+[exit 1]
+record mine-task: present
+record live-task: present
+window fm-mine-task: present
+live copy edit: still present
+
+=================== treehouse probe calls ===================
+(none)
