@@ -478,10 +478,10 @@ fm_nm_run_is_executing() {  # <toon-output>
 # route (fm_nm_run_is_executing above), which the caller pairs with its own
 # liveness evidence.
 # When optional task start epoch $5 is supplied, the answering row must have been
-# created in or after that start's minute (fm_nm_run_in_incarnation above owns
-# the rule): a newest row from before the task started is an earlier task's
-# history, so it prints nothing. The anchor row is exempt; it proves code
-# identity only.
+# created in a minute after that start's minute (fm_nm_run_in_incarnation above
+# owns the rule): a newest row from before the task started is an earlier task's
+# history, and a row from the start's own minute cannot prove it is not, so
+# either prints nothing. The anchor row is exempt; it proves code identity only.
 # Read-only: git reads resolve objects in place; custody never changes.
 fm_nm_runs_status_for_worktree() {  # <worktree> <branch> <runs-list-output> [expected-head] [task-start-epoch]
   local wt=$1 branch=$2 list=$3 expected_head=${4:-} task_start=${5:-} start_minute=''
@@ -532,7 +532,7 @@ fm_nm_runs_status_for_worktree() {  # <worktree> <branch> <runs-list-output> [ex
       fi
       break
     fi
-    if [ -n "$start_minute" ] && [[ "$day $clock" < "$start_minute" ]]; then
+    if [ -n "$start_minute" ] && ! [[ "$start_minute" < "$day $clock" ]]; then
       break
     fi
     if [ -n "$expected_head" ]; then

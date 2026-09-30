@@ -5844,10 +5844,36 @@ test_coarse_ledger_does_not_inherit_an_earlier_run() {
   FM_FAKE_RUNS_LIST="  completed fm/refresh $short $(ledger_minute $((now - 3600))) https://github.com/o/r/pull/1"
   out=$(run_crew_state "$d" refresh)
   assert_not_contains "$out" 'source: run-step' "an earlier ledger row must not answer for this task: $out"
+  FM_FAKE_RUNS_LIST="  completed fm/refresh $short $(ledger_minute "$now") https://github.com/o/r/pull/1"
+  out=$(run_crew_state "$d" refresh)
+  assert_not_contains "$out" 'source: run-step' "a row from the task's start minute cannot prove it is this task's: $out"
   FM_FAKE_RUNS_LIST="  completed fm/refresh $short $(ledger_minute $((now + 120))) https://github.com/o/r/pull/1"
   out=$(run_crew_state "$d" refresh)
   assert_contains "$out" 'source: run-step' "a ledger row from this task still answers: $out"
   pass 'the coarse ledger does not inherit an earlier task run'
+}
+
+# The start-minute bound applies to the answering row only: the head-anchor row
+# proves code identity, so it still anchors from the task's start minute.
+test_coarse_ledger_anchor_row_in_start_minute_still_anchors() {
+  local now d out
+  now=$(date +%s)
+  reset_fakes
+  d=$(new_case coarse-anchor-minute)
+  make_repo_on_branch "$d/wt" fm/feat-anchor-minute
+  mint_unfetched_fix_head "$d/wt" >/dev/null
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/anchor-minute.meta" "window=fm:fm-anchor-minute" "worktree=$d/wt" "kind=ship" "task_started=$now"
+  FM_FAKE_AXI_STATUS="$(run_running fm/other-crew)"
+  FM_FAKE_RUNS_LIST="$(cat <<EOF
+  running    fm/feat-anchor-minute $(git -C "$d/wt.pipe" rev-parse --short=7 HEAD)  $(ledger_minute $((now + 120)))
+  failed     fm/feat-anchor-minute $(git -C "$d/wt" rev-parse --short=7 HEAD)  $(ledger_minute "$now")
+EOF
+)"
+  out=$(run_crew_state "$d" anchor-minute)
+  assert_contains "$out" 'source: run-step' "an anchor row in the start minute still anchors the continuation: $out"
+  assert_contains "$out" 'state: working' 'the anchored continuation reads working'
+  pass 'a head-anchor row in the task start minute still anchors the continuation'
 }
 
 # A merged claim must come from the recorded pr= identity checked against the
@@ -5972,6 +5998,7 @@ test_spawn_generation_bounds_a_task_without_a_start_record
 test_unreadable_run_creation_time_is_not_attributed_to_a_bounded_task
 test_legacy_route_does_not_inherit_an_earlier_run
 test_coarse_ledger_does_not_inherit_an_earlier_run
+test_coarse_ledger_anchor_row_in_start_minute_still_anchors
 test_merged_claim_requires_the_recorded_pr_identity
 test_run_step_wording_never_presents_green
 test_newer_status_line_is_shown_beside_a_finished_run
