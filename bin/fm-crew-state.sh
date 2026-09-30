@@ -818,7 +818,7 @@ nm_reclassify_failed_run_as_held_green() {  # <failed|cancelled>
   local pr_url
   pr_disposition
   case "$PR_DISPOSITION" in
-    open) RUN_DETAIL="PR held for merge: run $1 at the ci monitor after its ci log reported CI checks passed; $PR_DISPOSITION_TEXT" ;;
+    open) RUN_DETAIL="PR held for merge: run $1 at the ci monitor after its ci log reported CI checks passed (required checks not verified); $PR_DISPOSITION_TEXT" ;;
     merged) RUN_DETAIL="run $1 at the ci monitor after its ci log reported CI checks passed; $PR_DISPOSITION_TEXT" ;;
     *) return 1 ;;
   esac
@@ -1180,7 +1180,7 @@ if [ "$HAVE_RUN" = 1 ]; then
     if [ -n "$outcome" ]; then
       case "$outcome" in
         passed|passed-with-override|passed-with-skips) RUN_STATE="done"; RUN_DETAIL=$(passed_run_detail "$outcome") ;;
-        checks-passed) RUN_STATE="done"; RUN_DETAIL="run reports CI checks passed: PR ready for review" ;;
+        checks-passed) RUN_STATE="done"; RUN_DETAIL="run reports CI checks passed (required checks not verified)" ;;
         failed)
           if nm_reclassify_failed_run_as_held_green failed; then :; else
             RUN_STATE=failed; RUN_DETAIL="run failed"
@@ -1233,7 +1233,7 @@ if [ "$HAVE_RUN" = 1 ]; then
             case "$CI_LOG_STATE" in
               passed)
                 RUN_STATE="done"
-                RUN_DETAIL="run ci log reports CI checks passed: PR ready for review (still monitoring for merge/close)"
+                RUN_DETAIL="run ci log reports CI checks passed (required checks not verified; still monitoring for merge/close)"
                 # The run's own PR URL makes this reading actionable even when
                 # the worker never reported it and no pr= was recorded.
                 ci_pr_url=$(strip_quotes "$(nm_field pr)")

@@ -1250,7 +1250,7 @@ EOF
   local out; out=$(run_crew_state "$d" feat-cirearm)
   assert_contains "$out" "state: done" "a base-advance re-arm after green keeps the PR green"
   assert_contains "$out" "source: run-step" "re-armed green monitoring stays run-step sourced"
-  assert_contains "$out" "CI checks passed: PR ready for review" "re-armed green monitoring reads held for merge"
+  assert_contains "$out" "CI checks passed (required checks not verified" "re-armed green monitoring reads held for merge"
   assert_contains "$out" "https://github.com/o/r/pull/2" "the held-for-merge reading names the run's PR"
   assert_not_contains "$out" "state: working" "a re-arm line must not read as checks not ready"
   pass "base-advance re-arm after green stays checks green"
@@ -1277,7 +1277,7 @@ test_ci_monitoring_green_before_log_tail_stays_green() {
   local out; out=$(run_crew_state "$d" feat-citail)
   assert_contains "$out" "state: done" "a green marker older than the log tail still reads green"
   assert_contains "$out" "source: run-step" "the full-log green reading stays run-step sourced"
-  assert_contains "$out" "CI checks passed: PR ready for review" "the full-log reading is held for merge"
+  assert_contains "$out" "CI checks passed (required checks not verified" "the full-log reading is held for merge"
   assert_contains "$out" "https://github.com/o/r/pull/2" "the full-log reading names the run's PR"
   assert_not_contains "$out" "state: working" "a truncated ci log must not hide a green PR"
   pass "a green marker before the ci log tail still surfaces done"
@@ -1733,6 +1733,7 @@ test_cancelled_delivery_and_skipped_rebase() {
         assert_contains "$out" "https://github.com/o/r/pull/203" "$scenario: delivery identity retained"
         assert_contains "$out" "ci log reported CI checks passed" "$scenario: retain positive CI evidence"
         assert_contains "$out" "held for merge" "$scenario: delivery awaits merge"
+        assert_contains "$out" "required checks not verified" "$scenario: the ci log pass is not verified against required checks"
       fi
       pass "$scenario: terminal delivery reports only observed evidence"
     ) || failures=$((failures + 1))
@@ -4121,7 +4122,7 @@ EOF
   assert_not_contains "$out" 'state: unknown' 'a green PR in merge monitoring is never unknown'
   assert_contains "$out" 'state: done' 'a green PR in merge monitoring reads done'
   assert_contains "$out" 'source: run-step' 'the green reading comes from the selected run'
-  assert_contains "$out" 'CI checks passed: PR ready for review' 'the reading is held for the merge decision'
+  assert_contains "$out" 'CI checks passed (required checks not verified' 'the reading is held for the merge decision'
   assert_contains "$out" 'https://github.com/o/r/pull/2' 'the reading names the PR to ask about'
   pass 'a linked worktree green PR in merge monitoring reads held for merge'
 }
@@ -5903,12 +5904,16 @@ test_run_step_wording_never_presents_green() {
   assert_contains "$out" 'state: done' "checks-passed still finishes the task: $out"
   assert_no_green_claim "$out" 'a checks-passed run record is not presented as green'
   assert_contains "$out" 'run reports CI checks passed' 'the run outcome is stated as what the run reported'
+  assert_contains "$out" 'required checks not verified' 'a run-reported checks pass says the required checks were not verified'
+  assert_not_contains "$out" 'ready for review' 'a run-reported checks pass is not presented as ready for review'
 
   FM_FAKE_AXI_STATUS="$(run_top_level_ci fm/green)"
   FM_FAKE_CI_LOGS="all CI checks passed - still monitoring until merged or closed"
   out=$(run_crew_state "$d" green)
-  assert_contains "$out" 'state: done' "a passed ci log is ready for review: $out"
+  assert_contains "$out" 'state: done' "a passed ci log still finishes the task: $out"
   assert_no_green_claim "$out" 'a ci log reading is not presented as green'
+  assert_contains "$out" 'run ci log reports CI checks passed (required checks not verified' 'a ci log pass says the required checks were not verified'
+  assert_not_contains "$out" 'ready for review' 'a ci log pass is not presented as ready for review'
 
 
   FM_FAKE_CI_LOGS=
