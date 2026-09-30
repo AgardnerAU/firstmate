@@ -1,0 +1,139 @@
+===== S1: record with empty worktree=, PR merged (the 2026-09-21 PR 3035 shape)
+$ fm-teardown.sh s1 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task s1's record names no worktree, so there is no copy to inspect, reset, or return; only s1's own records-only cleanup runs.
+demo: skipped: no origin remote
+teardown s1 complete (window firstmate:fm-s1; no worktree recorded, records-only cleanup)
+Backlog: s1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md - move s1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+--- records: 
+--- tmux windows: keep 
+--- treehouse calls: 
+
+===== S2: recorded worktree directory no longer exists, branch pushed to a remote
+$ fm-teardown.sh s2 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+demo: skipped: no origin remote
+teardown s2 complete (window firstmate:fm-s2, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P/pool/9/project)
+Backlog: s2 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md - move s2 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+--- records: 
+--- tmux windows: keep 
+--- treehouse calls: 
+
+===== S3: slot held by another live task; retiring task's branch has UNPUSHED commits
+$ fm-teardown.sh stale 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  2 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task stale's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/pool/1/project was reassigned to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P), which claimed that pool slot after this record was written; that slot is no longer stale's, so its processes, copy, and claim are left untouched and only stale's own cleanup runs.
+REFUSED: task stale has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/stale not on any remote:
+270292e stale unpushed work
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+--- records: live.meta stale.meta 
+--- tmux windows: keep fm-live fm-stale 
+--- treehouse calls: 
+--- live worker pid 18335 alive: yes
+
+===== S4: same slot case after pushing the retiring task's branch
+$ fm-teardown.sh stale 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task stale's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/pool/1/project was reassigned to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P), which claimed that pool slot after this record was written; that slot is no longer stale's, so its processes, copy, and claim are left untouched and only stale's own cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+demo: skipped: no origin remote
+teardown stale complete (window firstmate:fm-stale; pool slot /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P/pool/1/project left to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P), which it was reassigned to)
+Backlog: stale just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md - move stale to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+--- records: live.meta 
+--- tmux windows: keep fm-live 
+--- treehouse calls: 
+--- live worker pid 18335 alive: yes
+--- live copy unchanged: yes (live uncommitted edit)
+--- slot claim: task=live home=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P 
+
+===== S5: no worktree= line, unpushed branch, no PR -> refuse; then --force
+$ fm-teardown.sh s5 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task s5's record names no worktree, so there is no copy to inspect, reset, or return; only s5's own records-only cleanup runs.
+REFUSED: task s5 has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/s5 not on any remote:
+5787a5f s5 unlanded work
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+--- records: live.meta s5.meta 
+--- tmux windows: keep fm-live fm-s5 
+--- treehouse calls: 
+$ fm-teardown.sh s5 --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task s5's record names no worktree, so there is no copy to inspect, reset, or return; only s5's own records-only cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+demo: skipped: no origin remote
+teardown s5 complete (window firstmate:fm-s5; no worktree recorded, records-only cleanup)
+Backlog: s5 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md - move s5 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+--- records: live.meta 
+--- tmux windows: keep fm-live 
+--- treehouse calls: 
+
+===== S6: two worktree= lines stay ambiguous and refuse even with --force
+$ fm-teardown.sh s6 --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+REFUSED: task s6 has a missing, empty, or ambiguous worktree identity; preserving task state.
+[exit 1]
+--- records: live.meta s6.meta 
+--- tmux windows: keep fm-live fm-s6 
+--- treehouse calls: 
+
+===== S7: local-only record, gone worktree, branch merged into local main (no remote push)
+$ fm-teardown.sh s7 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+teardown s7 complete (window firstmate:fm-s7, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P/gone)
+Backlog: s7 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.GAbX3P/data/backlog.md - move s7 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+--- records: live.meta s6.meta 
+--- tmux windows: keep fm-live fm-s6 
+--- treehouse calls: 
+
+===== S8: recorded worktree directory gone, branch UNPUSHED, PR open -> refuse
+$ fm-teardown.sh s8 
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GAbX3P
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: task s8 has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/s8 not on any remote:
+4e71089 s8 unpushed work
+b56a8e4 s7 local work
+recorded PR: https://github.com/example/repo/pull/3035 (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+--- records: live.meta s6.meta s8.meta 
+--- tmux windows: keep fm-live fm-s6 fm-s8 
+--- treehouse calls: 
+
+lab removed: yes
