@@ -1,0 +1,78 @@
+herdr: herdr 0.9.1  session: fm-lab-selfhost-38861
+shim forwards to: /opt/homebrew/bin/herdr
+--- case s1-selfhosted-delivers (hosting=self render-busy=0 swallow-enter=0) target=fm-lab-selfhost-38861:w1:p2
+pane-env HERDR_ENV=1 HERDR_SESSION=fm-lab-selfhost-38861 HERDR_PANE_ID=w1:p2
+native agent_status (raw herdr agent get): working
+pane process-state: agent; adapter busy_state from outside the pane: busy
+submitted lines:
+    e281a346495253544d4154455f4f503a20763120617761792d73757065727669736f723a2053757065727669736f7220657363616c617465202831206576656e74287329293a206c6976652d63312e7374617475733a206e656564732d6465636973696f6e3a206c6976652d73312d73656c66686f737465642d64656c6976657273207069636b2041206f72204220287072652d726561643b2072652d61726d206e6f74206e656564656420e280942077617463686572206461656d6f6e2d6d616e6167656429	⁣FIRSTMATE_OP: v1 away-supervisor: Supervisor escalate (1 event(s)): live-c1.status: needs-decision: live-s1-selfhosted-delivers pick A or B (pre-read; re-arm not needed — watcher daemon-managed)
+buffered escalations:        0 bytes; wedge marker: absent
+daemon log (inject-related):
+    [2026-09-30T19:26:00+0800] daemon starting (pid 44706); target=fm-lab-selfhost-38861:w1:p2; target_source=FM_SUPERVISOR_TARGET; backend=herdr; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=999999s; batch=0s
+    [2026-09-30T19:26:07+0800] wake: signal: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s1-selfhosted-delivers/state/live-c1.status
+    [2026-09-30T19:26:08+0800] escalate: needs-decision: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s1-selfhosted-delivers/state/live-c1.status -> live-c1.status: needs-decision: live-s1-selfhosted-delivers pick A or B
+pane capture:
+    |agardner@AG-MBP-96 tmp ❯ (exec -a codex bash '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/
+    |agent.sh' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s1-selfhosted-delivers/submitted.lo
+    |g' 0 '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s1-selfhosted-delivers/launch.sh')
+    |
+    |❯RESULT PASS - self-hosted daemon delivered the escalation despite native working
+--- case s2-terminal-hosted-defers (hosting=terminal render-busy=0 swallow-enter=0) target=fm-lab-selfhost-38861:w1:p3
+pane-env HERDR_ENV=1 HERDR_SESSION=fm-lab-selfhost-38861 HERDR_PANE_ID=w1:p3
+native agent_status (raw herdr agent get): working
+pane process-state: agent; adapter busy_state from outside the pane: busy
+submitted lines:
+buffered escalations:       75 bytes; wedge marker: absent
+daemon log (inject-related):
+    [2026-09-30T19:26:24+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:25+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:27+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:28+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:29+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:30+0800] inject deferred: supervisor pane busy (agent mid-turn)
+pane capture:
+    |agardner@AG-MBP-96 tmp ❯ (exec -a codex bash '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/
+    |agent.sh' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s2-terminal-hosted-defers/submitted
+    |.log' 0 -)
+    |❯RESULT PASS - terminal-hosted daemon still defers on native working and keeps the buffer
+--- case s3-selfhosted-midturn-defers (hosting=self render-busy=1 swallow-enter=0) target=fm-lab-selfhost-38861:w1:p4
+pane-env HERDR_ENV=1 HERDR_SESSION=fm-lab-selfhost-38861 HERDR_PANE_ID=w1:p4
+native agent_status (raw herdr agent get): working
+pane process-state: agent; adapter busy_state from outside the pane: busy
+submitted lines:
+buffered escalations:       78 bytes; wedge marker: absent
+daemon log (inject-related):
+    [2026-09-30T19:26:40+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:41+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:43+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:44+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:45+0800] inject deferred: supervisor pane busy (agent mid-turn)
+    [2026-09-30T19:26:46+0800] inject deferred: supervisor pane busy (agent mid-turn)
+pane capture:
+    |agardner@AG-MBP-96 tmp ❯ (exec -a codex bash '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/
+    |agent.sh' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s3-selfhosted-midturn-defers/submit
+    |ted.log' 1 '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s3-selfhosted-midturn-defers/launc
+    |h.sh')
+    |• Working (5s • esc to interrupt)
+    |❯RESULT PASS - self-hosted daemon still defers while the rendered busy signature shows a live turn
+--- case s4-selfhosted-swallowed-enter (hosting=self render-busy=0 swallow-enter=1) target=fm-lab-selfhost-38861:w1:p5
+pane-env HERDR_ENV=1 HERDR_SESSION=fm-lab-selfhost-38861 HERDR_PANE_ID=w1:p5
+native agent_status (raw herdr agent get): working
+pane process-state: agent; adapter busy_state from outside the pane: busy
+submitted lines:
+buffered escalations:       79 bytes; wedge marker: present
+daemon log (inject-related):
+    [2026-09-30T19:27:04+0800] ERROR: away-mode escalation undelivered 7s; last delivery failure: deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane). Buffer + wake-queue preserved; alarm marker written.
+    [2026-09-30T19:27:05+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+    [2026-09-30T19:27:06+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+    [2026-09-30T19:27:08+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+    [2026-09-30T19:27:08+0800] inject deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane)
+    [2026-09-30T19:27:08+0800] ERROR: away-mode escalation undelivered 12s; last delivery failure: deferred: supervisor composer not confirmed-empty (state=pending: pending input, dead-shell prompt, or unreadable pane). Buffer + wake-queue preserved; alarm marker written.
+pane capture:
+    |agardner@AG-MBP-96 tmp ❯ (exec -a codex bash '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/
+    |agent.sh' '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s4-selfhosted-swallowed-enter/submi
+    |tted.log' 0 '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-selfhost-live.6Lo5dK/s4-selfhosted-swallowed-enter/lau
+    |nch.sh')
+    |❯ ... not needed — watcher daemon-managed)RESULT PASS - swallowed self-hosted submit keeps the buffer and raises the wedge marker
+teardown: fm-lab-selfhost-38861 removed
+exit=0
