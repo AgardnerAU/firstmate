@@ -446,6 +446,18 @@ fm_pr_metadata_block_print() {  # <meta>
   LC_ALL=C awk '/^pr=/ || /^pr_head=/' "$1"
 }
 
+# Print a task record with each given key=value line replacing that key's
+# earlier lines, ahead of the record's pr= block, so a writer that sets keys on
+# a task record keeps that block the tail.
+fm_pr_metadata_print_with() {  # <meta> <key=value>...
+  local meta=$1 line keys=' pr pr_head '
+  shift
+  for line in "$@"; do keys="$keys${line%%=*} "; done
+  LC_ALL=C awk -F= -v keys="$keys" 'index(keys, " " $1 " ") == 0' "$meta" || return 1
+  [ "$#" -eq 0 ] || printf '%s\n' "$@" || return 1
+  fm_pr_metadata_block_print "$meta"
+}
+
 # Sidecar layout: provider, url, host, path, number, one per line. A sidecar
 # written before the provider tag existed has a URL on its first line and one
 # line fewer, so it fails both the field count and the provider comparison and
