@@ -1972,7 +1972,7 @@ validate_worktree_teardown_safety() {
 # recorded, no directory at the recorded path, or a slot another task claims -
 # proved from the record itself (see the header's absent-worktree paragraph).
 validate_recorded_work_landed() {
-  local branch unpushed_raw unpushed= default unmerged_raw
+  local branch unpushed_raw unpushed='' default unmerged_raw
   [ "$FORCE" != "--force" ] || return 0
   case "$KIND" in
     secondmate|scout) return 0 ;;
