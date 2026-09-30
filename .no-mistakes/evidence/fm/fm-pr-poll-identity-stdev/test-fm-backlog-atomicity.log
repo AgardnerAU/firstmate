@@ -1,0 +1,21 @@
+ok - backend resolution preserves unreadable configuration errors for every caller
+ok - backend resolution preserves environment, project, user, and default precedence
+ok - backlog readers and mutations refuse unresolved backends without touching either backlog
+ok - captain hold refuses backend errors and preserves relocated addressing for valid configuration
+ok - dispatch publishes the record and moves the backlog item In flight in one run
+ok - a respawn keeps the task's pr= block, so its armed merge poll still authenticates
+ok - dispatch omits the markdown file when probing a Beads backlog
+ok - a leftover markdown symlink does not brick a Beads home's dispatch
+ok - completion applies and closes a Beads backlog without any markdown file
+ok - dispatch refuses to supersede a pending authoritative close
+ok - dispatch refuses held rows before creating resources
+ok - dispatch refuses dependency-blocked rows before creating resources
+ok - dispatch refuses held In-flight rows before relaunch
+ok - dispatch reads backlog rows from the backlog addressing root
+ok - recovery uses the parent of a trailing-slash data record
+ok - completion targets nested relative data from the caller directory
+ok - an immediate-child absolute data path keeps one paired backlog
+ok - bare relative data addresses one backlog through dispatch and completion
+ok - dispatch refuses symlinked backlogs without crossing homes
+ok - automatic homes refuse lifecycle mutation without compatible tasks-axi
+exit=143

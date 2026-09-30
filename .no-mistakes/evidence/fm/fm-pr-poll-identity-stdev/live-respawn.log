@@ -1,0 +1,76 @@
+## 1. re-arm a merge poll on the worker (task record gets a fresh pr= block)
+armed
+poll authenticates: yes
+## 2. the worker dies: kill its tmux window
+## 3. real fresh re-spawn: fm-spawn.sh lab7c2a9c7a9e9e-worker projects/notes --mode local-only --yolo on --harness claude
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+spawned lab7c2a9c7a9e9e-worker harness=claude kind=ship mode=local-only yolo=on window=firstmate:fm-lab7c2a9c7a9e9e-worker worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
+spawn rc=0; spawn_gen before=s1790789771.66060.27057 after=s1790789808.94678.22086
+--- republished task record:
+window=firstmate:fm-lab7c2a9c7a9e9e-worker
+endpoint_task_id=lab7c2a9c7a9e9e-worker
+worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
+project=/private/tmp/fmlab-prpoll/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab7c2a9c7a9e9e-worker
+tasktmp=/tmp/fm-lab7c2a9c7a9e9e-worker
+model=sonnet
+effort=low
+busy_gen=g1790789807.96303.14506
+spawn_gen=s1790789808.94678.22086
+pr=https://github.com/example/notes/pull/32
+pr_head=0123456789abcdef0123456789abcdef01234567
+poll authenticates: yes
+## 4. real fm-watch.sh cycle, forge reporting MERGED
+watch rc=0
+check: rearm-resurface
+lab zsh
+fm-lab7c2a9c7a9e9e-worker 2.1.285
+## 5. second real fm-watch.sh cycle (the first ended on its rearm-resurface wake before reaching checks)
+check: rearm-resurface
+watch rc=0
+lab7c2a9c7a9e9e-worker.check.sh
+lab7c2a9c7a9e9e-worker.pr-poll
+lab7c2a9c7a9e9e-worker.pr-poll-merge-notified
+lab7c2a9c7a9e9e-worker.pr-poll-registration
+## 6. drain queued wakes as the primary would (bin/fm-wake-drain.sh), then run the watcher
+1790789775	1	check	merged-lab7c2a9c7a9e9e-worker-https://github.com/example/notes/pull/31	check: merge landed: lab7c2a9c7a9e9e-worker https://github.com/example/notes/pull/31 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 3208.1790789819.8jJEcn
+WARNING: watcher still down (same stale episode; last beat: 20s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+--- watcher cycle 1
+check: rearm-resurface
+rc=0
+--- watcher cycle 2
+check: rearm-resurface
+rc=0
+--- watcher cycle 3
+check: rearm-resurface
+rc=0
+## 7. drain + acknowledge wakes as the primary would, then run the watcher
+1790789775	1	check	merged-lab7c2a9c7a9e9e-worker-https://github.com/example/notes/pull/31	check: merge landed: lab7c2a9c7a9e9e-worker https://github.com/example/notes/pull/31 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 11405.1790789842.omiKB5
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 11s ago).
+--- watcher cycle 1
+check: rearm-resurface
+rc=0
+1790789775	1	check	merged-lab7c2a9c7a9e9e-worker-https://github.com/example/notes/pull/31	check: merge landed: lab7c2a9c7a9e9e-worker https://github.com/example/notes/pull/31 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 18483.1790789853.klBrG0
+--- watcher cycle 2
+check: rearm-resurface
+rc=0
+1790789775	1	check	merged-lab7c2a9c7a9e9e-worker-https://github.com/example/notes/pull/31	check: merge landed: lab7c2a9c7a9e9e-worker https://github.com/example/notes/pull/31 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 20007.1790789855.RkBmnE
+--- watcher cycle 3
+check: rearm-resurface
+rc=0
+## 8. drain + acknowledge (bash word-splitting), then run the watcher
+--- watcher cycle 1
+check: /private/tmp/fmlab-prpoll/home/state/lab7c2a9c7a9e9e-worker.check.sh: merged
+rc=0
+(poll artifacts retired after merge)

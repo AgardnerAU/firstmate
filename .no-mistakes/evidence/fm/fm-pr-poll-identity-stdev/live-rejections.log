@@ -1,0 +1,33 @@
+## A. remount + sidecar replaced by a byte-identical copy (new inode)
+armed: state/replaced.check.sh
+## B. armed poll whose task record lost its pr= line (the old respawn symptom)
+armed: state/nopr.check.sh
+## C. armed poll whose task record has a key after pr= (the old relaunch symptom)
+armed: state/afterpr.check.sh
+## real fm-watch.sh cycle (forge says MERGED for all)
+watch rc=0
+check: rejected unauthenticated state checks: $LAB/state/afterpr.check.sh (merge poll: the task record has key control_relaunch_tx after its pr= block) $LAB/state/nopr.check.sh (merge poll: the task record has no pr= line) $LAB/state/replaced.check.sh (merge poll: the sidecar or check is not the file its registration was armed with)
+--- merge-state reads by the watcher (a refused check must never run): 0
+--- all gh calls (arming reads only):
+pr view https://github.com/example/repo/pull/21 --json isDraft
+pr view https://github.com/example/repo/pull/21 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/22 --json isDraft
+pr view https://github.com/example/repo/pull/22 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/23 --json isDraft
+pr view https://github.com/example/repo/pull/23 --json headRefOid -q .headRefOid
+api repos/example/repo/pulls/21
+api repos/example/repo/pulls/21/reviews?per_page=100 --paginate --slurp
+api repos/example/repo/issues/21/comments?per_page=100 --paginate --slurp
+api repos/example/repo/commits/0123456789abcdef0123456789abcdef01234567/check-runs?filter=all&per_page=100 --paginate --slurp
+api repos/example/repo/pulls/21/comments?per_page=100 --paginate --slurp
+api repos/example/repo/commits/0123456789abcdef0123456789abcdef01234567/statuses?per_page=100 --paginate --slurp
+api repos/example/repo
+pr view https://github.com/example/repo/pull/21 --json headRefOid,reviewDecision
+api repos/example/repo/pulls/23
+api repos/example/repo/pulls/23/comments?per_page=100 --paginate --slurp
+api repos/example/repo/commits/0123456789abcdef0123456789abcdef01234567/check-runs?filter=all&per_page=100 --paginate --slurp
+api repos/example/repo/pulls/23/reviews?per_page=100 --paginate --slurp
+api repos/example/repo/issues/23/comments?per_page=100 --paginate --slurp
+api repos/example/repo
+api repos/example/repo/commits/0123456789abcdef0123456789abcdef01234567/statuses?per_page=100 --paginate --slurp
+pr view https://github.com/example/repo/pull/23 --json headRefOid,reviewDecision

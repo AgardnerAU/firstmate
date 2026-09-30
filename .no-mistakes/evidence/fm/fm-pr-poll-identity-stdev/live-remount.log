@@ -1,0 +1,28 @@
+## 1. arm the merge watch with the real fm-pr-check.sh
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/live-remount.check.sh
+rc=0
+--- task record tail:
+pr=https://github.com/example/repo/pull/11
+pr_head=0123456789abcdef0123456789abcdef01234567
+--- live state st_dev=16777235; registration identities as armed:
+16777235:420091347
+16777235:420091348
+## 2. simulate the APFS reboot renumbering: rewrite the recorded device (16777235 -> 16777238), inodes/bytes untouched
+16777238:420091347
+16777238:420091348
+## 3. real fm-watch.sh cycle with the forge reporting MERGED
+watch rc=0
+--- watcher wake output:
+check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.3BTm5f/state/live-remount.check.sh: merged
+--- poll artifacts after merge:
+live-remount.meta
+live-remount.pr-poll-merge-notified
+--- registration still re-recorded? (should be gone after retirement)
+(registration retired)

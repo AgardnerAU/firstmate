@@ -1,0 +1,11 @@
+=== change (HEAD db1f48c6)
+--- drain 1 (st_dev=16777235):
+remount note: settled history before the reboot
+--- drain 2 after renumber (st_dev=16777237, same inode and birth time):
+remount note: first event after the reboot
+=== base (65c75b0d, before the fix)
+--- drain 1 (st_dev=16777235):
+remount note: settled history before the reboot
+--- drain 2 after renumber (st_dev=16777237, same inode and birth time):
+remount note: settled history before the reboot
+remount note: first event after the reboot

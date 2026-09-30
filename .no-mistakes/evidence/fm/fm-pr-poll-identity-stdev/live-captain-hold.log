@@ -1,0 +1,11 @@
+armed
+poll authenticates: yes
+## fm-captain-hold.sh complete lab7c2a9c7a9e9e-worker --none
+complete: lab7c2a9c7a9e9e-worker captain-call inventory reviewed
+rc=0
+--- record tail:
+decisions_reviewed=1
+decision_keys=
+pr=https://github.com/example/notes/pull/33
+pr_head=0123456789abcdef0123456789abcdef01234567
+poll authenticates: yes
