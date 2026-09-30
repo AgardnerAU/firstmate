@@ -130,20 +130,23 @@
 # claim comment.
 # Absent worktree (records-only cleanup): a ship or scout record that names no
 # worktree - no worktree= line, or exactly one empty one, left when an operator
-# cleared a reassigned slot from the record - or whose recorded path provably no
-# longer exists has no copy to inspect, reset, or return. That is a different
-# case from an ambiguous identity: two or more worktree= lines still refuse, and
-# a path that cannot be proven absent (a dangling symlink, an unsearchable or
-# non-directory ancestor, a relative or dotted path) keeps the ordinary flow.
-# Teardown then warns and finishes only the task's own cleanup - endpoint,
-# status, records, checks, backlog - exactly as for a reassigned slot, and never
-# reads, resets, kills under, or returns that path or deletes a branch through
-# it. Nothing of the task's is discarded, so --force is neither needed nor
-# relevant, and the landed-work checks still run on every copy that exists and
-# is this task's. bin/fm-backend.sh's endpoint validator accepts an unrecorded
-# worktree only through teardown's explicit opt-in, never for Orca (whose
-# removal is keyed on its own worktree identity) or a secondmate (whose home is
-# its worktree), and every control or relaunch caller keeps refusing it.
+# cleared a reassigned slot from the record - or whose recorded path is no
+# directory has no copy to inspect, reset, or return. That is a different case
+# from an ambiguous identity: two or more worktree= lines still refuse. Every
+# step that would read or touch the copy is already skipped when no directory
+# is there, so teardown finishes only the task's own cleanup - endpoint, status,
+# records, checks, backlog. The landed-work gate stays in force for a ship that
+# names no worktree: it is proved from the record itself - every commit on the
+# recorded branch= in the project repository is reachable from a remote-tracking
+# branch (a fork counts), or the recorded (or branch-discovered) PR is merged
+# and holds that branch's work, or the branch's content is already in the
+# up-to-date default branch. With no such local branch, no local commit is left
+# and only a merged PR proves it. Anything short of that refuses with the
+# evidence, and only --force - explicit discard authority - overrides it; scouts
+# keep their report gate. bin/fm-backend.sh's endpoint validator accepts an
+# unrecorded worktree only through teardown's explicit opt-in, never for Orca
+# (whose removal is keyed on its own worktree identity) or a secondmate (whose
+# home is its worktree), and every control or relaunch caller keeps refusing it.
 # The recorded endpoint's exact task identity and the record's spawn incarnation
 # are validated separately
 # before cleanup. Its current working directory is only incidental process
@@ -1478,10 +1481,17 @@ remove_pr_poll_artifacts() {
 # Resolve the PR number for a worktree branch via gh-axi. Echoes the number on a
 # single match and returns 0; returns non-zero on no match or any lookup failure,
 # so the caller treats it as "no PR found" (fail-safe).
+# The repository and revision the landed-work proofs below inspect: the task's
+# own copy and its HEAD, or - for a record that names no worktree - the project
+# repository and the recorded branch (validate_recorded_work_landed). An empty
+# revision means no local commit is left to prove.
+LANDED_REPO=$WT
+LANDED_REV=HEAD
+
 pr_number_from_branch() {
   local branch=$1 out n
   [ -n "$branch" ] && [ "$branch" != HEAD ] || return 1
-  out=$( cd "$WT" && gh-axi pr list --state all --head "$branch" --limit 1 2>/dev/null ) || return 1
+  out=$( cd "$LANDED_REPO" && gh-axi pr list --state all --head "$branch" --limit 1 2>/dev/null ) || return 1
   n=$(printf '%s\n' "$out" | sed -n 's/^[[:space:]]*\([0-9][0-9]*\),.*/\1/p' | head -1)
   [ -n "$n" ] || return 1
   printf '%s' "$n"
@@ -1506,26 +1516,26 @@ pr_number_from_target() {
 
 ensure_commit_object() {
   local target=$1 commit=$2 n
-  git -C "$WT" cat-file -e "$commit^{commit}" 2>/dev/null && return 0
+  git -C "$LANDED_REPO" cat-file -e "$commit^{commit}" 2>/dev/null && return 0
   n=$(pr_number_from_target "$target") || return 1
-  git -C "$WT" remote get-url origin >/dev/null 2>&1 || return 1
-  git -C "$WT" fetch --quiet origin "refs/pull/$n/head" >/dev/null 2>&1 || return 1
-  git -C "$WT" cat-file -e "$commit^{commit}" 2>/dev/null
+  git -C "$LANDED_REPO" remote get-url origin >/dev/null 2>&1 || return 1
+  git -C "$LANDED_REPO" fetch --quiet origin "refs/pull/$n/head" >/dev/null 2>&1 || return 1
+  git -C "$LANDED_REPO" cat-file -e "$commit^{commit}" 2>/dev/null
 }
 
 patch_id_for_commit() {
   local commit=$1
-  git -C "$WT" show --pretty=medium --no-ext-diff "$commit" 2>/dev/null \
+  git -C "$LANDED_REPO" show --pretty=medium --no-ext-diff "$commit" 2>/dev/null \
     | git patch-id --stable 2>/dev/null \
     | awk 'NR == 1 { print $1 }'
 }
 
 unpushed_patches_are_in_pr_head() {
   local pr_head=$1 current base pr_patch_ids commit patch_id unpushed
-  current=$(git -C "$WT" rev-parse --verify HEAD 2>/dev/null) || return 1
-  base=$(git -C "$WT" merge-base "$current" "$pr_head" 2>/dev/null) || return 1
+  current=$(git -C "$LANDED_REPO" rev-parse --verify "$LANDED_REV" 2>/dev/null) || return 1
+  base=$(git -C "$LANDED_REPO" merge-base "$current" "$pr_head" 2>/dev/null) || return 1
   pr_patch_ids=$(
-    git -C "$WT" log --format=%H "$base..$pr_head" -- 2>/dev/null \
+    git -C "$LANDED_REPO" log --format=%H "$base..$pr_head" -- 2>/dev/null \
       | while IFS= read -r commit; do
           patch_id_for_commit "$commit"
         done \
@@ -1533,7 +1543,7 @@ unpushed_patches_are_in_pr_head() {
       | sort -u
   ) || return 1
   [ -n "$pr_patch_ids" ] || return 1
-  unpushed=$(git -C "$WT" log --format=%H HEAD --not --remotes -- 2>/dev/null) || return 1
+  unpushed=$(git -C "$LANDED_REPO" log --format=%H "$LANDED_REV" --not --remotes -- 2>/dev/null) || return 1
   [ -n "$unpushed" ] || return 1
   while IFS= read -r commit; do
     [ -n "$commit" ] || continue
@@ -1549,7 +1559,8 @@ EOF
 # PR from the recorded pr= URL first, then from the branch name, and asks GitHub
 # for both the PR state and head. Returns non-zero when the PR is not merged, the
 # current work is not contained in the PR head, no PR is found, or any gh error
-# occurs - the caller then falls back to the content check.
+# occurs - the caller then falls back to the content check. With no local
+# revision left (LANDED_REV empty) the merged state alone is the proof.
 pr_is_merged() {
   local branch=$1 target view state remainder head resolved_url current landed=0
   if [ -n "$PR_URL" ]; then
@@ -1558,7 +1569,7 @@ pr_is_merged() {
     target=$(pr_number_from_branch "$branch") || return 1
   fi
   [ -n "$target" ] || return 1
-  view=$(cd "$WT" && gh pr view "$target" --json state,headRefOid,url -q '.state + "\t" + .headRefOid + "\t" + .url' 2>/dev/null) || return 1
+  view=$(cd "$LANDED_REPO" && gh pr view "$target" --json state,headRefOid,url -q '.state + "\t" + .headRefOid + "\t" + .url' 2>/dev/null) || return 1
   state=${view%%$'\t'*}
   remainder=${view#*$'\t'}
   [ "$state" != "$view" ] || return 1
@@ -1570,14 +1581,16 @@ pr_is_merged() {
     *) return 1 ;;
   esac
   [ -n "$head" ] || return 1
-  ensure_commit_object "$target" "$head" || return 1
-  current=$(git -C "$WT" rev-parse --verify HEAD 2>/dev/null) || return 1
-  if git -C "$WT" merge-base --is-ancestor "$current" "$head" 2>/dev/null; then
-    landed=1
-  elif unpushed_patches_are_in_pr_head "$head"; then
-    landed=1
+  if [ -n "$LANDED_REV" ]; then
+    ensure_commit_object "$target" "$head" || return 1
+    current=$(git -C "$LANDED_REPO" rev-parse --verify "$LANDED_REV" 2>/dev/null) || return 1
+    if git -C "$LANDED_REPO" merge-base --is-ancestor "$current" "$head" 2>/dev/null; then
+      landed=1
+    elif unpushed_patches_are_in_pr_head "$head"; then
+      landed=1
+    fi
+    [ "$landed" = 1 ] || return 1
   fi
-  [ "$landed" = 1 ] || return 1
   if [ -z "$PR_URL" ]; then
     [ -n "$resolved_url" ] || return 1
     PR_URL=$resolved_url
@@ -1594,18 +1607,19 @@ pr_is_merged() {
 # so the caller refuses rather than guesses.
 content_in_default() {
   local name ref default_tree merged_tree
+  [ -n "$LANDED_REV" ] || return 1
   name=$(default_branch) || return 1
-  if git -C "$WT" remote get-url origin >/dev/null 2>&1; then
-    git -C "$WT" fetch --quiet origin "+refs/heads/$name:refs/remotes/origin/$name" >/dev/null 2>&1 || return 1
+  if git -C "$LANDED_REPO" remote get-url origin >/dev/null 2>&1; then
+    git -C "$LANDED_REPO" fetch --quiet origin "+refs/heads/$name:refs/remotes/origin/$name" >/dev/null 2>&1 || return 1
     ref="refs/remotes/origin/$name"
-  elif git -C "$WT" rev-parse --quiet --verify "refs/heads/$name" >/dev/null 2>&1; then
+  elif git -C "$LANDED_REPO" rev-parse --quiet --verify "refs/heads/$name" >/dev/null 2>&1; then
     ref="refs/heads/$name"
   else
     return 1
   fi
-  default_tree=$(git -C "$WT" rev-parse --quiet --verify "$ref^{tree}" 2>/dev/null) || return 1
+  default_tree=$(git -C "$LANDED_REPO" rev-parse --quiet --verify "$ref^{tree}" 2>/dev/null) || return 1
   [ -n "$default_tree" ] || return 1
-  merged_tree=$(git -C "$WT" merge-tree --write-tree "$ref" HEAD 2>/dev/null) || return 1
+  merged_tree=$(git -C "$LANDED_REPO" merge-tree --write-tree "$ref" "$LANDED_REV" 2>/dev/null) || return 1
   merged_tree=$(printf '%s\n' "$merged_tree" | head -1)
   [ "$merged_tree" = "$default_tree" ]
 }
@@ -1948,6 +1962,41 @@ validate_worktree_teardown_safety() {
       return 1
     fi
   fi
+}
+
+# The landed-work gate for a ship record that names no worktree, proved from the
+# record itself (see the header's absent-worktree paragraph).
+validate_recorded_work_landed() {
+  local branch unpushed_raw unpushed=
+  [ "$FORCE" != "--force" ] || return 0
+  case "$KIND" in
+    secondmate|scout) return 0 ;;
+  esac
+  branch=$(fm_meta_get "$META" branch)
+  LANDED_REPO=$PROJ
+  LANDED_REV=
+  if [ -n "$branch" ] && git -C "$PROJ" show-ref --verify --quiet "refs/heads/$branch"; then
+    LANDED_REV=refs/heads/$branch
+    if ! unpushed_raw=$(git -C "$PROJ" log --oneline "$LANDED_REV" --not --remotes -- 2>/dev/null); then
+      echo "REFUSED: cannot inspect task $ID's recorded branch $branch in $PROJ for commits not on a remote." >&2
+      echo "Restore the project repository, or get the captain's explicit OK to discard, then --force." >&2
+      return 1
+    fi
+    unpushed=$(printf '%s\n' "$unpushed_raw" | head -5)
+    [ -n "$unpushed" ] || return 0
+  fi
+  work_is_landed "$branch" && return 0
+  echo "REFUSED: task $ID has no worktree to inspect, and its recorded work cannot be proven landed or pushed." >&2
+  if [ -z "$branch" ]; then
+    echo "recorded branch: none" >&2
+  elif [ -z "$LANDED_REV" ]; then
+    echo "recorded branch: $branch (no such branch in $PROJ)" >&2
+  else
+    printf 'commits on %s not on any remote:\n%s\n' "$branch" "$unpushed" >&2
+  fi
+  echo "recorded PR: ${PR_URL:-none} (not proven merged)" >&2
+  echo "Push the branch, land its PR, or get the captain's explicit OK to discard, then --force." >&2
+  return 1
 }
 
 # Fix 1 (see script header): does the active-or-most-recent no-mistakes run in
@@ -2473,45 +2522,7 @@ require_owned_task_worktree_slot() {
 }
 
 teardown_owns_worktree() {
-  [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ] && [ -z "$TEARDOWN_WORKTREE_ABSENT" ]
-}
-
-# True only when <path> provably names nothing on disk: an absolute path with
-# no . or .. component, not even a dangling symlink, whose nearest existing
-# ancestor is a searchable directory, so the failed lookup below it is a
-# genuine absence rather than a permission error or an unreadable mount.
-# Anything short of that proof returns false and keeps the ordinary flow.
-path_provably_absent() {  # <path>
-  local path=$1 ancestor
-  case "$path" in
-    /*) ;;
-    *) return 1 ;;
-  esac
-  case "/$path/" in */./*|*/../*) return 1 ;; esac
-  [ ! -e "$path" ] && [ ! -L "$path" ] || return 1
-  ancestor=$(dirname "$path")
-  while [ ! -e "$ancestor" ] && [ ! -L "$ancestor" ]; do
-    ancestor=$(dirname "$ancestor")
-  done
-  [ -d "$ancestor" ] && [ ! -L "$ancestor" ] && [ -x "$ancestor" ]
-}
-
-# The absent-worktree determination (see the header's absent-worktree
-# paragraph): a ship or scout record that names no worktree, or whose recorded
-# path provably no longer exists, has no copy teardown could inspect, reset,
-# or return, so only its records-only cleanup runs. Orca removes its worktree
-# by its own id and a secondmate's home is its worktree, so neither takes this
-# path.
-TEARDOWN_WORKTREE_ABSENT=
-determine_absent_task_worktree() {
-  [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ] || return 0
-  if [ -z "$WT" ]; then
-    TEARDOWN_WORKTREE_ABSENT=unrecorded
-    echo "warning: task $ID's record names no worktree, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
-  elif path_provably_absent "$WT"; then
-    TEARDOWN_WORKTREE_ABSENT=gone
-    echo "warning: task $ID's recorded worktree $WT no longer exists, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
-  fi
+  [ "$TEARDOWN_SLOT_REASSIGNED" != 1 ]
 }
 
 firstmate_home_has_treehouse_slot() {
@@ -3384,7 +3395,9 @@ remove_secondmate_registry_entry() {
   return "$rc"
 }
 
-determine_absent_task_worktree
+if [ -z "$WT" ]; then
+  echo "warning: task $ID's record names no worktree, so there is no copy to inspect, reset, or return; only $ID's own records-only cleanup runs." >&2
+fi
 # The claim is read first: a slot claimed by another task is never returned, so
 # a second record naming it is no hazard to that cleanup and the record scan -
 # which protects a slot teardown would return - applies only to a slot this
@@ -3514,6 +3527,8 @@ if teardown_owns_worktree && [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
       exit 1
     fi
   fi
+elif [ -z "$WT" ]; then
+  validate_recorded_work_landed || exit 1
 fi
 
 # A Herdr close may reposition shared workspace order, so the whole
@@ -3907,12 +3922,10 @@ if [ -d "$STATE" ]; then
 fi
 if [ "$TEARDOWN_LEGACY_ACCEPTED" = 1 ]; then
   echo "teardown $ID complete (window ${T:-none}, worktree $WT, legacy record accepted without spawn_gen: endpoint $TEARDOWN_LEGACY_ENDPOINT, incarnation $TEARDOWN_META_SPAWN_GEN)"
+elif [ -z "$WT" ]; then
+  echo "teardown $ID complete (window ${T:-none}; no worktree recorded, records-only cleanup)"
 elif teardown_owns_worktree; then
   echo "teardown $ID complete (window ${T:-none}, worktree $WT)"
-elif [ "$TEARDOWN_WORKTREE_ABSENT" = unrecorded ]; then
-  echo "teardown $ID complete (window ${T:-none}; no worktree recorded, records-only cleanup)"
-elif [ "$TEARDOWN_WORKTREE_ABSENT" = gone ]; then
-  echo "teardown $ID complete (window ${T:-none}; recorded worktree $WT already gone, records-only cleanup)"
 else
   echo "teardown $ID complete (window ${T:-none}; pool slot $WT left to task $TEARDOWN_SLOT_REASSIGNED_TO${TEARDOWN_SLOT_REASSIGNED_HOME:+ (home $TEARDOWN_SLOT_REASSIGNED_HOME)}, which it was reassigned to)"
 fi

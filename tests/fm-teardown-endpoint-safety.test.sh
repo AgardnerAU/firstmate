@@ -1019,7 +1019,19 @@ test_own_and_absent_slot_claims_still_tear_down() {
 
 # Records-only cleanup: a task whose recorded copy is absent, or whose slot is
 # provably another task's, retires its endpoint and records without reading,
-# resetting, killing under, or returning that path, and without --force.
+# resetting, killing under, or returning that path, and without --force. A ship
+# that names no worktree still proves its work landed, here through a merged PR.
+fake_merged_pr() {  # <case>
+  cat > "$1/fakebin/gh" <<'SH'
+#!/usr/bin/env bash
+case "${1:-} ${2:-}" in
+  "pr view") printf '%s\t%s\t%s\n' MERGED 0000000000000000000000000000000000000000 https://github.com/example/repo/pull/3035 ; exit 0 ;;
+esac
+exit 1
+SH
+  chmod +x "$1/fakebin/gh"
+}
+
 run_plain_case() {  # <case> <id>
   local dir=$1 id=$2
   FM_HOME="$dir/home" FM_ROOT_OVERRIDE="$ROOT" \
@@ -1034,8 +1046,6 @@ assert_records_only_cleanup() {  # <case> <id> <description>
     || fail "$description: the task's own endpoint was not closed: $(cat "$dir/runtime.log")"
   ! grep -Fq "treehouse <" "$dir/runtime.log" \
     || fail "$description: a pool slot was returned: $(cat "$dir/runtime.log")"
-  assert_contains "$(cat "$dir/stdout")" "records-only cleanup" \
-    "$description: the completion line should name the records-only cleanup"
 }
 
 test_unrecorded_worktree_retires_records_only() {
@@ -1045,21 +1055,25 @@ test_unrecorded_worktree_retires_records_only() {
   # stopped blocking another task, and the work has since landed.
   dir=$(make_case worktree-unrecorded)
   mark_case_as_treehouse_pool "$dir"
+  fake_merged_pr "$dir"
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=firstmate:fm-$id" "endpoint_task_id=$id" \
     "project=$dir/project" "kind=ship" "pr=https://github.com/example/repo/pull/3035"
   run_plain_case "$dir" "$id" > "$dir/stdout" 2> "$dir/stderr" \
     || fail "teardown of a record naming no worktree failed: $(cat "$dir/stderr")"
   assert_records_only_cleanup "$dir" "$id" "no worktree= line"
+  assert_contains "$(cat "$dir/stdout")" "records-only cleanup" \
+    "the completion line should name the records-only cleanup"
   assert_contains "$(cat "$dir/stderr")" "names no worktree" \
     "the warning should say the record names no worktree"
   assert_present "$dir/worktree/sentinel" "records-only cleanup touched an unrelated pool slot"
 
   # The same record with its worktree= value cleared rather than removed.
   dir=$(make_case worktree-cleared)
+  fake_merged_pr "$dir"
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=firstmate:fm-$id" "endpoint_task_id=$id" "worktree=" \
-    "project=$dir/project" "kind=ship"
+    "project=$dir/project" "kind=ship" "pr=https://github.com/example/repo/pull/3035"
   run_plain_case "$dir" "$id" > "$dir/stdout" 2> "$dir/stderr" \
     || fail "teardown of a record with a cleared worktree= failed: $(cat "$dir/stderr")"
   assert_records_only_cleanup "$dir" "$id" "cleared worktree= value"
@@ -1128,8 +1142,6 @@ test_gone_worktree_retires_records_only() {
   run_plain_case "$dir" "$id" > "$dir/stdout" 2> "$dir/stderr" \
     || fail "teardown of a task whose recorded worktree is gone failed: $(cat "$dir/stderr")"
   assert_records_only_cleanup "$dir" "$id" "gone worktree"
-  assert_contains "$(cat "$dir/stderr")" "no longer exists" \
-    "the warning should say the recorded worktree no longer exists"
   kill -0 "$worker" 2>/dev/null || fail "gone-worktree teardown killed another task's worker"
   assert_present "$dir/worktree/sentinel" "gone-worktree teardown reset another task's copy"
   assert_present "$dir/home/state/$other.meta" "gone-worktree teardown removed another task's record"
