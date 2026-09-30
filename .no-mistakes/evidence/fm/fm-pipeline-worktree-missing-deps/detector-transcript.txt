@@ -1,0 +1,14 @@
+ROW: L1,warning,,,ask-user,"ESLint and Prettier checks could not run because worktree dependencies are absent. Install the project dependencies and rerun changed-file checks. Whitespace and generated agent-configuration drift checks passed."
+  -> ENVIRONMENT FAULT: ESLint and Prettier checks could not run because worktree dependencies are absent. Install the project dependencies and rerun changed-file checks. Whitespace and generated agent-configuration drift checks passed.
+ROW: lint-tools-unavailable,warning,,,ask-user,"ESLint and Prettier checks could not run because worktree dependencies are absent; both commands returned Command not found. Restore dependencies and rerun these checks. Syntax, whitespace and configured secret checks passed."
+  -> ENVIRONMENT FAULT: ESLint and Prettier checks could not run because worktree dependencies are absent; both commands returned Command not found. Restore dependencies and rerun these checks. Syntax, whitespace and configured secret checks passed.
+ROW: r1,warning,b.go,,ask-user,Administrators cannot run exports
+  -> not an environment fault
+ROW: test,warning,src/lint/x.go,,ask-user,Administrators cannot run exports
+  -> not an environment fault
+ROW: r1,warning,b.go,,ask-user,Users cannot run the optional plugin install
+  -> not an environment fault
+ROW: r1,warning,b.go,,ask-user,The export format cannot be run by administrators
+  -> not an environment fault
+ROW: r1,warning,b.go,,ask-user,Search is unavailable to administrators
+  -> not an environment fault
