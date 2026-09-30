@@ -514,6 +514,9 @@ Workspace and tab ids support verification and cleanup but are not inferred from
 Herdr reissues pane ids: after a server restart, the next new workspace takes a closed workspace's id, and its panes take that workspace's old pane ids (measured on Herdr 0.9.1 - [verification](verification/runtime-backends.md#pane-id-reissue)).
 A pane id alone therefore does not prove that a live pane is the task's endpoint.
 The pane's terminal id is never reissued, so spawn records it as `herdr_terminal_id=`, and `fm_backend_herdr_endpoint_identity` in `bin/backends/herdr.sh` checks it before every liveness read, capture, input, control action, and close.
+Spawn takes that id from the pane-create response, or from the record of an endpoint that relaunch adopts, and reads the pane back just before it writes the record.
+If that read fails or returns a different terminal id, spawn refuses to publish the record and exits nonzero.
+It then closes a pane it created only when the read returned an id; when the id was unreadable, it leaves the pane open and names it on stderr so the operator can close it by hand.
 A pane that another terminal now holds reads as this task's endpoint gone: liveness reads `missing`, input and capture fail, and cleanup closes nothing and still runs its landed-work checks.
 A record written before the field existed matches only while the pane's foreground working directory lies inside the recorded worktree and no other record of the home claims the live terminal.
 That foreground working directory follows the pane's foreground process-group leader, so a legacy record reads its own pane as gone only while that leader (for example the agent process itself, or a command the pane shell runs in the foreground) works outside the recorded worktree, not while the agent's child processes work elsewhere.
