@@ -2670,9 +2670,10 @@ fm_backend_herdr_agent_alive() {  # <target>
 # fm_backend_herdr_workspace_prune_seeded_default_tab for the incident and
 # the safety argument). An ADOPTED workspace's caller always passes an empty
 # 4th arg, so this function never even queries for a prune candidate in that
-# case. Echoes "<tab_id> <pane_id>" on success.
+# case. Echoes "<tab_id> <pane_id>" on success, followed by " <terminal_id>"
+# when the create response carries the new pane's terminal id.
 fm_backend_herdr_create_task() {  # <container> <label> <cwd> <seeded_default_tab_id>
-  local container=$1 label=$2 cwd=$3 seeded_tab_id=${4:-} session wsid list dup_tabs dup dup_pane dup_tab_ids out tab_id pane_id remaining_dup_tabs
+  local container=$1 label=$2 cwd=$3 seeded_tab_id=${4:-} session wsid list dup_tabs dup dup_pane dup_tab_ids out tab_id pane_id terminal_id remaining_dup_tabs
   session=${container%%:*}
   wsid=${container#*:}
   list=$(fm_backend_herdr_cli "$session" tab list --workspace "$wsid" 2>/dev/null) || return 1
@@ -2697,6 +2698,7 @@ EOF
   out=$(fm_backend_herdr_cli "$session" tab create --workspace "$wsid" --cwd "$cwd" --label "$label" --no-focus 2>/dev/null) || return 1
   tab_id=$(printf '%s' "$out" | jq -r '.result.tab.tab_id // empty' 2>/dev/null)
   pane_id=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id // empty' 2>/dev/null)
+  terminal_id=$(printf '%s' "$out" | jq -r '.result.root_pane.terminal_id // empty' 2>/dev/null)
   if [ -z "$tab_id" ] || [ -z "$pane_id" ]; then
     echo "error: could not parse tab/pane id from herdr tab create output" >&2
     return 1
@@ -2726,6 +2728,7 @@ EOF
     fi
   fi
   printf '%s %s' "$tab_id" "$pane_id"
+  [ -z "$terminal_id" ] || printf ' %s' "$terminal_id"
 }
 
 # fm_backend_herdr_projection_create_task: create one disposable presentation
@@ -2751,6 +2754,7 @@ fm_backend_herdr_projection_create_task() {  # <cwd> <workspace-label> <task-lab
   FM_BACKEND_HERDR_PROJECTION_SEEDED_PANE_ID=""
   FM_BACKEND_HERDR_PROJECTION_TAB_ID=""
   FM_BACKEND_HERDR_PROJECTION_PANE_ID=""
+  FM_BACKEND_HERDR_PROJECTION_TERMINAL_ID=""
   FM_BACKEND_HERDR_PROJECTION_CLEANUP_SAFE=0
 
   fm_backend_herdr_version_check || return 1
@@ -2802,6 +2806,8 @@ fm_backend_herdr_projection_create_task() {  # <cwd> <workspace-label> <task-lab
   }
   FM_BACKEND_HERDR_PROJECTION_TAB_ID=$(printf '%s' "$out" | jq -r '.result.tab.tab_id // empty' 2>/dev/null)
   FM_BACKEND_HERDR_PROJECTION_PANE_ID=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id // empty' 2>/dev/null)
+  # shellcheck disable=SC2034  # caller consumes the response-derived global
+  FM_BACKEND_HERDR_PROJECTION_TERMINAL_ID=$(printf '%s' "$out" | jq -r '.result.root_pane.terminal_id // empty' 2>/dev/null)
   if [ -z "$FM_BACKEND_HERDR_PROJECTION_TAB_ID" ] || [ -z "$FM_BACKEND_HERDR_PROJECTION_PANE_ID" ]; then
     echo "error: herdr presentation task-tab create returned incomplete IDs; leaving its journal quarantined" >&2
     return 1
@@ -2965,9 +2971,10 @@ fm_backend_herdr_projection_reclaim_rollback() {  # <session> <new-pane>
 # post-mutation uncertainty that must refuse the launch.
 fm_backend_herdr_projection_reclaim_task() {  # <session> <journal> <task-id> <home> <meta-workspace> <meta-tab> <meta-pane> <parent-label> <task-label> <cwd>
   local session=$1 journal=$2 id=$3 home=$4 meta_workspace=$5 meta_tab=$6 meta_pane=$7
-  local parent_label=$8 task_label=$9 cwd=${10} canonical_home state focus_before active_tab out new_tab new_pane info close_status
+  local parent_label=$8 task_label=$9 cwd=${10} canonical_home state focus_before active_tab out new_tab new_pane new_terminal info close_status
   FM_BACKEND_HERDR_PROJECTION_TAB_ID=""
   FM_BACKEND_HERDR_PROJECTION_PANE_ID=""
+  FM_BACKEND_HERDR_PROJECTION_TERMINAL_ID=""
   fm_backend_herdr_projection_journal_snapshot "$journal" "$id" || return 1
   if [ "$FM_BACKEND_HERDR_JOURNAL_VERSION" != 2 ]; then
     echo "warning: herdr presentation journal for $id has no exact restart binding; spawning flat" >&2
@@ -3024,6 +3031,7 @@ fm_backend_herdr_projection_reclaim_task() {  # <session> <journal> <task-id> <h
   fi
   new_tab=$(printf '%s' "$out" | jq -r '.result.tab.tab_id // empty' 2>/dev/null)
   new_pane=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id // empty' 2>/dev/null)
+  new_terminal=$(printf '%s' "$out" | jq -r '.result.root_pane.terminal_id // empty' 2>/dev/null)
   if [ -z "$new_tab" ] || [ -z "$new_pane" ]; then
     fm_backend_herdr_projection_focus_restore "$session" "$focus_before" "husk replacement create" || return 1
     echo "warning: herdr presentation reclaim for $id returned ambiguous replacement ids; spawning flat" >&2
@@ -3104,6 +3112,8 @@ fm_backend_herdr_projection_reclaim_task() {  # <session> <journal> <task-id> <h
   fi
   FM_BACKEND_HERDR_PROJECTION_TAB_ID=$new_tab
   FM_BACKEND_HERDR_PROJECTION_PANE_ID=$new_pane
+  # shellcheck disable=SC2034  # caller consumes the response-derived global
+  FM_BACKEND_HERDR_PROJECTION_TERMINAL_ID=$new_terminal
   return 0
 }
 

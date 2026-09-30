@@ -78,7 +78,7 @@ SEEDED_TAB_ID=${CONTAINER_RAW#*$'\t'}
 WORKSPACE_ID=${CONTAINER#*:}
 TASK_IDS=$(fm_backend_herdr_create_task "$CONTAINER" "fm-hsmoke" "$WT" "$SEEDED_TAB_ID") \
   || fail "create_task failed"
-read -r TAB_ID PANE_ID <<EOF
+read -r TAB_ID PANE_ID _ <<EOF
 $TASK_IDS
 EOF
 [ -n "$TAB_ID" ] && [ -n "$PANE_ID" ] || fail "create_task did not return tab/pane ids"

@@ -4856,16 +4856,14 @@ META_WINDOW=$T
 # identity every later endpoint read and action checks before trusting the
 # pane id (bin/backends/herdr.sh's fm_backend_herdr_endpoint_identity). The id
 # comes from the pane-create response, or from the record of an adopted
-# endpoint, and the pane read here must still answer with it, so a pane id
-# reissued since then cannot lend its terminal to this record. A record whose
-# identity cannot be established is never published.
-if [ "$BACKEND" = herdr ]; then
-  HERDR_READ_TERMINAL_ID=$(fm_backend_herdr_pane_terminal_id "$HERDR_SES" "$HERDR_PANE_ID") || HERDR_READ_TERMINAL_ID=
-  if [ -z "$HERDR_READ_TERMINAL_ID" ] || { [ -n "$HERDR_TERMINAL_ID" ] && [ "$HERDR_READ_TERMINAL_ID" != "$HERDR_TERMINAL_ID" ]; }; then
+# endpoint, so a pane id reissued since then cannot lend its terminal to this
+# record. Only when neither carries one is the pane read here, and a record
+# whose identity cannot be established is never published.
+if [ "$BACKEND" = herdr ] && [ -z "$HERDR_TERMINAL_ID" ]; then
+  HERDR_TERMINAL_ID=$(fm_backend_herdr_pane_terminal_id "$HERDR_SES" "$HERDR_PANE_ID") || {
     echo "error: could not establish the terminal identity of herdr pane $HERDR_SES:$HERDR_PANE_ID for $ID; refusing to publish its record" >&2
     exit 1
-  fi
-  HERDR_TERMINAL_ID=$HERDR_READ_TERMINAL_ID
+  }
 fi
 SPAWN_GEN="s$(date +%s).${BASHPID:-$$}.$RANDOM"
 SPAWN_META_PATH="$STATE/$ID.meta"

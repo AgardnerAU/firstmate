@@ -2035,7 +2035,12 @@ case "${1:-} ${2:-}" in
     # The re-created endpoint. Recording it lets a case prove the pane the
     # record ends up naming is the one this call minted.
     printf '%s\n' "$*" >> "$D/herdr-created-tabs"
-    printf '{"result":{"tab":{"tab_id":"tabnew"},"root_pane":{"pane_id":"%%9"}}}\n'
+    if [ -f "$D/herdr-create-terminal" ]; then
+      printf '{"result":{"tab":{"tab_id":"tabnew"},"root_pane":{"pane_id":"%%9","terminal_id":"%s"}}}\n' \
+        "$(cat "$D/herdr-create-terminal")"
+    else
+      printf '{"result":{"tab":{"tab_id":"tabnew"},"root_pane":{"pane_id":"%%9"}}}\n'
+    fi
     # From here on the new pane is the one that reads back.
     printf '%s' '%9' > "$D/herdr-pane"
     exit 0 ;;
@@ -2227,6 +2232,30 @@ test_herdr_rebind_stays_in_the_recorded_session() {
   [ "$(meta_field "$dir" rl73 herdr_pane_id)" = '%9' ] \
     || fail "the rebound record should name the pane the reclaim minted, got $(meta_field "$dir" rl73 herdr_pane_id)"
   pass "reclaim: a herdr rebind is created in the session the record names, never the ambient one"
+}
+
+test_herdr_rebind_refuses_a_terminal_identity_the_create_did_not_return() {
+  local dir out rc log
+  herdr_case_or_skip gone-herdr-identity rl76 fmlab '%none' || {
+    echo "skip - herdr rebind needs jq (the herdr adapter parses JSON with it)"
+    return 0
+  }
+  dir=$HERDR_CASE_DIR
+  # The create response names one terminal, and the later read of the same
+  # pane id answers with another, as if Herdr reissued the pane id between.
+  printf '%s' term-created > "$dir/fake/herdr-create-terminal"
+
+  out=$(run_spawn "$dir" rl76 --relaunch --harness claude); rc=$?
+  log=$(cat "$dir/fake/herdr-log")
+  expect_code 1 "$rc" "a rebind whose pane reads back another terminal must refuse"$'\n'"$out"$'\n'"$log"
+  assert_contains "$out" "refusing to publish its record" "the refusal should say the record was not published"
+  [ "$(meta_field "$dir" rl76 window)" = 'fmlab:%7' ] \
+    || fail "a refused rebind published the new endpoint, got $(meta_field "$dir" rl76 window)"
+  assert_not_contains "$(cat "$dir/home/state/rl76.meta")" "term-" \
+    "a refused rebind recorded a terminal id it could not establish"
+  [ ! -e "$dir/fake/launched-command" ] \
+    || fail "a refused rebind launched an agent into the unverified pane"
+  pass "reclaim: a herdr rebind refuses to publish a record whose pane reads back another terminal than the create returned"
 }
 
 test_herdr_reclaim_refuses_an_agent_that_came_back() {
@@ -2452,6 +2481,7 @@ test_herdr_relaunch_resumes_only_the_registered_pi_session
 test_herdr_reclaim_adopts_a_pane_that_outlived_its_server
 test_herdr_exit_reports_already_stopped_when_the_pane_outlived_its_server
 test_herdr_rebind_stays_in_the_recorded_session
+test_herdr_rebind_refuses_a_terminal_identity_the_create_did_not_return
 test_herdr_reclaim_refuses_an_agent_that_came_back
 test_herdr_reclaim_keeps_the_task_whole
 test_herdr_reclaim_of_a_secondmate_names_its_own_owner
