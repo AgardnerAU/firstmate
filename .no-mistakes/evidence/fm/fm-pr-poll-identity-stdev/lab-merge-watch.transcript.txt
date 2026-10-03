@@ -1,0 +1,36 @@
+=== Scenario 1: armed poll survives a device renumber (open PR, then merged)
+    fm-pr-check: armed: state/t1.check.sh
+    task record tail: pr=https://github.com/o/r/pull/11
+    live state device: 16777235; registration now records: 16777238:421898065 / 16777238:421898066
+--- fm-watch.sh output (renumbered, PR open):
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/contributions.check.sh: contributions: observation unavailable for https://github.com/o/r/pull/11
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/z-stop.check.sh: stop-cycle
+RESULT S1a: PASS (no rejection; poll ran: 1 gh state query)
+--- fm-watch.sh output (renumbered, PR merged):
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/t1.check.sh: merged
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/z-stop.check.sh: stop-cycle
+RESULT S1b: PASS (merge detected, poll retired)
+=== Scenario 2 (adversarial): renumbered poll whose check file was replaced is still refused, with cause
+    fm-pr-check: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+    fm-pr-check: armed: state/t2.check.sh
+    live state device: 16777235; registration now records: 16777238:421898452 / 16777238:421898453
+--- fm-watch.sh output (replaced check):
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/contributions.check.sh: contributions: observation unavailable for https://github.com/o/r/pull/12
+    check: rejected unauthenticated state checks: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/t2.check.sh (merge poll: the sidecar or check is not the file its registration was armed with)
+RESULT S2: PASS
+=== Scenario 3: a key appended after pr= is rejected and the wake names the cause
+    fm-pr-check: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+    fm-pr-check: armed: state/t3.check.sh
+--- fm-watch.sh output (key after pr=):
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/contributions.check.sh: contributions: observation unavailable for https://github.com/o/r/pull/13
+    check: rejected unauthenticated state checks: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/t3.check.sh (merge poll: the task record has key control_relaunch_tx after its pr= block)
+RESULT S3: PASS
+=== Scenario 4: captain attestation (fm-captain-hold.sh complete) under umask 022 keeps pr= last, 0600, poll valid
+    fm-pr-check: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+    fm-pr-check: armed: state/t4.check.sh
+    captain-hold: complete: t4 captain-call inventory reviewed
+    record: window=fm-t4|kind=ship|mode=direct|decisions_reviewed=1|decision_keys=|pr=https://github.com/o/r/pull/14|  mode: 600
+--- fm-watch.sh output (after attestation):
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/contributions.check.sh: contributions: observation unavailable for https://github.com/o/r/pull/14
+    check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Bf38EO/state/z-stop.check.sh: stop-cycle
+RESULT S4: PASS

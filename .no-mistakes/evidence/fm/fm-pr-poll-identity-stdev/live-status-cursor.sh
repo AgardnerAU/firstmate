@@ -26,6 +26,6 @@ SH
   rm -rf "$LAB"
 }
 run_case "change (HEAD $(git -C "$WT" rev-parse --short HEAD))" "$WT"
-BASE=$(mktemp -d "${TMPDIR:-/tmp}/fm-base.XXXXXX"); git -C "$WT" archive 65c75b0d bin | tar -x -C "$BASE"
-run_case "base (65c75b0d, before the fix)" "$BASE"
+BASE=$(mktemp -d "${TMPDIR:-/tmp}/fm-base.XXXXXX"); git -C "$WT" archive 1f3e7696 bin | tar -x -C "$BASE"
+run_case "base (1f3e7696, before the fix)" "$BASE"
 rm -rf "$BASE"

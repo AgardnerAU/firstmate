@@ -1,7 +1,7 @@
 ## 1. record the PR on the real worker's task record and arm the poll (fm-pr-lib publish path used by fm-pr-check.sh)
 armed
 poll authenticates: yes
-## 2. real relaunch: fm-control.sh lab7c2a9c7a9e9e-worker relaunch
+## 2. real relaunch: fm-control.sh lab9fbc74dfcb59-worker relaunch
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ●  WATCHER DOWN - SUPERVISION IS OFF
 ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
@@ -9,28 +9,28 @@ poll authenticates: yes
 ●  This is a supervision warning only; the guarded operation WILL still run.
 ●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-relaunched lab7c2a9c7a9e9e-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab7c2a9c7a9e9e-worker worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
+relaunched lab9fbc74dfcb59-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab9fbc74dfcb59-worker worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
 relaunch rc=0
-worker pane pid before=32422 after=32422; spawn_gen before=s1790789706.31875.30454 after=s1790789771.66060.27057
+worker pane pid before=13291 after=13291; spawn_gen before=s1791025170.11543.181 after=s1791025190.23744.4791
 --- relaunched task record:
-window=firstmate:fm-lab7c2a9c7a9e9e-worker
-endpoint_task_id=lab7c2a9c7a9e9e-worker
+window=firstmate:fm-lab9fbc74dfcb59-worker
+endpoint_task_id=lab9fbc74dfcb59-worker
 worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
 project=/private/tmp/fmlab-prpoll/home/projects/notes
 harness=claude
 kind=ship
 mode=local-only
 yolo=on
-branch=fm/lab7c2a9c7a9e9e-worker
-tasktmp=/tmp/fm-lab7c2a9c7a9e9e-worker
+branch=fm/lab9fbc74dfcb59-worker
+tasktmp=/tmp/fm-lab9fbc74dfcb59-worker
 model=sonnet
 effort=low
-busy_gen=g1790789771.69298.22120
-spawn_gen=s1790789771.66060.27057
-control_relaunch_tx=63148.20260930T173609Z.5318
+busy_gen=g1791025190.25195.19749
+spawn_gen=s1791025190.23744.4791
+control_relaunch_tx=20572.20261003T105948Z.5453
 pr=https://github.com/example/notes/pull/31
-pr_head=afc3f3a1606c16af25ac086bce5492bb456e9d4a
+pr_head=554fa2f9d9d060fdc67dbd8d9cbb52a62d4a45c8
 poll authenticates: yes
 ## 3. real fm-watch.sh cycle, forge reporting MERGED
 watch rc=0
-check: /private/tmp/fmlab-prpoll/home/state/lab7c2a9c7a9e9e-worker.check.sh: merged
+check: /private/tmp/fmlab-prpoll/home/state/lab9fbc74dfcb59-worker.check.sh: merged

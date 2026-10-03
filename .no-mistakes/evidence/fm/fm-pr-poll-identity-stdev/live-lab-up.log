@@ -1,0 +1,4 @@
+lab: /private/tmp/fmlab-prpoll (tear down with: bin/fm-live-lab.sh down /private/tmp/fmlab-prpoll)
+tree: 059e163fcd481615dca8951aa85ada5a4fe1c720 from /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M3SMCB52SV79Z4NHS0B46ETT
+spawned lab9fbc74dfcb59-worker harness=claude kind=ship mode=local-only yolo=on window=firstmate:fm-lab9fbc74dfcb59-worker worktree=/private/tmp/fmlab-prpoll/treehouse/.treehouse/notes-6c17b6/1/notes
+fm-live-lab: cannot record lab process: missing or invalid PID ''
