@@ -1790,7 +1790,7 @@ EOF
   if [ "$has_meta" = 1 ]; then
     if [ "$(meta_value "$meta" decisions_reviewed)" != 1 ] || [ "$previous" != "$keys" ]; then
       meta_tmp="$STATE/.$origin.meta.captain.$$"
-      if ! fm_pr_metadata_print_with "$meta" decisions_reviewed=1 "decision_keys=$keys" >"$meta_tmp" ||
+      if ! (umask 077; fm_pr_metadata_print_with "$meta" decisions_reviewed=1 "decision_keys=$keys" >"$meta_tmp") ||
         ! fm_backlog_atomic_transition publish "$meta_tmp" "$meta" "task record" "$STATE"; then
         rm -f -- "$meta_tmp"
         fail "could not record the decision attestation on task $origin"
