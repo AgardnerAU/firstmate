@@ -1,0 +1,12 @@
+$ fm-control.sh held relaunch --note "resume after a deliberate hold"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/data/held/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for held could not be launched on claude
+error: held's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=1
+$ ls state/held.worker-state
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/held.worker-state
+pane_current_command=zsh
+$ fm-crew-state.sh held
+state: parked · source: worker-state · worker deliberately stood down

@@ -1,0 +1,25 @@
+$ fm-crew-state.sh held   # live claude worker, no record
+state: unknown · source: pane · harness state unavailable (unknown missing)
+rc=0
+$ fm-control.sh held stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+stood-down held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0
+$ cat state/held.worker-state
+schema=1
+task_id=held
+endpoint=fmses:fm-held
+state=stood-down
+-rw-------@
+$ pane after stand-down:
+claude
+AG-MBP-96% claude
+AG-MBP-96%
+pane_current_command=zsh
+$ fm-crew-state.sh held   # after stand-down
+state: parked · source: worker-state · worker deliberately stood down
+rc=0
+$ fm-control.sh held stand-down   # repeat
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+already-stood-down held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0

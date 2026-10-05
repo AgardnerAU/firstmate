@@ -1,0 +1,17 @@
+$ fm-control.sh held stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+stood-down held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0
+$ fm-send.sh held "please continue"   # task deliberately has no worker
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+error: task held deliberately has no worker; relaunch it before sending an instruction
+rc=1
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/held.inbox: No such file or directory
+$ fm-control.sh held relaunch
+env: timeout: No such file or directory
+rc=127
+$ ls state/held.worker-state
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/held.worker-state
+pane_current_command=zsh
+$ fm-crew-state.sh held
+state: parked · source: worker-state · worker deliberately stood down

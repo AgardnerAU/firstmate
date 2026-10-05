@@ -1,0 +1,36 @@
+$ fm-control.sh held stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+stood-down held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0
+$ ls state/held.*
+held.control-relaunch
+held.control-relaunch.brief-prior
+held.control-relaunch.meta-prior
+held.control-relaunch.note
+held.git-hooks
+held.inbox
+held.meta
+held.status
+held.turn-ended
+held.worker-state
+$ fm-teardown.sh held
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+teardown: reaping leaked worktree process(es) for held: 59348 72562
+teardown: force-killing leaked worktree process(es) for held: 72562
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+
+worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.lPJs4I/wt-held is not managed by treehouse
+error: treehouse return failed for worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held; teardown aborted
+rc=1
+$ ls state/held.*  (after teardown)
+held.control-relaunch
+held.control-relaunch.brief-prior
+held.control-relaunch.meta-prior
+held.control-relaunch.note
+held.git-hooks
+held.inbox
+held.meta
+held.status
+held.turn-ended
+held.worker-state

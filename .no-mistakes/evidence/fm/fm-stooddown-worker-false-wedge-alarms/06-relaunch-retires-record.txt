@@ -1,0 +1,12 @@
+$ fm-control.sh held relaunch --note "resume after a deliberate hold"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+warning: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/data/held/launch-brief.md records no ship branch; defaulting to legacy branch fm/held
+warning: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/data/held/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+relaunched held harness=claude from=claude model=default effort=default backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0
+$ ls state/held.worker-state
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/held.worker-state: No such file or directory
+pane_current_command=2.1.289
+$ fm-crew-state.sh held
+state: working · source: pane · harness busy (claude-hook)

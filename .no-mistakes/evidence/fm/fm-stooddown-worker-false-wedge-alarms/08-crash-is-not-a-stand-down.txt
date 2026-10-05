@@ -1,0 +1,27 @@
+# task 'crash': its real claude worker was SIGKILLed (simulated crash); no stand-down was ever run
+pane_current_command=zsh
+$ fm-crew-state.sh crash
+state: unknown · source: pane · harness state unavailable (unknown missing)
+$ fm-control.sh crash stand-down   # must NOT relabel a crash as a deliberate hold
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+error: task crash's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/crash.status, then re-run stand-down
+rc=1
+$ ls state/crash.worker-state
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/crash.worker-state: No such file or directory
+$ fm-control.sh crash repair-worker-state   # must not infer a hold from absence
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+no-record agent-state=dead crash harness=claude backend=tmux endpoint=fmses:fm-crash worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-crash
+rc=0
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/crash.worker-state: No such file or directory
+--- declare the hold the documented way, then stand-down:
+$ echo "paused: waiting on upstream review" >> state/crash.status
+$ fm-control.sh crash stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+stood-down crash harness=claude backend=tmux endpoint=fmses:fm-crash worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-crash
+rc=0
+schema=1
+task_id=crash
+endpoint=fmses:fm-crash
+state=stood-down
+$ fm-crew-state.sh crash
+state: parked · source: worker-state · worker deliberately stood down

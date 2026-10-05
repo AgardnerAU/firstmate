@@ -1,0 +1,24 @@
+# a live claude started by hand in the held pane; the stood-down record is left in place
+pane_current_command=2.1.289
+$ cat state/held.worker-state
+schema=1
+task_id=held
+endpoint=fmses:fm-held
+state=stood-down
+$ fm-crew-state.sh held
+state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+$ fm-watch.sh (FM_POLL=2 FM_STALE_ESCALATE_SECS=6), up to 90s
+watcher still blocking at end: no (exited after ~4s)
+--- stdout (wake lines):
+check: rearm-resurface
+--- wake queue:
+--- stale tracking files:
+--- second watcher run (first exited on an unrelated check: rearm-resurface after the previous kill; acknowledged):
+watcher still blocking at end: no (loop iterations: 4 x 2s)
+--- stdout (wake lines):
+stale: fmses:fm-held
+--- wake queue:
+1791184043	3	stale	fmses:fm-held	stale: fmses:fm-held
+--- stale tracking files:
+.count-fmses_fm-held
+.hash-fmses_fm-held

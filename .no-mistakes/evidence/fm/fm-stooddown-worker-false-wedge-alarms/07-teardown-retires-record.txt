@@ -1,0 +1,14 @@
+# lab-only: plain git worktree, so a shim `treehouse return` (git worktree remove) stands in for the pool manager; fm-teardown itself is real
+$ cat state/held.worker-state  (before)
+schema=1
+task_id=held
+endpoint=fmses:fm-held
+state=stood-down
+$ fm-teardown.sh held
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.lPJs4I/projects/demo: skipped: no origin remote
+teardown held complete (window fmses:fm-held, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held)
+Backlog: held just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.lPJs4I/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.lPJs4I/data/backlog.md - move held to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+rc=0
+$ ls state/held.*  (after teardown)
+(no held.* records remain)

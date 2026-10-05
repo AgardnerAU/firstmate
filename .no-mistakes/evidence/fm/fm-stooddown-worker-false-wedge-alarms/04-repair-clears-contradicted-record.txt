@@ -1,0 +1,12 @@
+# live claude behind the stale record: repair-worker-state
+$ fm-control.sh held repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+warning: task held declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0
+$ ls state/held.worker-state
+ls: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/state/held.worker-state: No such file or directory
+$ fm-control.sh held repair-worker-state  # repeat
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I
+no-record agent-state=alive held harness=claude backend=tmux endpoint=fmses:fm-held worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.lPJs4I/wt-held
+rc=0

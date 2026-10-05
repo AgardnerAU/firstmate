@@ -1,0 +1,7 @@
+# the stood-down task's tmux window is destroyed (session survives); record still on disk
+schema=1
+task_id=crash
+endpoint=fmses:fm-crash
+state=stood-down
+$ fm-crew-state.sh crash
+state: unknown · source: worker-state · stood down but its endpoint is gone: fmses:fm-crash (relaunch cannot restore it in place)

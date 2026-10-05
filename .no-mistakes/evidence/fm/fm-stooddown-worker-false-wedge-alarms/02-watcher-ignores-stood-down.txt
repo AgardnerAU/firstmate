@@ -1,0 +1,6 @@
+# watcher run A (initial status signal drained): only the stood-down task 'held', real dead claude endpoint fmses:fm-held, FM_POLL=2 FM_STALE_ESCALATE_SECS=6, observed 45s
+watcher still blocking after 45s: yes
+--- stdout (wake lines):
+--- wake queue:
+--- stale/wedge tracking files for the held pane:
+(none)
