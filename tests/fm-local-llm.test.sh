@@ -77,6 +77,11 @@ try:
         log_file.write_text("PASS all tests\n")
         summary = run("summarise-log", str(log_file))
         assert summary.returncode == 0 and summary.stdout == "- Nothing failed.\n", summary.stderr
+        for model_bullet in ("*   Nothing failed.", "• Nothing failed."):
+            reply["choices"][0]["message"]["content"] = model_bullet
+            summary = run("summarise-log", str(log_file))
+            assert summary.returncode == 0 and summary.stdout == "- Nothing failed.\n", summary.stderr
+        reply["choices"][0]["message"]["content"] = "- Nothing failed."
         long_log = run("summarise-log", input="old\n" * 40000 + "FAIL test_one\n")
         assert long_log.returncode == 0, long_log.stderr
         sent = requests[-1][1]["messages"][1]["content"]

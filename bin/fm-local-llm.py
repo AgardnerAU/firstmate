@@ -97,8 +97,11 @@ def validate(task, content):
             raise ValueError("model returned an invalid commit subject")
         if len(lines) > 1 and (lines[1] != "" or len(lines[2:]) > 3 or any(not line.strip() for line in lines[2:])):
             raise ValueError("model returned an invalid commit body")
-    elif len(lines) > 5 or any(not line.startswith("- ") or not line[2:].strip() for line in lines):
-        raise ValueError("model returned an invalid log summary")
+    else:
+        bullets = [re.fullmatch(r"[-*•][ \t]+(.+)", line) for line in lines]
+        if len(lines) > 5 or any(not bullet or not bullet[1].strip() for bullet in bullets):
+            raise ValueError("model returned an invalid log summary")
+        return "\n".join(f"- {bullet[1].strip()}" for bullet in bullets)
     return content
 
 

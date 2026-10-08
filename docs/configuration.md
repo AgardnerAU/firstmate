@@ -13,6 +13,7 @@ Start with the directory layout, then use the setting reference for the behavior
 | Backlog, preferences, and memory | [Backlog backend](#backlog-backend-taskstoml--configbacklog-backend), [captain preferences](#captain-preferences-datacaptainmd--datacaptain-sharedmd), and [startup memory budget](#startup-memory-budget-configstartup-memory-budget) |
 | Supervision and presentation | [Pi supervision branch](#pi-supervision-branch), [supervision host](#supervision-host-configsupervision-host), and [Calm preference](#calm-preference-configcalm) |
 | Persistent secondmates | [Secondmate routes](#secondmate-routes-datasecondmatesmd) |
+| Local commit and log drafts | [Local text helper](#local-text-helper-configlocal-llmjson) |
 | Per-run overrides and tuning | [Environment variables](#environment-variables) |
 
 ## Local text helper (config/local-llm.json)
@@ -25,8 +26,7 @@ Create the private, gitignored `config/local-llm.json` under the effective `FM_H
 {"base_url":"http://llm-box:8000/v1","model":"nvidia/Qwen3.8-27B-NVFP4"}
 ```
 
-Run `bin/fm-local-llm.py commit-msg --repo <repository>` to draft from its staged diff, or pipe a diff to `commit-msg`.
-Run `bin/fm-local-llm.py summarise-log <log-file>` or pipe a log to `summarise-log`.
+Use `bin/fm-local-llm.py` to draft a conventional commit message from a diff or to summarise a test log; its command help owns the input forms and exact commands.
 The helper requires Python 3, sends requests without an API key, disables model thinking, and exits unsuccessfully without stdout when configuration or the endpoint is unavailable.
 
 ## FM_HOME
