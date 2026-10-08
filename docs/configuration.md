@@ -15,6 +15,20 @@ Start with the directory layout, then use the setting reference for the behavior
 | Persistent secondmates | [Secondmate routes](#secondmate-routes-datasecondmatesmd) |
 | Per-run overrides and tuning | [Environment variables](#environment-variables) |
 
+## Local text helper (config/local-llm.json)
+
+`bin/fm-local-llm.py` is optional help for workers drafting a commit message or summarising a test log before reading it in full.
+It does not make implementation or safety decisions, and workers review its output before use.
+Create the private, gitignored `config/local-llm.json` under the effective `FM_HOME`, or under `FM_CONFIG_OVERRIDE` when set:
+
+```json
+{"base_url":"http://llm-box:8000/v1","model":"nvidia/Qwen3.8-27B-NVFP4"}
+```
+
+Run `bin/fm-local-llm.py commit-msg --repo <repository>` to draft from its staged diff, or pipe a diff to `commit-msg`.
+Run `bin/fm-local-llm.py summarise-log <log-file>` or pipe a log to `summarise-log`.
+The helper requires Python 3, sends requests without an API key, disables model thinking, and exits unsuccessfully without stdout when configuration or the endpoint is unavailable.
+
 ## FM_HOME
 
 `FM_HOME` selects the operational home for one firstmate instance.
