@@ -1,0 +1,24 @@
+Commit message from staged disposable diff:
+exit=0
+docs: add diagnostics guideline to redact tokens
+
+Summary of passing test log:
+exit=0
+- No tests failed; all executed tests passed.
+- `test_config` and `test_redaction` were both reported as PASS.
+- There are no errors or exceptions present in the provided log tail.
+- No files require inspection as there are no failures.
+- The log indicates a successful test run for the two listed tests.
+
+Summary of failing test log:
+exit=0
+- 1 test passed: `test_config`.
+- 1 test failed: `test_redaction`.
+- Most likely cause: assertion failure for expected masked token.
+- First file to inspect: `tests/test_redaction.py` (line 42).
+- No other failures reported.
+
+Missing configuration guard:
+exit=1
+
+fm-local-llm: missing /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4DMWBDSTS0XHZZZV51H0JRR/.local-llm-live.3i0lcbdt/missing/local-llm.json; set base_url and model in config/local-llm.json
