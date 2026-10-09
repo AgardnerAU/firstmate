@@ -23,12 +23,15 @@ Set the private, gitignored `config/remote-verify` file in the effective `FM_HOM
 `FM_CONFIG_OVERRIDE` selects a different private config directory for tests or a one-off run.
 The script refuses an absent or malformed setting and reports an unreachable host so the caller can choose whether to run locally.
 
-Run `bin/fm-remote-verify.sh /path/to/worktree pnpm run verify` to copy tracked and untracked but not ignored files, install with `pnpm install --frozen-lockfile`, and stream the command's result.
+Run `bin/fm-remote-verify.sh /path/to/worktree pnpm run verify` to copy existing tracked and untracked but not ignored files, install with `pnpm install --frozen-lockfile` when the project has a pnpm lockfile and package manifest, and stream the command's result.
 The script excludes `.git`, dependencies, build output, `.env` files, and common credential filenames even if Git tracks them; review other sensitive file names before using it on a project.
 Each run uses a disposable directory under `~/.cache/firstmate/verify/`, while the pnpm store persists at `~/.local/share/pnpm/store`.
 The command receives `CUDA_VISIBLE_DEVICES` empty and `NVIDIA_VISIBLE_DEVICES=void` to keep GPU devices unavailable to normal test tooling.
-Git-dependent project checks cannot inspect the source revision in this copy because `.git` stays on the Mac; their failure is reported by the project command.
-The project command itself may invoke Git for fixtures or other checks; AGFloorPlanner's `verify` does so despite the transport avoiding remote Git.
+The Mac bundles the worktree's HEAD and its ancestry into a standalone, disposable Git repository beside the transferred files.
+Remote Git may inspect this read-only history and run in throwaway test fixtures, so history checks such as `wiki:watermark:test` and `openapi:drift` can run there.
+The remote copy has no remote URLs, credential helpers, hooks, or push configuration; `.env` and common secret files remain excluded.
+The runner refuses a history bundle if a reachable commit contains one of those excluded secret paths.
+Do not clone from GitHub, create worker copies or source commits, push, or provide GitHub credentials on the workstation.
 
 The `runner` account on `llm-box` was provisioned without sudo on 2026-10-08 using its installed Corepack 0.24.0: `COREPACK_HOME="$HOME/.cache/node/corepack" corepack enable --install-directory "$HOME/.local/bin"` and `COREPACK_HOME="$HOME/.cache/node/corepack" corepack prepare pnpm@10.34.3 --activate`.
 Its `~/.local/bin/pnpm` shim resolves pnpm 10.34.3, matching AGFloorPlanner's `packageManager` pin; Node 22.22.1 satisfies the project's `>=22.13.0 <23.0.0` engine.
