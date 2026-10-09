@@ -88,22 +88,29 @@ printf 'lockfileVersion: 9.0\n' > "$tmp/tree/pnpm-lock.yaml"
 PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash check.sh
 grep -q '^install --frozen-lockfile --store-dir ' "$tmp/pnpm.log"
 
+# Committed .env files are repository content; untracked and ignored secrets stay local.
+printf 'MODE=test\n' > "$tmp/tree/.env.test"
+git -C "$tmp/tree" add .env.test
+git -C "$tmp/tree" -c user.name=Test -c user.email=test@example.test commit -qm committed-env
+printf 'ignored.key\n' > "$tmp/tree/.gitignore"
+printf 'PRIVATE\n' > "$tmp/tree/ignored.key"
+printf 'SECRET=local\n' > "$tmp/tree/.env.local"
 printf 'SECRET=\n' > "$tmp/tree/.env.example"
-git -C "$tmp/tree" add .env.example
-git -C "$tmp/tree" -c user.name=Test -c user.email=test@example.test commit -qm template
-cat > "$tmp/tree/template.sh" <<'CHECK'
+cat > "$tmp/tree/secrets.sh" <<'CHECK'
 #!/usr/bin/env bash
 set -euo pipefail
+[ -f .env.test ]
+[ -z "$(git status --porcelain -- .env.test)" ]
+[ "$(git log -1 --format=%s)" = committed-env ]
 [ -f .env.example ]
 [ ! -e .env ]
-[ -z "$(git status --porcelain -- .env.example)" ]
+[ ! -e .env.local ]
+[ ! -e ignored.key ]
 CHECK
-PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash template.sh
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash secrets.sh
 
-git -C "$tmp/tree" add .env
-git -C "$tmp/tree" -c user.name=Test -c user.email=test@example.test commit -qm secret
-if PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" true >"$tmp/out" 2>&1; then
-  printf 'history containing a secret succeeded\n' >&2; exit 1
-fi
-grep -q 'Git history contains excluded secret path: .env' "$tmp/out"
+printf 'exit 7\n' > "$tmp/tree/fail.sh"
+status=0
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash fail.sh || status=$?
+[ "$status" -eq 7 ] || { printf 'remote exit code %s was not propagated\n' "$status" >&2; exit 1; }
 printf 'fm-remote-verify: passed\n'

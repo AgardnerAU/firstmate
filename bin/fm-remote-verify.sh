@@ -4,6 +4,8 @@
 # The command is passed as an argv vector, not evaluated as shell text.
 # config/remote-verify contains exactly one user@host SSH destination.
 # Git history is bundled on the Mac into a disposable remote test repository.
+# Committed files, including committed .env files, are sent as repository content;
+# ignored and secret-like untracked files, such as local .env files, are not.
 # Remote Git is limited to verification and throwaway test fixtures: no GitHub
 # clones, worker copies, source commits, pushes, credentials, remotes, or hooks.
 set -euo pipefail
@@ -53,37 +55,35 @@ file_list=$(mktemp)
 bundle_file=$(mktemp)
 trap cleanup EXIT
 
-# Git selects tracked files and untracked files that are not ignored.
-# rsync's exclusions apply even to tracked files; credentials stay on this Mac.
-git -C "$worktree" ls-files --cached --others --exclude-standard -z | while IFS= read -r -d '' path; do
+# Committed files are repository content already shared through the project
+# remote, so the tree and history are sent as committed, including .env files.
+# Untracked files are sent only when not ignored and not secret-like; ignored
+# files, including local .env files and keys, never leave this Mac.
+is_secret_path() {
+  case "$1" in
+    .env.example|*/.env.example|.env.sample|*/.env.sample|.env.template|*/.env.template) return 1;;
+    .env|.env.*|*/.env|*/.env.*|.npmrc|*/.npmrc|.pypirc|*/.pypirc|.netrc|*/.netrc|\
+    .ssh/*|*/.ssh/*|.aws/*|*/.aws/*|.gnupg/*|*/.gnupg/*|\
+    *.pem|*.key|*.p12|*.pfx|credentials.json|*/credentials.json|secrets.json|*/secrets.json|\
+    id_rsa*|*/id_rsa*|id_ed25519*|*/id_ed25519*) return 0;;
+  esac
+  return 1
+}
+{
+  git -C "$worktree" ls-files --cached -z
+  git -C "$worktree" ls-files --others --exclude-standard -z | while IFS= read -r -d '' path; do
+    is_secret_path "$path" || printf '%s\0' "$path"
+  done
+} | while IFS= read -r -d '' path; do
   if [ -e "$worktree/$path" ] || [ -L "$worktree/$path" ]; then
     printf '%s\0' "$path"
   fi
 done > "$file_list"
-# Committed .env templates are not secrets and verification may need them.
-git -C "$worktree" log --format= --name-only -z HEAD | while IFS= read -r -d '' path; do
-  case "$path" in
-    .env.example|*/.env.example|.env.sample|*/.env.sample|.env.template|*/.env.template) ;;
-    .env|.env.*|*/.env|*/.env.*|.npmrc|*/.npmrc|.pypirc|*/.pypirc|.netrc|*/.netrc|\
-    .ssh/*|*/.ssh/*|.aws/*|*/.aws/*|.gnupg/*|*/.gnupg/*|\
-    *.pem|*.key|*.p12|*.pfx|credentials.json|*/credentials.json|secrets.json|*/secrets.json|\
-    id_rsa*|*/id_rsa*|id_ed25519*|*/id_ed25519*)
-      printf 'error: Git history contains excluded secret path: %s\n' "$path" >&2
-      exit 65
-      ;;
-  esac
-done
 source_head=$(git -C "$worktree" rev-parse HEAD)
 git -C "$worktree" bundle create "$bundle_file" HEAD
 exclude=(
-  --include=.env.example --include=.env.sample --include=.env.template
   --exclude=.git --exclude=node_modules --exclude=dist --exclude=build
   --exclude=coverage --exclude=.next --exclude=.turbo --exclude=.cache
-  --exclude=.env --exclude='.env.*' --exclude='.npmrc' --exclude='.pypirc'
-  --exclude='.ssh' --exclude='.aws' --exclude='.gnupg' --exclude='.netrc'
-  --exclude='*.pem' --exclude='*.key' --exclude='*.p12' --exclude='*.pfx'
-  --exclude='credentials.json' --exclude='secrets.json'
-  --exclude='id_rsa*' --exclude='id_ed25519*'
 )
 rsync -a --from0 --files-from="$file_list" "${exclude[@]}" -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$worktree/" "$destination:$remote_work/"
 rsync -a -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$bundle_file" "$destination:$remote_work.bundle"

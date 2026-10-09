@@ -24,18 +24,20 @@ Set the private, gitignored `config/remote-verify` file in the effective `FM_HOM
 The script refuses an absent or malformed setting and reports an unreachable host so the caller can choose whether to run locally.
 
 Run `bin/fm-remote-verify.sh /path/to/worktree pnpm run verify` to copy existing tracked and untracked but not ignored files, install with `pnpm install --frozen-lockfile` when the project has a pnpm lockfile and package manifest, and stream the command's result.
-The script excludes `.git`, dependencies, build output, `.env` files, and common credential filenames even if Git tracks them; review other sensitive file names before using it on a project.
-Committed `.env.example`, `.env.sample`, and `.env.template` files are templates, so the script copies them and allows them in the history.
+Committed files, including committed `.env` files, are repository content already shared through the project remote, so the script sends them so the remote tree matches HEAD.
+Ignored files never leave the Mac, and untracked files named like `.env`, `.npmrc`, keys, or credential files are also kept local; `.env.example`, `.env.sample`, and `.env.template` are sent as templates.
+The script also skips `.git`, dependency, and build output directories.
 Each run uses a disposable directory under `~/.cache/firstmate/verify/`, while the pnpm store persists at `~/.local/share/pnpm/store`.
 The command receives `CUDA_VISIBLE_DEVICES` empty and `NVIDIA_VISIBLE_DEVICES=void` to keep GPU devices unavailable to normal test tooling.
 The Mac bundles the worktree's HEAD and its ancestry into a standalone, disposable Git repository beside the transferred files.
 Remote Git may inspect this read-only history and run in throwaway test fixtures, so history checks such as `wiki:watermark:test` and `openapi:drift` can run there.
-The remote copy has no remote URLs, credential helpers, hooks, or push configuration; `.env` and common secret files remain excluded.
-The runner refuses a history bundle if a reachable commit contains one of those excluded secret paths.
+The remote copy has no remote URLs, credential helpers, hooks, or push configuration.
 Do not clone from GitHub, create worker copies or source commits, push, or provide GitHub credentials on the workstation.
 
 The `runner` account on `llm-box` was provisioned without sudo on 2026-10-08 using its installed Corepack 0.24.0: `COREPACK_HOME="$HOME/.cache/node/corepack" corepack enable --install-directory "$HOME/.local/bin"` and `COREPACK_HOME="$HOME/.cache/node/corepack" corepack prepare pnpm@10.34.3 --activate`.
-Its `~/.local/bin/pnpm` shim resolves pnpm 10.34.3, matching AGFloorPlanner's `packageManager` pin; Node 22.22.1 satisfies the project's `>=22.13.0 <23.0.0` engine.
+Its `~/.local/bin/pnpm` shim resolves pnpm 10.34.3, matching AGFloorPlanner's `packageManager` pin.
+AGFloorPlanner's engine moved to `>=24.11.0 <25.0.0`, so on 2026-10-09 the official `node-v24.21.0-linux-x64.tar.xz` from `https://nodejs.org/dist/latest-v24.x/` was verified against that release's `SHASUMS256.txt` (SHA-256 `fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6`), unpacked to `~/.local/opt/node-v24.21.0-linux-x64`, and its `node`, `npm`, and `npx` were linked into `~/.local/bin`.
+The runner's `node -v` reports v24.21.0; the system Node 22.22.1 is unchanged.
 AGFloorPlanner's secret-scan canary also requires gitleaks, so version 8.30.1 was downloaded from its GitHub release, checked against the project's pinned SHA-256 `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`, and installed at `~/.local/bin/gitleaks` with mode 0755.
 The remote shell receives the user bin directory through the script, so interactive shell profile changes are unnecessary.
 
