@@ -1,16 +1,35 @@
 #!/usr/bin/env bash
 # Run a local Git worktree's verification command on the configured SSH host.
-# Usage: bin/fm-remote-verify.sh <worktree> <command> [argument ...]
+# Usage: bin/fm-remote-verify.sh [--env NAME=VALUE]... <worktree> <command> [argument ...]
 # The command is passed as an argv vector, not evaluated as shell text.
+# --env sets one variable for the remote command; repeat it for more.
+# The script installs nothing: put any dependency install in the command itself.
 # config/remote-verify contains exactly one user@host SSH destination.
-# Git history is bundled on the Mac into a disposable remote test repository.
+# Every remote step is a script read from stdin by `bash -s`, so the remote
+# login shell never parses arguments; the remote host needs bash and Git.
+# Git history is bundled locally into a disposable remote test repository.
 # Committed files, including committed .env files, are sent as repository content;
-# ignored and secret-like untracked files, such as local .env files, are not.
+# ignored files and untracked files with secret-like names are not.
+# The untracked filter matches file names only, so ignore any other secret file.
 # Remote Git is limited to verification and throwaway test fixtures: no GitHub
 # clones, worker copies, source commits, pushes, credentials, remotes, or hooks.
 set -euo pipefail
 
-usage() { printf 'usage: %s <worktree> <command> [argument ...]\n' "$0" >&2; exit 64; }
+usage() { printf 'usage: %s [--env NAME=VALUE]... <worktree> <command> [argument ...]\n' "$0" >&2; exit 64; }
+env_args=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --env)
+      [ "$#" -ge 2 ] || usage
+      [[ "$2" =~ ^[A-Za-z_][A-Za-z_0-9]*= ]] || { printf 'error: --env needs NAME=VALUE: %s\n' "$2" >&2; exit 64; }
+      env_args+=("$2")
+      shift 2
+      ;;
+    --) shift; break;;
+    -*) usage;;
+    *) break;;
+  esac
+done
 [ "$#" -ge 2 ] || usage
 worktree=$1
 shift
@@ -30,16 +49,25 @@ destination=$(cat "$config")
   exit 78
 }
 ssh_opts=(-o BatchMode=yes -o ConnectTimeout=10)
-remote_home=$(ssh "${ssh_opts[@]}" "$destination" 'printf %s "$HOME"') || {
+# Run a bash script from stdin on the host; arguments are quoted for bash, not the login shell.
+remote_bash() {
+  local args=''
+  [ "$#" -eq 0 ] || printf -v args ' %q' "$@"
+  { printf 'set --%s\n' "$args"; cat; } | ssh "${ssh_opts[@]}" "$destination" 'bash -s'
+}
+sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi
+}
+# shellcheck disable=SC2016
+remote_home=$(remote_bash <<<'printf %s "$HOME"') || {
   printf 'error: remote verify host %s is unreachable; run locally if needed\n' "$destination" >&2
   exit 69
 }
 [[ "$remote_home" =~ ^/[a-zA-Z0-9_./-]+$ ]] || { printf 'error: unsafe remote home path\n' >&2; exit 69; }
-task_hash=$(printf %s "$worktree" | shasum -a 256 | cut -c1-16)
+task_hash=$(printf %s "$worktree" | sha256 | cut -c1-16)
 remote_task=$remote_home/.cache/firstmate/verify/$task_hash
-# Paths are validated above and intentionally expand on the client.
-# shellcheck disable=SC2029
-remote_work=$(ssh "${ssh_opts[@]}" "$destination" "mkdir -p '$remote_task' && mktemp -d '$remote_task/work.XXXXXXXX'") || {
+# shellcheck disable=SC2016
+remote_work=$(remote_bash "$remote_task" <<<'mkdir -p "$1" && mktemp -d "$1/work.XXXXXXXX"') || {
   printf 'error: cannot create remote verify directory on %s\n' "$destination" >&2
   exit 69
 }
@@ -47,8 +75,9 @@ remote_work=$(ssh "${ssh_opts[@]}" "$destination" "mkdir -p '$remote_task' && mk
   printf 'error: unexpected remote verify directory from %s\n' "$destination" >&2
   exit 69
 }
-cleanup() { # shellcheck disable=SC2029
-  ssh "${ssh_opts[@]}" "$destination" "chmod -R u+w '$remote_work/.git' 2>/dev/null || true; rm -rf '$remote_work' '$remote_work.template' && rm -f '$remote_work.bundle'" >/dev/null 2>&1 || true
+cleanup() {
+  # shellcheck disable=SC2016
+  remote_bash "$remote_work" <<<'chmod -R u+w "$1/.git" 2>/dev/null || true; rm -rf "$1" "$1.template"; rm -f "$1.bundle"' >/dev/null 2>&1 || true
   rm -f "$file_list" "$bundle_file"
 }
 file_list=$(mktemp)
@@ -57,8 +86,8 @@ trap cleanup EXIT
 
 # Committed files are repository content already shared through the project
 # remote, so the tree and history are sent as committed, including .env files.
-# Untracked files are sent only when not ignored and not secret-like; ignored
-# files, including local .env files and keys, never leave this Mac.
+# Untracked files are sent only when not ignored and not named like a secret;
+# ignored files, including local .env files and keys, never leave this machine.
 is_secret_path() {
   case "$1" in
     .env.example|*/.env.example|.env.sample|*/.env.sample|.env.template|*/.env.template) return 1;;
@@ -88,14 +117,14 @@ exclude=(
 rsync -a --from0 --files-from="$file_list" "${exclude[@]}" -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$worktree/" "$destination:$remote_work/"
 rsync -a -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$bundle_file" "$destination:$remote_work.bundle"
 
-# Bash receives the command through positional parameters, avoiding remote shell evaluation.
-printf -v remote_args ' %q' "$remote_work" "$source_head" "$@"
-# shellcheck disable=SC2029
-ssh "${ssh_opts[@]}" "$destination" "bash -s --$remote_args" <<'REMOTE'
+remote_bash "$remote_work" "$source_head" "${#env_args[@]}" ${env_args[@]+"${env_args[@]}"} "$@" <<'REMOTE'
 set -euo pipefail
 work=$1
 source_head=$2
-shift 2
+env_count=$3
+shift 3
+env_vars=("${@:1:$env_count}")
+shift "$env_count"
 trap 'chmod -R u+w "$work/.git" 2>/dev/null || true; rm -rf "$work"' EXIT
 cd "$work"
 export GIT_CONFIG_NOSYSTEM=1
@@ -112,12 +141,7 @@ rm "$work.bundle"
 chmod -R a-w .git
 export GIT_OPTIONAL_LOCKS=0
 export PATH="$HOME/.local/bin:$PATH"
-export COREPACK_HOME="$HOME/.cache/node/corepack"
-export PNPM_STORE_DIR="$HOME/.local/share/pnpm/store"
-export CUDA_VISIBLE_DEVICES=''
-export NVIDIA_VISIBLE_DEVICES=void
-if [ -f package.json ] && [ -f pnpm-lock.yaml ]; then
-  pnpm install --frozen-lockfile --store-dir "$PNPM_STORE_DIR"
-fi
-"$@"
+for assignment in ${env_vars[@]+"${env_vars[@]}"}; do export "${assignment?}"; done
+# The command must not read the rest of this script from stdin.
+"$@" </dev/null
 REMOTE

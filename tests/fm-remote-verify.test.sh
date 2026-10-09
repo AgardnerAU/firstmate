@@ -29,12 +29,9 @@ cat > "$tmp/mock/ssh" <<'MOCK'
 set -euo pipefail
 while [ "$1" = -o ]; do shift 2; done
 shift
-command=$1
-case "$command" in
-  'printf %s "$HOME"') printf '%s' "$TEST_REMOTE_HOME";;
-  *'mktemp -d'*) mkdir -p "$TEST_REMOTE_WORK"; printf '%s' "$TEST_REMOTE_WORK";;
-  *) HOME=$TEST_REMOTE_HOME bash -c "$command";;
-esac
+# Arguments must reach the host only through stdin, never through the login shell.
+[ "$#" -eq 1 ] && [ "$1" = 'bash -s' ] || { printf 'unexpected remote command: %s\n' "$*" >&2; exit 90; }
+HOME=$TEST_REMOTE_HOME exec bash -s
 MOCK
 cat > "$tmp/mock/rsync" <<'MOCK'
 #!/usr/bin/env bash
@@ -71,22 +68,40 @@ if [ -d .git/hooks ] && [ -n "$(find .git/hooks -type f -print -quit)" ]; then e
 [ ! -e .env ]
 CHECK
 chmod +x "$tmp/mock/ssh" "$tmp/mock/rsync" "$tmp/remote/home/.local/bin/pnpm" "$tmp/tree/check.sh"
-tree=$(cd "$tmp/tree" && pwd -P)
-task_hash=$(printf %s "$tree" | shasum -a 256 | cut -c1-16)
 export TEST_REMOTE_HOME="$tmp/remote/home"
-export TEST_REMOTE_WORK="$TEST_REMOTE_HOME/.cache/firstmate/verify/$task_hash/work.test"
 TEST_REAL_RSYNC=$(command -v rsync)
 export TEST_REAL_RSYNC
 export TEST_PNPM_LOG="$tmp/pnpm.log"
 TEST_SOURCE_HEAD=$(git -C "$tmp/tree" rev-parse HEAD)
 export TEST_SOURCE_HEAD
 PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash check.sh
-[ ! -e "$tmp/pnpm.log" ] || { printf 'pnpm ran without a pnpm project\n' >&2; exit 1; }
+[ ! -e "$tmp/pnpm.log" ] || { printf 'pnpm ran without being asked\n' >&2; exit 1; }
 
+# The script installs nothing itself; the command does, with the user bin directory on PATH.
 printf '{"packageManager":"pnpm@10.34.3"}\n' > "$tmp/tree/package.json"
 printf 'lockfileVersion: 9.0\n' > "$tmp/tree/pnpm-lock.yaml"
 PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash check.sh
-grep -q '^install --frozen-lockfile --store-dir ' "$tmp/pnpm.log"
+[ ! -e "$tmp/pnpm.log" ] || { printf 'pnpm ran without being asked\n' >&2; exit 1; }
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" pnpm install --frozen-lockfile
+[ "$(cat "$tmp/pnpm.log")" = 'install --frozen-lockfile' ]
+
+# Arguments arrive verbatim and --env sets variables only when asked.
+cat > "$tmp/tree/args.sh" <<'CHECK'
+#!/usr/bin/env bash
+set -euo pipefail
+[ "$#" -eq 3 ]
+[ "$1" = 'a b' ]
+[ "$2" = "\$(touch pwned)'\"" ]
+[ "$3" = '*' ]
+[ ! -e pwned ]
+[ "${CUDA_VISIBLE_DEVICES-unset}" = "$EXPECT_CUDA" ]
+CHECK
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" --env EXPECT_CUDA=unset "$tmp/tree" bash args.sh 'a b' "\$(touch pwned)'\"" '*'
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" --env CUDA_VISIBLE_DEVICES= --env EXPECT_CUDA= "$tmp/tree" bash args.sh 'a b' "\$(touch pwned)'\"" '*'
+if PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" --env 'BAD NAME=1' "$tmp/tree" true >"$tmp/out" 2>&1; then
+  printf 'invalid --env succeeded\n' >&2; exit 1
+fi
+grep -q -- '--env needs NAME=VALUE' "$tmp/out"
 
 # Committed .env files are repository content; untracked and ignored secrets stay local.
 printf 'MODE=test\n' > "$tmp/tree/.env.test"
