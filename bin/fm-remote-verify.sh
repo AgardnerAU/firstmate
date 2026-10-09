@@ -6,7 +6,7 @@
 # The script installs nothing: put any dependency install in the command itself.
 # config/remote-verify contains exactly one user@host SSH destination.
 # Every remote step is a script read from stdin by `bash -s`, so the remote
-# login shell never parses arguments; the remote host needs bash and Git.
+# login shell never parses arguments; the remote host needs bash, Git, and rsync.
 # Git history is bundled locally into a disposable remote test repository.
 # Committed files, including committed .env files, are sent as repository content;
 # ignored files and untracked files with secret-like names are not.
@@ -98,10 +98,17 @@ is_secret_path() {
   esac
   return 1
 }
+# Untracked dependency and build output stays local; tracked files are always sent.
+is_output_path() {
+  case "/$1/" in
+    */node_modules/*|*/dist/*|*/build/*|*/coverage/*|*/.next/*|*/.turbo/*|*/.cache/*) return 0;;
+  esac
+  return 1
+}
 {
   git -C "$worktree" ls-files --cached -z
   git -C "$worktree" ls-files --others --exclude-standard -z | while IFS= read -r -d '' path; do
-    is_secret_path "$path" || printf '%s\0' "$path"
+    is_secret_path "$path" || is_output_path "$path" || printf '%s\0' "$path"
   done
 } | while IFS= read -r -d '' path; do
   if [ -e "$worktree/$path" ] || [ -L "$worktree/$path" ]; then
@@ -110,11 +117,7 @@ is_secret_path() {
 done > "$file_list"
 source_head=$(git -C "$worktree" rev-parse HEAD)
 git -C "$worktree" bundle create "$bundle_file" HEAD
-exclude=(
-  --exclude=.git --exclude=node_modules --exclude=dist --exclude=build
-  --exclude=coverage --exclude=.next --exclude=.turbo --exclude=.cache
-)
-rsync -a --from0 --files-from="$file_list" "${exclude[@]}" -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$worktree/" "$destination:$remote_work/"
+rsync -a --from0 --files-from="$file_list" --exclude=.git -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$worktree/" "$destination:$remote_work/"
 rsync -a -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' "$bundle_file" "$destination:$remote_work.bundle"
 
 remote_bash "$remote_work" "$source_head" "${#env_args[@]}" ${env_args[@]+"${env_args[@]}"} "$@" <<'REMOTE'

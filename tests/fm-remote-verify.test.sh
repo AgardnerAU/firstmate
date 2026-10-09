@@ -7,11 +7,15 @@ mkdir -p "$tmp/repo" "$tmp/config" "$tmp/mock" "$tmp/remote/home/.local/bin"
 git -C "$tmp/repo" init -q
 printf 'committed\n' > "$tmp/repo/kept.txt"
 printf 'deleted\n' > "$tmp/repo/deleted.txt"
-git -C "$tmp/repo" add kept.txt deleted.txt
+mkdir -p "$tmp/repo/tools/build"
+printf 'generator\n' > "$tmp/repo/tools/build/gen.sh"
+git -C "$tmp/repo" add kept.txt deleted.txt tools/build/gen.sh
 git -C "$tmp/repo" -c user.name=Test -c user.email=test@example.test commit -qm initial
 git -C "$tmp/repo" worktree add -qb verify "$tmp/tree"
 rm "$tmp/tree/deleted.txt"
 printf 'SECRET=hidden\n' > "$tmp/tree/.env"
+mkdir -p "$tmp/tree/node_modules/pkg"
+printf 'dependency\n' > "$tmp/tree/node_modules/pkg/index.js"
 
 if "$root/bin/fm-remote-verify.sh" >"$tmp/out" 2>&1; then
   printf 'missing arguments succeeded\n' >&2; exit 1
@@ -64,6 +68,9 @@ if git config --get-regexp '^(credential\..*|remote\..*\.url|push\..*)$' >/dev/n
 if git config --get credential.helper >/dev/null; then exit 1; fi
 if [ -d .git/hooks ] && [ -n "$(find .git/hooks -type f -print -quit)" ]; then exit 1; fi
 [ -f kept.txt ]
+[ -f tools/build/gen.sh ]
+[ -z "$(git status --porcelain -- tools/build/gen.sh)" ]
+[ ! -e node_modules ]
 [ ! -e deleted.txt ]
 [ ! -e .env ]
 CHECK

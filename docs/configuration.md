@@ -29,14 +29,14 @@ The command and its arguments arrive as an argument vector and are never evaluat
 Each `--env` sets one variable for the command, for example `--env CUDA_VISIBLE_DEVICES=` to keep GPU devices away from test tooling.
 The script installs nothing, so the command performs any dependency install, for example `bash -c 'pnpm install --frozen-lockfile && pnpm run verify'`.
 The remote user's `~/.local/bin` is first on `PATH`, so tools installed there without admin rights are found without shell profile changes.
-The host must provide bash, Git, and the runtimes and tools the command needs.
+The host must provide bash, Git, rsync, and the runtimes and tools the command needs.
 Each remote step is a script that `bash -s` reads from standard input, so the remote login shell does not need to be bash.
 
 Committed files, including committed `.env` files, are repository content already shared through the project remote, so the script sends them and the remote tree matches HEAD.
 Ignored files never leave the local machine.
 Untracked files that are not ignored are sent unless their names look like secrets, such as `.env`, `.npmrc`, key, or credential files; `.env.example`, `.env.sample`, and `.env.template` are sent as templates.
 That filter matches file names only, so ignore any other untracked secret file before a remote run.
-The script also skips `.git`, dependency, and build output directories.
+The script also skips `.git` and untracked files in dependency and build output directories (`node_modules`, `dist`, `build`, `coverage`, `.next`, `.turbo`, and `.cache`); tracked files in those directories are sent as committed.
 
 The worktree's HEAD and its ancestry are bundled locally into a standalone, disposable Git repository beside the transferred files.
 Remote Git may inspect this read-only history and run in throwaway test fixtures, so checks that read Git history can run there.
