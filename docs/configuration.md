@@ -14,6 +14,26 @@ Start with the directory layout, then use the setting reference for the behavior
 | Supervision and presentation | [Pi supervision branch](#pi-supervision-branch), [supervision host](#supervision-host-configsupervision-host), and [Calm preference](#calm-preference-configcalm) |
 | Persistent secondmates | [Secondmate routes](#secondmate-routes-datasecondmatesmd) |
 | Per-run overrides and tuning | [Environment variables](#environment-variables) |
+| Offload a worktree's verification command | [Remote verification](#remote-verification-configremote-verify) |
+
+## Remote verification (config/remote-verify)
+
+`bin/fm-remote-verify.sh` runs a command from a local Git worktree on an SSH host and performs its own Git file selection on the Mac.
+Set the private, gitignored `config/remote-verify` file in the effective `FM_HOME` to one `user@host` line, such as `runner@llm-box`.
+`FM_CONFIG_OVERRIDE` selects a different private config directory for tests or a one-off run.
+The script refuses an absent or malformed setting and reports an unreachable host so the caller can choose whether to run locally.
+
+Run `bin/fm-remote-verify.sh /path/to/worktree pnpm run verify` to copy tracked and untracked but not ignored files, install with `pnpm install --frozen-lockfile`, and stream the command's result.
+The script excludes `.git`, dependencies, build output, `.env` files, and common credential filenames even if Git tracks them; review other sensitive file names before using it on a project.
+Each run uses a disposable directory under `~/.cache/firstmate/verify/`, while the pnpm store persists at `~/.local/share/pnpm/store`.
+The command receives `CUDA_VISIBLE_DEVICES` empty and `NVIDIA_VISIBLE_DEVICES=void` to keep GPU devices unavailable to normal test tooling.
+Git-dependent project checks cannot inspect the source revision in this copy because `.git` stays on the Mac; their failure is reported by the project command.
+The project command itself may invoke Git for fixtures or other checks; AGFloorPlanner's `verify` does so despite the transport avoiding remote Git.
+
+The `runner` account on `llm-box` was provisioned without sudo on 2026-10-08 using its installed Corepack 0.24.0: `COREPACK_HOME="$HOME/.cache/node/corepack" corepack enable --install-directory "$HOME/.local/bin"` and `COREPACK_HOME="$HOME/.cache/node/corepack" corepack prepare pnpm@10.34.3 --activate`.
+Its `~/.local/bin/pnpm` shim resolves pnpm 10.34.3, matching AGFloorPlanner's `packageManager` pin; Node 22.22.1 satisfies the project's `>=22.13.0 <23.0.0` engine.
+AGFloorPlanner's secret-scan canary also requires gitleaks, so version 8.30.1 was downloaded from its GitHub release, checked against the project's pinned SHA-256 `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`, and installed at `~/.local/bin/gitleaks` with mode 0755.
+The remote shell receives the user bin directory through the script, so interactive shell profile changes are unnecessary.
 
 ## FM_HOME
 
