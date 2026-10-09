@@ -34,12 +34,9 @@ Remote Git may inspect this read-only history and run in throwaway test fixtures
 The remote copy has no remote URLs, credential helpers, hooks, or push configuration.
 Do not clone from GitHub, create worker copies or source commits, push, or provide GitHub credentials on the workstation.
 
-The `runner` account on `llm-box` was provisioned without sudo on 2026-10-08 using its installed Corepack 0.24.0: `COREPACK_HOME="$HOME/.cache/node/corepack" corepack enable --install-directory "$HOME/.local/bin"` and `COREPACK_HOME="$HOME/.cache/node/corepack" corepack prepare pnpm@10.34.3 --activate`.
-Its `~/.local/bin/pnpm` shim resolves pnpm 10.34.3, matching AGFloorPlanner's `packageManager` pin.
-AGFloorPlanner's engine moved to `>=24.11.0 <25.0.0`, so on 2026-10-09 the official `node-v24.21.0-linux-x64.tar.xz` from `https://nodejs.org/dist/latest-v24.x/` was verified against that release's `SHASUMS256.txt` (SHA-256 `fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6`), unpacked to `~/.local/opt/node-v24.21.0-linux-x64`, and its `node`, `npm`, and `npx` were linked into `~/.local/bin`.
-The runner's `node -v` reports v24.21.0; the system Node 22.22.1 is unchanged.
-AGFloorPlanner's secret-scan canary also requires gitleaks, so version 8.30.1 was downloaded from its GitHub release, checked against the project's pinned SHA-256 `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`, and installed at `~/.local/bin/gitleaks` with mode 0755.
-The remote shell receives the user bin directory through the script, so interactive shell profile changes are unnecessary.
+The remote host must provide the Node and package-manager versions the project requires, plus any other tools its verify command needs.
+No admin rights are needed: for example, install pnpm through Corepack into a user directory.
+The script puts the remote user's `~/.local/bin` first on `PATH` for the install and the command, so tools installed there are found without shell profile changes.
 
 ## FM_HOME
 
