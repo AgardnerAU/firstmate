@@ -60,8 +60,10 @@ git -C "$worktree" ls-files --cached --others --exclude-standard -z | while IFS=
     printf '%s\0' "$path"
   fi
 done > "$file_list"
+# Committed .env templates are not secrets and verification may need them.
 git -C "$worktree" log --format= --name-only -z HEAD | while IFS= read -r -d '' path; do
   case "$path" in
+    .env.example|*/.env.example|.env.sample|*/.env.sample|.env.template|*/.env.template) ;;
     .env|.env.*|*/.env|*/.env.*|.npmrc|*/.npmrc|.pypirc|*/.pypirc|.netrc|*/.netrc|\
     .ssh/*|*/.ssh/*|.aws/*|*/.aws/*|.gnupg/*|*/.gnupg/*|\
     *.pem|*.key|*.p12|*.pfx|credentials.json|*/credentials.json|secrets.json|*/secrets.json|\
@@ -74,6 +76,7 @@ done
 source_head=$(git -C "$worktree" rev-parse HEAD)
 git -C "$worktree" bundle create "$bundle_file" HEAD
 exclude=(
+  --include=.env.example --include=.env.sample --include=.env.template
   --exclude=.git --exclude=node_modules --exclude=dist --exclude=build
   --exclude=coverage --exclude=.next --exclude=.turbo --exclude=.cache
   --exclude=.env --exclude='.env.*' --exclude='.npmrc' --exclude='.pypirc'

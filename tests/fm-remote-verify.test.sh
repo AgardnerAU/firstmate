@@ -75,9 +75,11 @@ tree=$(cd "$tmp/tree" && pwd -P)
 task_hash=$(printf %s "$tree" | shasum -a 256 | cut -c1-16)
 export TEST_REMOTE_HOME="$tmp/remote/home"
 export TEST_REMOTE_WORK="$TEST_REMOTE_HOME/.cache/firstmate/verify/$task_hash/work.test"
-export TEST_REAL_RSYNC=$(command -v rsync)
+TEST_REAL_RSYNC=$(command -v rsync)
+export TEST_REAL_RSYNC
 export TEST_PNPM_LOG="$tmp/pnpm.log"
-export TEST_SOURCE_HEAD=$(git -C "$tmp/tree" rev-parse HEAD)
+TEST_SOURCE_HEAD=$(git -C "$tmp/tree" rev-parse HEAD)
+export TEST_SOURCE_HEAD
 PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash check.sh
 [ ! -e "$tmp/pnpm.log" ] || { printf 'pnpm ran without a pnpm project\n' >&2; exit 1; }
 
@@ -85,6 +87,18 @@ printf '{"packageManager":"pnpm@10.34.3"}\n' > "$tmp/tree/package.json"
 printf 'lockfileVersion: 9.0\n' > "$tmp/tree/pnpm-lock.yaml"
 PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash check.sh
 grep -q '^install --frozen-lockfile --store-dir ' "$tmp/pnpm.log"
+
+printf 'SECRET=\n' > "$tmp/tree/.env.example"
+git -C "$tmp/tree" add .env.example
+git -C "$tmp/tree" -c user.name=Test -c user.email=test@example.test commit -qm template
+cat > "$tmp/tree/template.sh" <<'CHECK'
+#!/usr/bin/env bash
+set -euo pipefail
+[ -f .env.example ]
+[ ! -e .env ]
+[ -z "$(git status --porcelain -- .env.example)" ]
+CHECK
+PATH="$tmp/mock:$PATH" FM_CONFIG_OVERRIDE="$tmp/config" "$root/bin/fm-remote-verify.sh" "$tmp/tree" bash template.sh
 
 git -C "$tmp/tree" add .env
 git -C "$tmp/tree" -c user.name=Test -c user.email=test@example.test commit -qm secret

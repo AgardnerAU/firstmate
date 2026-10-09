@@ -25,6 +25,7 @@ The script refuses an absent or malformed setting and reports an unreachable hos
 
 Run `bin/fm-remote-verify.sh /path/to/worktree pnpm run verify` to copy existing tracked and untracked but not ignored files, install with `pnpm install --frozen-lockfile` when the project has a pnpm lockfile and package manifest, and stream the command's result.
 The script excludes `.git`, dependencies, build output, `.env` files, and common credential filenames even if Git tracks them; review other sensitive file names before using it on a project.
+Committed `.env.example`, `.env.sample`, and `.env.template` files are templates, so the script copies them and allows them in the history.
 Each run uses a disposable directory under `~/.cache/firstmate/verify/`, while the pnpm store persists at `~/.local/share/pnpm/store`.
 The command receives `CUDA_VISIBLE_DEVICES` empty and `NVIDIA_VISIBLE_DEVICES=void` to keep GPU devices unavailable to normal test tooling.
 The Mac bundles the worktree's HEAD and its ancestry into a standalone, disposable Git repository beside the transferred files.
