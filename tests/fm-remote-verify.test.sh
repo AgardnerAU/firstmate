@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd -P)
-tmp=$(mktemp -d "$root/.remote-verify-test.XXXXXXXX")
+tmp=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/fm-remote-verify-test.XXXXXXXX")" && pwd -P)
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/repo" "$tmp/config" "$tmp/mock" "$tmp/remote/home/.local/bin"
 git -C "$tmp/repo" init -q
