@@ -60,6 +60,8 @@ set -euo pipefail
 [ "$(git rev-parse HEAD)" = "$TEST_SOURCE_HEAD" ]
 [ "$(git rev-list --count HEAD)" -eq 1 ]
 [ -z "$(git remote)" ]
+[ -z "$(git status --porcelain -- kept.txt)" ]
+[ "$(git status --porcelain -- deleted.txt)" = ' D deleted.txt' ]
 if git -c user.name=Test -c user.email=test@example.test commit --allow-empty -qm forbidden >/dev/null 2>&1; then exit 1; fi
 if git config --get-regexp '^(credential\..*|remote\..*\.url|push\..*)$' >/dev/null; then exit 1; fi
 if git config --get credential.helper >/dev/null; then exit 1; fi

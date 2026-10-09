@@ -104,6 +104,7 @@ rmdir "$work.template"
 git bundle unbundle "$work.bundle" >/dev/null
 git update-ref refs/heads/verify "$source_head"
 git symbolic-ref HEAD refs/heads/verify
+git read-tree HEAD
 rm "$work.bundle"
 chmod -R a-w .git
 export GIT_OPTIONAL_LOCKS=0
