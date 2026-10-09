@@ -1,0 +1,22 @@
+$ git -C repo rev-parse HEAD: 201ae67a66c5985bac62d88db7593d58eef01d95
+$ FM_CONFIG_OVERRIDE=<lab>/config bin/fm-remote-verify.sh <lab>/repo bash check.sh
+host=user-Z790-Steel-Legend-WiFi user=runner pwd=/home/runner/.cache/firstmate/verify/1ff29742aea4fb2d/work.7e7lmaFx
+HEAD=201ae67a66c5985bac62d88db7593d58eef01d95 commits=2
+remotes=[]
+credential/remote/push config=[]
+hooks=[]
+status=[ D deleted.txt
+?? note.txt]
+files=[.env.example .env.test .git check.sh kept.txt note.txt ]
+CUDA_VISIBLE_DEVICES=[] NVIDIA_VISIBLE_DEVICES=[void]
+commit=refused (read-only .git)
+throwaway-fixture-commit=ok
+exit=0
+
+$ ... bin/fm-remote-verify.sh <lab>/repo bash check.sh 1
+exit=1
+$ ... bin/fm-remote-verify.sh <lab>/repo bash -c "exit 42"
+exit=42
+
+$ ssh runner@llm-box ls ~/.cache/firstmate/verify/<task-hash> (after runs)
+remote leftovers listed above (empty = clean)

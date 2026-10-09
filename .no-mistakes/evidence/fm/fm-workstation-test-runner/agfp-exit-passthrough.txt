@@ -1,0 +1,126 @@
+# AGFloorPlanner bd53a7a0d full verify via bin/fm-remote-verify.sh (reused log remote-verify-node24.log)
+ Test Files  5 passed (5)
+=== pnpm run wiki:watermark:test ===
+> ag-floor-planner@0.10.2 wiki:watermark:test /home/runner/.cache/firstmate/verify/38430c559d28fa8b/work.lbJKDI87
+OpenAPI spec is up to date.
+ Test Files  330 passed (330)
+ Test Files  46 passed (46)
+ Test Files  8 failed | 1054 passed | 5 skipped (1067)
+ ELIFECYCLE  Test failed. See above for more details.
+ ELIFECYCLE  Command failed with exit code 1.
+exit=1 wall=1072s
+
+# Local Mac CI=true pnpm --dir frontend test (local-frontend-test.log)
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear
+stdout | src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear
+stdout | src/store/layers.test.ts > Layer Store > Layer Visibility > restores the visibility from before the FIRST isolation when exiting after a switch
+stdout | src/store/layers.test.ts > Layer Store > Layer Visibility > restores the visibility from before the FIRST isolation when exiting after a switch
+stdout | src/store/layers.test.ts > Layer Store > Layer Visibility > restores the visibility from before the FIRST isolation when exiting after a switch
+stdout | src/store/canvas/__tests__/measurementSlice.test.ts > Canvas Store - Measurement Label Offset > Polygon Vertex Edit Mode (#998) > exitEditMode clears the editing id and selected vertex
+stderr | src/store/canvas/__tests__/measurementSlice.test.ts > Canvas Store - Measurement Label Offset > Polygon Vertex Edit Mode (#998) > exitEditMode clears the editing id and selected vertex
+stdout | src/store/canvas/__tests__/measurementSlice.test.ts > Canvas Store - Measurement Label Offset > Polygon Vertex Edit Mode (#998) > exitEditMode clears the editing id and selected vertex
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > spaces top and bottom exits evenly along the outermost rung, through the wall plus overshoot
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > tees side exits off the rail on that side
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > uses the nearest rung end when there is no rail on that side
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > never uses the same rung end twice and stops when the rung ends run out
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > warns when a wall gets fewer exits than requested
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > does not warn when every requested exit is laid
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — exits (D4) > makes every exit perpendicular to its wall
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — two lanes > offsets lane 2 exits by the lane spacing so the two exits run side by side
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — input guards > rejects negative distances and non-integer exit counts
+stdout | src/utils/containmentRouting.test.ts > planContainmentRoutes — input guards > rejects more than MAX_EXITS_PER_SIDE exits on any side, and plans exactly the cap
+stdout | src/components/AutoCageDialog.test.tsx > AutoCageDialog — containment (issue #1876) > caps each side at MAX_EXITS_PER_SIDE exits
+stdout | src/components/AutoCageDialog.test.tsx > AutoCageDialog — containment (issue #1876) > caps exit overshoot, tray inset and lane gap at their limits
+stdout | src/components/AutoCageDialog.test.tsx > AutoCageDialog — containment (issue #1876) > accepts the owner-set limits exactly: 20 exits, 5000 mm inset and lane gap, 10000 mm overshoot
+stdout | src/components/CommandPalette/useCommandActions.test.ts > useCommandActions > getHandler — store-backed commands > exit-isolation delegates to the layer store
+stdout | src/store/commands/layerCommands.test.ts > Layer Commands > IsolateLayerCommand > should exit isolation when layerId is null
+stdout | src/store/commands/layerCommands.test.ts > Layer Commands > IsolateLayerCommand > should check if exit isolation command can execute
+stdout | src/store/commands/layerCommands.test.ts > Layer Commands > IsolateLayerCommand > should generate correct description for exit isolation
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+stdout | src/config/tours/startTour.test.ts > startTour > calls config.cleanup() on early exit if defined
+stdout | src/config/tours/startTour.test.ts > startTour > chain mode > does not advance chain on early exit
+stdout | src/config/tours/startTour.test.ts > startTour > chain mode > marks tour complete on early exit in chain mode (issue #1142)
+stdout | src/components/LayerPanel.test.tsx > LayerPanel > Isolation indicator > shows the Isolated badge and exit control when a layer is isolated
+stdout | src/components/LayerPanel.test.tsx > LayerPanel > Isolation indicator > shows the Isolated badge and exit control when a layer is isolated
+stdout | src/components/canvas/events/__tests__/useKeyboardEvents.vertexEdit.test.ts > useKeyboardEvents - Polygon vertex edit mode (#998) > Escape exits vertex edit mode before any tool-specific branch
+stdout | src/components/canvas/events/__tests__/useKeyboardEvents.vertexEdit.test.ts > useKeyboardEvents - Polygon REDACTION edit mode (#998 Phase 4) > Escape exits redaction edit mode before any tool-specific branch
+stdout | src/hooks/__tests__/useStaggeredChildReveal.test.tsx > useStaggeredChildReveal > reveals children in batches across RAFs at the gate exit (no one-shot commit)
+stdout | src/hooks/__tests__/useStaggeredChildReveal.test.tsx > useStaggeredChildReveal > staggers on a REPEATED gate exit after a completed reveal (zoom out then back in) — #1842
+stdout | src/hooks/__tests__/useStaggeredGateReveal.test.tsx > useStaggeredGateReveal > reveals dividers in batches across RAFs at the gate exit (no one-shot commit)
+stdout | src/hooks/__tests__/useStaggeredGateReveal.test.tsx > useStaggeredGateReveal > staggers on a REPEATED gate exit after a completed reveal (zoom out then back in) — #1842
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should produce ~10 chunks for 1184 simple components with target complexity 200
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should produce ~10 chunks for 1184 simple components with target complexity 200
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should produce ~10 chunks for 1184 simple components with target complexity 200
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should produce fewer chunks than the old target of 75
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should keep chunk count reasonable for small projects
+stdout | src/store/drawings/drawingComponentLoadUtils.test.ts > drawingComponentLoadUtils chunk configuration > complexity-aware chunking > should handle complex components that increase chunk count
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 2 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 2 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 2 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+[DEBUG] 📦 Loading 1 components in 1 complexity-aware chunks (target complexity: 200)
+stdout | src/hooks/__tests__/staggeredChildReveal.benchmark.test.tsx > Issue #1826 — gate-exit stagger benchmark fixture > mounts the dense scene gate-active without throwing
+stdout | src/hooks/__tests__/staggeredChildReveal.benchmark.test.tsx > Issue #1826 — gate-exit stagger benchmark fixture > mounts the dense scene gate-active without throwing
+stdout | src/components/canvas/rendering/__tests__/lodTransitionProfile.benchmark.test.tsx > Issue #1718 — LOD-transition profile fixture > mounts the dense scene at the exit scale without throwing
+stdout | src/components/canvas/rendering/__tests__/lodTransitionProfile.benchmark.test.tsx > Issue #1718 — LOD-transition profile fixture > mounts the dense scene at the exit scale without throwing
+     ✓ mounts the dense scene at the exit scale without throwing  393ms
+stdout | src/utils/__tests__/validation.test.ts > Validation Utils > validatePassword > should enforce password complexity requirements
+stdout | src/utils/__tests__/lodSystem.test.ts > LOD System (2-level) > LODManager.updateLevel (hysteresis) > should stay in ultra-low until zoom exceeds exitMaxZoom (0.035)
+stdout | src/utils/__tests__/lodSystem.test.ts > LOD System (2-level) > LODManager.updateLevel (hysteresis) > should stay in ultra-low until zoom exceeds exitMaxZoom (0.035)
+stdout | src/config/tours/canvasControls.test.ts > Canvas Controls tour — Rulers step (#836) > Rulers step lifecycle > ends the ruler preview when the user advances or exits the step
+stdout | src/config/tours/canvasControls.test.ts > Canvas Controls tour — Rulers step (#836) > canvasControlsCleanup > strips the tour-rulers-step body class even on early exit
+stdout | src/config/tours/canvasControls.test.ts > Canvas Controls tour — Rulers step (#836) > canvasControlsCleanup > ends the ruler preview on early exit without touching the saved setting
+stdout | src/config/tours/canvasControls.test.ts > Canvas Controls tour — Rulers step (#836) > canvasControlsCleanup > hides the toolbar on early exit if the Rulers step had auto-revealed it
+stdout | src/components/menu-bar/__tests__/useToolHandlers.test.ts > useToolHandlers > handleIsolateSelectedLayer > exits isolation when currently isolated
+stdout | src/config/tours/measurements.test.ts > Measurements & Precision tour > Grid Settings step (#835) > cleanup removes the elevation class even on early exit
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > exitRedactionEditMode clears the editing id and selected vertex
+stderr | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > exitRedactionEditMode clears the editing id and selected vertex
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > exitRedactionEditMode clears the editing id and selected vertex
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterRedactionEditMode exits any active measurement edit mode
+stderr | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterRedactionEditMode exits any active measurement edit mode
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterRedactionEditMode exits any active measurement edit mode
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterEditMode (measurement) exits any active redaction edit mode
+stderr | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterEditMode (measurement) exits any active redaction edit mode
+stdout | src/store/canvas/__tests__/redactionEditSlice.test.ts > Canvas Store - Redaction Edit Mode (#998 Phase 4) > Mutual exclusion with measurement edit mode > enterEditMode (measurement) exits any active redaction edit mode
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > exposes the 12–15% band thresholds (enter 15%, exit 17.5% display)
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > exposes the 12–15% band thresholds (enter 15%, exit 17.5% display)
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > exposes the 12–15% band thresholds (enter 15%, exit 17.5% display)
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > exposes the 12–15% band thresholds (enter 15%, exit 17.5% display)
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > holds active through the exit window when zooming in (hysteresis)
+stdout | src/utils/__tests__/lodSystem.autoSimplify.test.ts > Issue #1696 — auto-simplify zoom band (hysteretic) > stays inactive entering the window from above (exit-side hysteresis only)
+stdout | src/utils/__tests__/lodSystem.hysteresis.test.ts > Issue #1699 — hysteretic getLODConfig > exits to normal at the exitMaxZoom threshold (0.035) when zooming in
+ FAIL  src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear
+ FAIL  src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear
+ Test Files  8 failed | 1054 passed | 5 skipped (1067)
+::error file=/Users/agardner/Documents/firstmate/data/fm-workstation-test-runner/agfp-local-bd53a7a0/frontend/src/store/undoRedo.drawingScope.test.ts,title=src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the 100 ms duplicate-call debounce does not swallow the clear,line=718,column=51::AssertionError: expected null not to be null%0A ❯ src/store/undoRedo.drawingScope.test.ts:718:51%0A%0A
+::error file=/Users/agardner/Documents/firstmate/data/fm-workstation-test-runner/agfp-local-bd53a7a0/frontend/src/store/undoRedo.drawingScope.test.ts,title=src/store/undoRedo.drawingScope.test.ts > createDefaultDrawing honours a genuine clear before every early exit (#2716) > the existing-objects guard does not swallow the clear,line=84,column=19::AssertionError: expected null not to be null%0A ❯ expectPersistedLogCleared src/store/undoRedo.drawingScope.test.ts:84:19%0A ❯ src/store/undoRedo.drawingScope.test.ts:748:5%0A%0A
+ ELIFECYCLE  Test failed. See above for more details.
+test_exit=1 wall=370s
+
+# FAIL-line set comparison (ANSI stripped)
+FAIL sets identical:       30 lines

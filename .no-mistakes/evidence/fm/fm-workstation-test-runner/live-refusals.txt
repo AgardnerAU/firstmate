@@ -1,0 +1,21 @@
+# S1 missing config
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/tree true
+error: remote verify is not configured; put user@host in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/cfg-empty/remote-verify
+exit=78
+
+# S2 malformed config ("not a destination")
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/tree true
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/cfg-bad/remote-verify must contain one user@host SSH destination
+exit=78
+
+# S3 unreachable host
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/tree true
+ssh: Could not resolve hostname no-such-host.invalid: nodename nor servname provided, or not known
+error: remote verify host runner@no-such-host.invalid is unreachable; run locally if needed
+exit=69
+
+# S3b path is not a worktree root
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd true
+error: path must be a Git worktree root: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.P5bShd
+exit=64
+

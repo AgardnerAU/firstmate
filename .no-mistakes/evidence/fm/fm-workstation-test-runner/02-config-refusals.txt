@@ -1,0 +1,10 @@
+$ bin/fm-remote-verify.sh <fixture>/tree true    # config/remote-verify absent
+error: remote verify is not configured; put user@host in /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/.rv-live/config/remote-verify
+exit=78
+$ ... config contains "llm-box; touch /tmp/pwned"
+error: /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/.rv-live/config/remote-verify must contain one user@host SSH destination
+exit=78
+$ ... config contains runner@no-such-host-fmtest
+ssh: Could not resolve hostname no-such-host-fmtest: nodename nor servname provided, or not known
+error: remote verify host runner@no-such-host-fmtest is unreachable; run locally if needed
+exit=69

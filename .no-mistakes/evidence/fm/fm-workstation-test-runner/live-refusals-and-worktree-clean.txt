@@ -1,0 +1,13 @@
+$ FM_CONFIG_OVERRIDE=<lab>/emptyconfig bin/fm-remote-verify.sh <lab>/repo true
+error: remote verify is not configured; put user@host in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.ofTO09/emptyconfig/remote-verify
+exit=78
+$ FM_CONFIG_OVERRIDE=<lab>/badconfig (unreachable host) bin/fm-remote-verify.sh <lab>/repo true
+ssh: Could not resolve hostname nonexistent-fm-lab-host.invalid: nodename nor servname provided, or not known
+error: remote verify host runner@nonexistent-fm-lab-host.invalid is unreachable; run locally if needed
+exit=69
+$ bin/fm-remote-verify.sh <lab>/repo/sub-not-root true
+error: path must be a Git worktree root: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.ofTO09/repo/sub
+exit=64
+$ git status --porcelain --ignored (run worktree, after all live runs)
+[end status]
+ls: .rv-live: No such file or directory

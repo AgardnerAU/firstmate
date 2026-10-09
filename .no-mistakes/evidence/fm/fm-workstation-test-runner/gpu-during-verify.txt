@@ -1,0 +1,60 @@
+17:21:38
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:21:58
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:22:18
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:22:38
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:22:58
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:23:19
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:23:39
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:23:59
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:24:19
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:24:39
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:25:00
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---
+17:25:20
+17676, /usr/bin/ptyxis, 139 MiB
+15335, /usr/libexec/xdg-desktop-portal-gnome, 12 MiB
+242172, VLLM::EngineCore, 31464 MiB
+---

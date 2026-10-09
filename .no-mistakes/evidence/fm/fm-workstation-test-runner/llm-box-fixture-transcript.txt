@@ -1,0 +1,48 @@
+Mac task worktree: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv.cRawF5/tree
+Mac HEAD=a893cfd4b6666c67a9ff028ac925c2b3208723f2
+Mac git status:
+ M a.txt
+ D deleted.txt
+?? .env
+?? .env.local
+?? fail.sh
+?? probe.sh
+?? untracked.txt
+!! id.key
+
+$ bin/fm-remote-verify.sh <task worktree> bash probe.sh
+host=user-Z790-Steel-Legend-WiFi pwd=/home/runner/.cache/firstmate/verify/4b4d9657a4ce13f8/work.oVw0A55G
+HEAD=a893cfd4b6666c67a9ff028ac925c2b3208723f2 commits=2 branch=verify
+remotes=[]
+credential/remote/push config=[]
+hook files=[]
+git status --porcelain:
+ M a.txt
+ D deleted.txt
+?? fail.sh
+?? probe.sh
+?? untracked.txt
+files:
+.env.example
+.env.test
+.gitignore
+a.txt
+fail.sh
+probe.sh
+untracked.txt
+CUDA_VISIBLE_DEVICES=[] NVIDIA_VISIBLE_DEVICES=[void]
+commit in copy: refused (read-only .git)
+throwaway fixture repo commit: ok
+exit=0
+
+$ bin/fm-remote-verify.sh <task worktree> bash fail.sh   (fail.sh = exit 7)
+exit=7
+
+$ bin/fm-remote-verify.sh <task worktree> printf '[%s]
+' 'a b; echo INJECTED' '$(hostname)'   (argv is not shell-evaluated)
+[a b; echo INJECTED]
+[$(hostname)]
+exit=0
+
+$ ssh runner@llm-box ls -A ~/.cache/firstmate/verify/4b4d9657a4ce13f8   (after runs)
+(empty listing = no leftovers)

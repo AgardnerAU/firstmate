@@ -1,0 +1,28 @@
+### S1: inspect remote copy (git state, files, GPU env)
+host=user-Z790-Steel-Legend-WiFi user=runner
+remotes=[]
+helper=[]
+hooks=[]
+pushurl=[]
+status=[?? untracked.txt]
+b00c75f init
+.env.example
+.git
+.gitignore
+kept.txt
+untracked.txt
+CUDA_VISIBLE_DEVICES=[]
+pwd=/home/runner/.cache/firstmate/verify/faf48b82e843a9de/work.0VvEVTqx
+exit=0
+### S2: failing command exit passes through
+failing
+exit=3
+### S3: argv not shell-evaluated
+[a b]
+[$(hostname);x]
+exit=0
+### S4: missing config refused
+error: remote verify is not configured; put user@host in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.TiSRLB/none/remote-verify
+exit=78
+### S5: remote verify dirs cleaned up
+0

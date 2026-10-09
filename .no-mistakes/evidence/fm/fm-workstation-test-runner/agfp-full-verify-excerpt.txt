@@ -1,0 +1,57 @@
+Source: /Users/agardner/Documents/firstmate/data/fm-workstation-test-runner/remote-verify-node24.log (runner commit 4327d8f4; bin/fm-remote-verify.sh unchanged at HEAD 774e0265)
+Scope: all 4 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1093
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2:Lockfile is up to date, resolution step is skipped
+96:=== node scripts/check-node-version.js ===
+99:=== pnpm run node-version:test ===
+157:=== node scripts/check-orphan-tests.mjs ===
+166:=== pnpm run orphan-tests:test ===
+228:=== pnpm run nuc-runner-image:test ===
+277:=== pnpm run agent-config:check ===
+284:=== pnpm run agent-config:test ===
+313:=== pnpm run pnpm-tooling:test ===
+353:=== pnpm run pr-check-trust-gate:test ===
+378:=== pnpm run nightshift-phase0-order:test ===
+407:=== pnpm run nightshift-workflow-pin:test ===
+525:=== pnpm run dev-ports:test ===
+587:=== pnpm run e2e-frontend-server:test ===
+612:=== pnpm run frontend-config:test ===
+741:=== pnpm run export-openapi:test ===
+783:=== pnpm run openapi-drift:test ===
+818:=== pnpm run production-bundle:test ===
+854:=== pnpm run green-main:test ===
+937:=== pnpm run green-main-workflows:test ===
+982:=== pnpm run ci-secret-scan:test ===
+1043:=== pnpm run fixture-git-isolation:test ===
+1062:=== pnpm run green-main-semantic:test ===
+1104:=== pnpm run workflow-path-filter:test ===
+1140:=== pnpm run heavy-runner-routing:test ===
+1165:=== pnpm run workflow-reachability:test ===
+1305:=== pnpm run deep-route-gate:test ===
+1325:=== pnpm run version:bump:test ===
+1387:=== pnpm run preflight:gate:test ===
+1432:=== pnpm run ssh-host-key-checking:test ===
+1546:=== pnpm run deploy:not-checked:test ===
+1828:=== pnpm run deploy:asset-mime:test ===
+1863:=== pnpm run deploy:nginx-config:test ===
+1975:=== pnpm run deploy:stale-build:test ===
+2010:=== pnpm run deploy:upload-modes:test ===
+2070:=== pnpm run deploy:safety:test ===
+2105:=== pnpm run perf-report:collect:test ===
+2171:=== pnpm run perf-report:cron:test ===
+2217:=== pnpm run unit-failure-alert:test ===
+2249:=== pnpm run wiki:watermark:test ===
+145008:[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 29 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+145669:[2m Test Files [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m1054 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (1067)[39m
+145670:[2m      Tests [22m [1m[31m29 failed[39m[22m[2m | [22m[1m[32m13457 passed[39m[22m[2m | [22m[33m34 skipped[39m[90m (13520)[39m
+145746:       [31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 29 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+ ELIFECYCLE  Command failed with exit code 1.
+exit=1 wall=1072s
+
+Local Mac comparison: /Users/agardner/Documents/firstmate/data/fm-workstation-test-runner/local-frontend-test.log
+136825:⎯⎯⎯⎯⎯⎯ Failed Tests 29 ⎯⎯⎯⎯⎯⎯⎯
+137516: Test Files  8 failed | 1054 passed | 5 skipped (1067)
+137517:      Tests  29 failed | 13457 passed | 34 skipped (13520)

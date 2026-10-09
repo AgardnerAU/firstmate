@@ -1,0 +1,20 @@
+$ bin/fm-remote-verify.sh  (no args)
+usage: bin/fm-remote-verify.sh <worktree> <command> [argument ...]
+exit=64
+
+$ FM_CONFIG_OVERRIDE=<empty config dir> bin/fm-remote-verify.sh <repo> true
+error: remote verify is not configured; put user@host in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv.cRawF5/config/remote-verify
+exit=78
+
+$ (config = "runner@llm-box; rm -rf /") bin/fm-remote-verify.sh <repo> true
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv.cRawF5/config/remote-verify must contain one user@host SSH destination
+exit=78
+
+$ (config = runner@no-such-host-fm-test.invalid) bin/fm-remote-verify.sh <repo> true
+ssh: Could not resolve hostname no-such-host-fm-test.invalid: nodename nor servname provided, or not known
+error: remote verify host runner@no-such-host-fm-test.invalid is unreachable; run locally if needed
+exit=69
+
+$ bin/fm-remote-verify.sh <subdir-not-root> true
+error: path must be a Git worktree root: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv.cRawF5/repo/sub
+exit=64

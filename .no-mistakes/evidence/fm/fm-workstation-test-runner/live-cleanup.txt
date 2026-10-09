@@ -1,0 +1,9 @@
+# S6 remote task directory after runs (expected empty)
+count=0
+# S6b local lab worktree status (only the files the test created)
+ D deleted.txt
+?? .env
+?? fail.sh
+?? id_rsa
+?? probe.sh
+?? untracked.txt

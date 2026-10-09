@@ -1,0 +1,11 @@
+# S5 remote failure exit code passes through unchanged
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/tree bash fail.sh
+failing on purpose
+exit=7
+
+# S5b argv is not evaluated as shell text
+$ /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4FZAFXHJT622S2940RN9C1Y/bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-rv-lab.P5bShd/tree printf [%s]\n $(hostname); echo injected a b
+[$(hostname); echo injected]
+[a b]
+exit=0
+

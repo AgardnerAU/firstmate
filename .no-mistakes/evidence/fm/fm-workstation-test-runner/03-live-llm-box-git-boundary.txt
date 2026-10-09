@@ -1,0 +1,31 @@
+local HEAD: two one 
+$ FM_CONFIG_OVERRIDE=<fixture>/config bin/fm-remote-verify.sh <fixture>/tree bash probe.sh
+host=user-Z790-Steel-Legend-WiFi user=runner nproc=32
+CUDA_VISIBLE_DEVICES='' NVIDIA_VISIBLE_DEVICES=void
+--- files
+.env.example
+.git
+kept.txt
+probe.sh
+untracked.txt
+--- git log
+two
+one
+--- git status
+ D gone.txt
+?? .env.example
+?? probe.sh
+?? untracked.txt
+--- remotes: []
+--- credential/remote/push config:
+none
+--- hook files:
+end-hooks
+--- commit attempt in verify copy:
+fatal: Unable to create '/home/runner/.cache/firstmate/verify/91f7f54dc4818cac/work.cl1Ua999/.git/index.lock': Permission denied
+commit refused
+--- throwaway fixture repo:
+fixture-commit
+exit=3
+--- leftover work dirs on llm-box after run:
+end
