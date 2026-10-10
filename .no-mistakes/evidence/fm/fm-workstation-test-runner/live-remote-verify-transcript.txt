@@ -1,0 +1,80 @@
+=== S1: happy path, argv with shell metacharacters, file selection, git state, default env
+$ FM_CONFIG_OVERRIDE=$LAB/config bin/fm-remote-verify.sh /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/repo bash ./probe.sh two words $HOME ; echo pwned it's *
+host=user-Z790-Steel-Legend-WiFi pwd=/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.5KL7hzO5
+argc=5 args:
+  [two words]
+  [$HOME]
+  [; echo pwned]
+  [it's]
+  [*]
+present: kept.txt
+present: tools/build/gen.sh
+present: untracked.txt
+absent:  .env
+absent:  node_modules/pkg/index.js
+absent:  ignored.log
+absent:  keys/server.pem
+--- git status --porcelain (expect only untracked.txt + probe.sh):
+?? probe.sh
+?? untracked.txt
+--- git log:
+95d73c9 second
+c5c8d62 initial
+--- git remote -v (expect empty):
+--- git commit attempt (expect failure):
+fatal: Unable to create '/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.5KL7hzO5/.git/index.lock': Permission denied
+commit refused rc=128
+--- env: CUDA_VISIBLE_DEVICES=<unset> MYVAR=<unset>
+--- PATH head: /home/runner/.local/bin
+[exit=0]
+
+=== S2: opt-in env (GPU hiding is caller's choice)
+$ FM_CONFIG_OVERRIDE=$LAB/config bin/fm-remote-verify.sh --env CUDA_VISIBLE_DEVICES= --env MYVAR=a b;c /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/repo bash ./probe.sh
+host=user-Z790-Steel-Legend-WiFi pwd=/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.0OnVUWsr
+argc=0 args:
+present: kept.txt
+present: tools/build/gen.sh
+present: untracked.txt
+absent:  .env
+absent:  node_modules/pkg/index.js
+absent:  ignored.log
+absent:  keys/server.pem
+--- git status --porcelain (expect only untracked.txt + probe.sh):
+?? probe.sh
+?? untracked.txt
+--- git log:
+95d73c9 second
+c5c8d62 initial
+--- git remote -v (expect empty):
+--- git commit attempt (expect failure):
+fatal: Unable to create '/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.0OnVUWsr/.git/index.lock': Permission denied
+commit refused rc=128
+--- env: CUDA_VISIBLE_DEVICES= MYVAR=a b;c
+--- PATH head: /home/runner/.local/bin
+[exit=0]
+
+=== S3: exit-code pass-through
+$ FM_CONFIG_OVERRIDE=$LAB/config bin/fm-remote-verify.sh --env PROBE_EXIT=7 /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/repo bash ./probe.sh
+host=user-Z790-Steel-Legend-WiFi pwd=/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.dZhEzkQ0
+argc=0 args:
+present: kept.txt
+present: tools/build/gen.sh
+present: untracked.txt
+absent:  .env
+absent:  node_modules/pkg/index.js
+absent:  ignored.log
+absent:  keys/server.pem
+--- git status --porcelain (expect only untracked.txt + probe.sh):
+?? probe.sh
+?? untracked.txt
+--- git log:
+95d73c9 second
+c5c8d62 initial
+--- git remote -v (expect empty):
+--- git commit attempt (expect failure):
+fatal: Unable to create '/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.dZhEzkQ0/.git/index.lock': Permission denied
+commit refused rc=128
+--- env: CUDA_VISIBLE_DEVICES=<unset> MYVAR=<unset>
+--- PATH head: /home/runner/.local/bin
+[exit=7]
+

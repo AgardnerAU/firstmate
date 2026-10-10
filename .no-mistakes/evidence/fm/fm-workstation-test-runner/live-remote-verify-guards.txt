@@ -1,0 +1,28 @@
+=== S4: shasum fallback (PATH without /sbin, so no sha256sum)
+command -v sha256sum under that PATH: <none>
+pwd=/home/runner/.cache/firstmate/verify/c6c7b3a9b2ff9aab/work.1nqjECIQ
+[exit=0]
+local expected hash: c6c7b3a9b2ff9aab
+
+=== S5: guards
+--- unconfigured
+error: remote verify is not configured; put user@host in /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/nocfg/remote-verify
+[exit=78]
+--- malformed destination
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/badcfg/remote-verify must contain one user@host SSH destination
+[exit=78]
+--- unreachable host
+ssh: Could not resolve hostname fm-nonexistent-host.invalid: nodename nor servname provided, or not known
+error: remote verify host runner@fm-nonexistent-host.invalid is unreachable; run locally if needed
+[exit=69]
+--- non-root worktree path
+error: path must be a Git worktree root: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-lab.esv3Bo/repo/tools
+[exit=64]
+--- bad --env
+error: --env needs NAME=VALUE: bad name=1
+[exit=64]
+
+=== S6: remote cleanup after runs (work dirs, bundles, templates gone)
+total 8
+drwxr-xr-x  2 runner runner 4096 Oct 10 08:00 .
+drwxr-xr-x 11 runner runner 4096 Oct 10 08:00 ..
