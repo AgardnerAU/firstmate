@@ -1,0 +1,65 @@
+[ship] absent file: byte-identical to base fb75c1f9 brief
+[ship] blank file:  byte-identical to base fb75c1f9 brief
+[scout] absent file: byte-identical to base fb75c1f9 brief
+[scout] blank file:  byte-identical to base fb75c1f9 brief
+[secondmate] absent file: byte-identical to base fb75c1f9 brief
+[secondmate] blank file:  byte-identical to base fb75c1f9 brief
+===== [ship] present file: first 12 lines of generated brief =====
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+  heading count: 1
+===== [scout] present file: first 12 lines of generated brief =====
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+  heading count: 1
+===== [secondmate] present file: first 12 lines of generated brief =====
+You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+
+
+# Charter
+lab charter
+  heading count: 1
+===== base->present diff (secondmate, normalised) =====
+2a3,10
+> # Worker writing style
+> Use ASD-STE100 with British spelling for human-facing prose.
+> Use plain hyphens, never typographic dashes.
+> 
+> 
+> At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+> 
+> 
+===== FM_CONFIG_OVERRIDE =====
+# Worker writing style
+Override-only rule.
+===== Adversarial: style text containing {TASK}, '# Task', and quotes =====
+exit=0
+# Worker writing style
+Don't use $HOME or `backticks` or "quotes" (parens).

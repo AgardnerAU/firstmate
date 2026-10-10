@@ -51,4 +51,3 @@ ok - B19 bootstrap respawns before inherited-config reread
 ok - B25 spawn quarantines stale rereads without blocking relaunch
 ok - B24 bootstrap detect-only mode remains filesystem read-only
 # all fm-secondmate-harness tests passed
-bash tests/fm-secondmate-harness.test.sh  47.20s user 78.70s system 51% cpu 4:03.55 total
