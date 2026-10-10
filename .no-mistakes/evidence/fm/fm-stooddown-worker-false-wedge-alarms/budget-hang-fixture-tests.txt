@@ -1,0 +1,7 @@
+Budget-hang fixture fix (tests/fm-contributions.test.sh, carried on the branch): results from 'bash tests/fm-contributions.test.sh' (rc=0, full file in fm-contributions-suite.txt)
+ok - budget exhausted mid-observation (exhaust) keeps the prior record and stays silent
+ok - budget exhausted mid-observation (hang) keeps the prior record and stays silent
+ok - a genuine forge failure inside the budget still records the error and wakes
+ok - a read killed at the five-second bound is budget refusal and stays silent
+ok - the effective budget is cut down to the watcher per-check bound with margin
+ok - generated checks enforce configured and inherited budgets at runtime

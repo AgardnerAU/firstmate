@@ -1,0 +1,19 @@
+=== S9 (clean): an already-dead agent without a declared hold cannot be relabelled as a deliberate stand-down ===
+t2: agent=alive record present? no
+$ fm-control.sh t2 exit   (ordinary stop, no hold)
+stopped t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+$ fm-control.sh t2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+error: task t2's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/state/t2.status, then re-run stand-down
+exit=1
+record present? no
+$ fm-crew-state.sh t2   (absent worker with no declaration)
+state: unknown · source: pane · harness state unavailable (unknown missing)
+$ fm-control.sh t2 repair-worker-state   (repair must never create a declaration)
+no-record agent-state=dead t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+record present? no
+$ echo 'paused: lab hold' >> state/t2.status; fm-control.sh t2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+stood-down t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+exit=0
+t2 worker-state=stood-down

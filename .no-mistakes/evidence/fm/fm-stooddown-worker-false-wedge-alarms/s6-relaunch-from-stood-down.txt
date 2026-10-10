@@ -1,0 +1,17 @@
+=== S6: relaunch a stood-down scout (s2) in its preserved endpoint and worktree ===
+before: agent=dead worker-state=stood-down
+$ fm-control.sh s2 relaunch --note 'resume after hold'
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+error: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/data/s2/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for s2 could not be launched on claude
+error: s2's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s2
+exit=1
+after: agent=dead worker-state record present? yes: schema=1 task_id=s2 endpoint=fmlab:fm-s2 state=stood-down 
+  fm-s1 cmd=2.1.296
+  fm-t1 cmd=2.1.296
+  fm-s2 cmd=zsh
+  fm-t2 cmd=zsh
+$ fm-crew-state.sh s2
+state: parked · source: worker-state · worker deliberately stood down

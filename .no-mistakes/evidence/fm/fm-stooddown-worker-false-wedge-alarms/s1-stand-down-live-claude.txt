@@ -1,0 +1,33 @@
+=== S1: stand-down a live real-Claude scout (s2, detached worktree) and ship (t2, run on its branch is terminal) ===
+before: s2=alive t2=alive
+$ fm-control.sh s2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+stood-down s2 harness=claude backend=tmux endpoint=fmlab:fm-s2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s2
+exit=0
+$ fm-control.sh t2 stand-down   (axi status reports a completed run on fm/t2-held)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+stood-down t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+exit=0
+after: s2=dead t2=dead
+tmux windows (endpoint preserved):
+  fm-s1 cmd=2.1.296
+  fm-t1 cmd=2.1.296
+  fm-s2 cmd=zsh
+  fm-t2 cmd=zsh
+--- state/s2.worker-state
+schema=1
+task_id=s2
+endpoint=fmlab:fm-s2
+state=stood-down
+--- state/t2.worker-state
+schema=1
+task_id=t2
+endpoint=fmlab:fm-t2
+state=stood-down
+$ fm-control.sh s2 stand-down   (repeat)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+already-stood-down s2 harness=claude backend=tmux endpoint=fmlab:fm-s2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s2
+exit=0
+--- pane fm-s2 tail
+AG-MBP-96% claude
+AG-MBP-96%

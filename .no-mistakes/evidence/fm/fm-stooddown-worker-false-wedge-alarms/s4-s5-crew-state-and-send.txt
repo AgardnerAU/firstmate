@@ -1,0 +1,24 @@
+=== S4: fm-crew-state reports the held tasks as parked, the live ones not ===
+$ fm-crew-state.sh s2
+state: parked · source: worker-state · worker deliberately stood down
+exit=0
+$ fm-crew-state.sh t2
+state: parked · source: worker-state · worker deliberately stood down
+exit=0
+$ fm-crew-state.sh s1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+exit=0
+$ fm-crew-state.sh t1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+exit=0
+
+=== S5: fm-send to a stood-down task is refused; inbox stays empty ===
+$ fm-send.sh s2 'please continue'
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+error: task s2 deliberately has no worker; relaunch it before sending an instruction
+exit=1
+s2 inbox contents: 
+--- pane fm-s2 after send attempt
+AG-MBP-96% claude
+AG-MBP-96%

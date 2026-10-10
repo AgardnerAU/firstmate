@@ -1,0 +1,45 @@
+=== S7: a live worker started behind a stale stood-down record (t2) is not hidden ===
+t2: agent=alive worker-state=stood-down
+$ fm-crew-state.sh t2
+state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+$ fm-control.sh t2 stand-down   (repeat while a live agent contradicts the record)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+error: task t2 is recorded as stood down but its agent is alive; refusing to hide a live worker from wedge detection (repair it with 'fm-control t2 repair-worker-state')
+exit=1
+t2 still alive? alive
+$ fm-control.sh t2 repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+warning: task t2 declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+exit=0
+record present after repair? no
+$ fm-control.sh t2 repair-worker-state   (repeat, no-op)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+no-record agent-state=alive t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t2
+exit=0
+
+=== S8: an interrupted stand-down (s1: 'standing-down' record, live agent) is completed by re-running stand-down ===
+s1: agent=alive worker-state=standing-down
+$ fm-crew-state.sh s1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+$ fm-control.sh s1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+stood-down s1 harness=claude backend=tmux endpoint=fmlab:fm-s1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s1
+exit=0
+s1: agent=dead worker-state=stood-down
+
+=== S9: an agent that is already dead without a declared hold cannot be relabelled ===
+(t1's live Claude is exited with the ordinary 'exit' verb, then repair clears its stale standing-down record)
+stopped t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t1
+intact agent-state=dead t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t1
+t1: agent=dead record present? yes
+$ fm-control.sh t1 stand-down   (status log does not declare a hold)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+stood-down t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t1
+exit=0
+record present? yes
+$ echo 'paused: lab hold' >> state/t1.status; fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+already-stood-down t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-t1
+exit=0
+t1 worker-state=stood-down

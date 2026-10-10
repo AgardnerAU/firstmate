@@ -1,0 +1,9 @@
+=== S10: stand-down refuses while an unacknowledged steer waits in the inbox ===
+s2: agent=alive
+$ fm-send.sh s2 'lab steer: reply with nothing'
+inbox: 001.msg handled 
+$ fm-control.sh s2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+error: task s2 has an unacknowledged instruction waiting at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/state/s2.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/state/s2.inbox/001.msg /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/state/s2.inbox/handled/', before standing the worker down
+exit=1
+s2: agent=alive record present? no

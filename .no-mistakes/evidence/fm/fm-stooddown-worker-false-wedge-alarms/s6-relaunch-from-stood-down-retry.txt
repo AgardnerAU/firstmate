@@ -1,0 +1,22 @@
+=== S6 (retry with a valid '# Task' brief): relaunch the stood-down scout s2 in place ===
+before: agent=dead worker-state=stood-down
+$ fm-control.sh s2 relaunch --note 'resume after hold'
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+relaunched s2 harness=claude from=claude model=default effort=default backend=tmux endpoint=fmlab:fm-s2 worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s2
+exit=0
+after: agent=alive; worker-state record present? no
+  fm-s1 cmd=2.1.296
+  fm-t1 cmd=2.1.296
+  fm-s2 cmd=2.1.296
+  fm-t2 cmd=zsh
+$ fm-crew-state.sh s2
+state: working · source: pane · harness busy (fm-spawn)
+--- pane fm-s2 tail
+AG-MBP-96% claude
+AG-MBP-96% cd -- '/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG/wt-s2'
+AG-MBP-96% export GOTMPDIR=/tmp/fm-s2/gotmp
+AG-MBP-96% export COMPACT_ADVISER_DISABLE=1
+AG-MBP-96% export FM_TASK_ID=s2
+AG-MBP-96% . '/tmp/fm-s2+122d88ec4d86797d6f2ded928c22541ce3bf6a42bc3b39ef33bdb7dee8bdd886/launch.s1791592552.8808.11015.sh'

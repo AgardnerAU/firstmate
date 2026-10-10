@@ -1,0 +1,17 @@
+=== S2: real fm-watch.sh (FM_POLL=1) over 4 real tmux endpoints ===
+s1,t1: live idle Claude (s1 carries a leftover 'standing-down' record from an interrupted stand-down)
+s2,t2: stood-down (shell only, exact stood-down record)
+  s1 agent=alive worker-state=standing-down
+  t1 agent=alive worker-state=standing-down
+  s2 agent=dead worker-state=stood-down
+  t2 agent=dead worker-state=stood-down
+--- watcher stdout
+stale: fmlab:fm-s1
+--- watcher stderr (tail)
+--- pane-stale tracking files the watcher created (.hash/.count/.stale per window)
+.count-fmlab_fm-s1
+.count-fmlab_fm-t1
+.hash-fmlab_fm-s1
+.hash-fmlab_fm-t1
+.stale-fmlab_fm-s1
+--- wake queue rows after ack

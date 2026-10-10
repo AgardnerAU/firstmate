@@ -1,0 +1,7 @@
+=== S3: stand-down ship t1 while its branch owns an active no-mistakes run ===
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.t99UcG
+error: task t1 owns an active no-mistakes run (01LABACTIVE) that still needs a worker at its gates; finish it, or abort it explicitly with 'no-mistakes axi abort --run 01LABACTIVE', before standing the worker down
+exit=1
+worker-state record present? no
+fm-backend agent state: alive
