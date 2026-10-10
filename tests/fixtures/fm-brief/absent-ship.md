@@ -23,7 +23,9 @@ If the top-level path is the primary checkout or not the worktree you were launc
 
 # Rules
 1. Never push to the default branch (push only your `fm/absent-ship` branch). Never merge a PR.
-2. Stay inside this worktree; modify nothing outside it.
+2. Keep project edits inside this worktree; keep proof and scratch output outside it, under `__TMP_ROOT__/home/data/absent-ship/` or a temporary directory.
+   Outside the worktree, write only that task material and the status and steering-inbox records authorized below.
+   Leave the worktree clean before reporting done.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
    `echo "{state} [at=<epoch>]: {one short line}" >> '__TMP_ROOT__/home/state/absent-ship.status' && { [ ! -e '__TMP_ROOT__/home/config/fleet-ledger' ] || '__ROOT__/bin/fm-fleet-ledger.sh' appended '__TMP_ROOT__/home/config' '__TMP_ROOT__/home/state/absent-ship.status' >/dev/null 2>&1 || true; }`
