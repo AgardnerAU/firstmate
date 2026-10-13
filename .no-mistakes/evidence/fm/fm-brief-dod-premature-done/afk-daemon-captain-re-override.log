@@ -1,0 +1,11 @@
+# Live away-mode daemon restarted with FM_CAPTAIN_RE='custom-verb:' (override that replaces the captain verb set); new task w-re appends the exact handoff
+[2026-10-13T20:35:35+1100] daemon starting (pid 1866); target=primary:0.0; target_source=FM_SUPERVISOR_TARGET; backend=tmux; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=3600s; batch=5s
+[2026-10-13T20:35:46+1100] wake: check: rearm-resurface
+[2026-10-13T20:35:59+1100] escalate: check: rearm-resurface -> check: rearm-resurface
+[2026-10-13T20:37:32+1100] wake: signal: w-near.status w-pipeline.status w-re.status
+[2026-10-13T20:37:58+1100] self-handle: signal: w-near.status w-pipeline.status w-re.status -> signal already escalated (catch-all scan): w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working [at=1791884069]: implemented, ready for the pipeline | w-re.status: working [at=1791884151]: implemented, ready for the pipeline
+[2026-10-13T20:38:00+1100] self-handle: signal: w-near.status w-pipeline.status w-re.status -> signal already escalated (catch-all scan): w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working [at=1791884069]: implemented, ready for the pipeline | w-re.status: working [at=1791884151]: implemented, ready for the pipeline
+[2026-10-13T20:38:01+1100] self-handle: signal: w-near.status w-pipeline.status w-re.status -> signal already escalated (catch-all scan): w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working [at=1791884069]: implemented, ready for the pipeline | w-re.status: working [at=1791884151]: implemented, ready for the pipeline
+--- state/.subsuper-escalations
+check: rearm-resurface
+w-re.status: working [at=1791884151]: implemented, ready for the pipeline (catch-all scan)

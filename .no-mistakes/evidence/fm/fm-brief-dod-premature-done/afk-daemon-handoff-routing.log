@@ -1,29 +1,15 @@
-# Live away-mode daemon in a disposable lab FM_HOME; FM_CAPTAIN_RE=custom-verb: ; batch=0; supervisor pane is a stand-in so delivery deferral is expected
-## state/t-plain.status
-working: setup complete
-working [at=1791620001]: rebased onto merged #76, running tests
-working [at=1791620100]: rebased onto merged #76, tests next
-done [at=1791620200]: PR https://github.com/o/r/pull/1 checks green
-## state/t-near.status
-working: setup complete
-working [at=1791620002]: implemented, ready for the pipeline review
-working [at=1791620101]: implemented, ready for the pipeline review
-## state/t-route.status
-working: setup complete
-working [at=1791620000]: implemented, ready for the pipeline
-working [at=1791620102]: implemented, ready for the pipeline
-## daemon log
-[2026-10-10T08:15:54+0800] daemon starting (pid 32667); target=%0; target_source=FM_SUPERVISOR_TARGET; backend=tmux; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=240s; batch=0s
-[2026-10-10T08:16:28+0800] wake: signal: <lab>/state/t-near.status <lab>/state/t-plain.status <lab>/state/t-route.status
-[2026-10-10T08:16:30+0800] escalate: signal: <lab>/state/t-near.status <lab>/state/t-plain.status <lab>/state/t-route.status -> t-near.status: working [at=1791620002]: implemented, ready for the pipeline review | t-plain.status: working [at=1791620001]: rebased onto merged #76, running tests | t-route.status: working [at=1791620000]: implemented, ready for the pipeline
-[2026-10-10T08:16:30+0800] self-handle: signal: <lab>/state/t-near.status <lab>/state/t-plain.status <lab>/state/t-route.status -> signal already escalated (catch-all scan): t-near.status: working [at=1791620002]: implemented, ready for the pipeline review | t-plain.status: working [at=1791620001]: rebased onto merged #76, running tests | t-route.status: working [at=1791620000]: implemented, ready for the pipeline
-[2026-10-10T08:16:31+0800] self-handle: signal: <lab>/state/t-near.status <lab>/state/t-plain.status <lab>/state/t-route.status -> signal already escalated (catch-all scan): t-near.status: working [at=1791620002]: implemented, ready for the pipeline review | t-plain.status: working [at=1791620001]: rebased onto merged #76, running tests | t-route.status: working [at=1791620000]: implemented, ready for the pipeline
-[2026-10-10T08:17:34+0800] wake: signal: <lab>/state/t-plain.status
-[2026-10-10T08:17:36+0800] self-handle: signal: <lab>/state/t-plain.status -> routine signal: t-plain.status: working [at=1791620100]: rebased onto merged #76, tests next
-[2026-10-10T08:18:24+0800] wake: signal: <lab>/state/t-near.status
-[2026-10-10T08:18:25+0800] self-handle: signal: <lab>/state/t-near.status -> routine signal: t-near.status: working [at=1791620101]: implemented, ready for the pipeline review
-[2026-10-10T08:19:13+0800] wake: signal: <lab>/state/t-route.status
-[2026-10-10T08:19:15+0800] escalate: signal: <lab>/state/t-route.status -> t-route.status: working [at=1791620102]: implemented, ready for the pipeline
-[2026-10-10T08:21:43+0800] ERROR: away-mode escalation undelivered 313s; last delivery failure: deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane). Buffer + wake-queue preserved; alarm marker written.
-[2026-10-10T08:22:54+0800] wake: signal: <lab>/state/t-plain.status
-[2026-10-10T08:22:55+0800] self-handle: signal: <lab>/state/t-plain.status -> routine signal: t-plain.status: done [at=1791620200]: PR https://github.com/o/r/pull/1 checks green
+# Live away-mode daemon (bin/fm-afk-start.sh) in disposable lab home, private tmux socket; appends made one at a time
+# Appends: w-routine 'working: ordinary progress', then w-near 'working: implemented, ready for the pipeline review', then w-pipeline 'working: implemented, ready for the pipeline'
+[2026-10-13T20:32:16+1100] daemon starting (pid 4234); target=primary:0.0; target_source=FM_SUPERVISOR_TARGET; backend=tmux; backend_source=FM_SUPERVISOR_BACKEND; afk=on; inject_skip='heartbeat'; stale_escalate=3600s; batch=5s
+[2026-10-13T20:33:24+1100] wake: signal: w-near.status w-pipeline.status w-routine.status
+[2026-10-13T20:34:23+1100] self-handle: signal: w-near.status w-pipeline.status w-routine.status -> routine signal: w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working: started | w-routine.status: working [at=1791883975]: ordinary progress, tests passing
+[2026-10-13T20:34:30+1100] self-handle: signal: w-near.status w-pipeline.status w-routine.status -> routine signal: w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working: started | w-routine.status: working [at=1791883975]: ordinary progress, tests passing
+[2026-10-13T20:34:38+1100] escalate: signal: w-near.status w-pipeline.status w-routine.status -> w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working [at=1791884069]: implemented, ready for the pipeline | w-routine.status: working [at=1791883975]: ordinary progress, tests passing
+[2026-10-13T20:34:48+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+[2026-10-13T20:34:51+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+[2026-10-13T20:34:57+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+[2026-10-13T20:35:03+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+[2026-10-13T20:35:13+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+[2026-10-13T20:35:24+1100] inject deferred: supervisor composer not confirmed-empty (state=unknown: pending input, dead-shell prompt, or unreadable pane)
+--- state/.subsuper-escalations
+w-near.status: working [at=1791884010]: implemented, ready for the pipeline review | w-pipeline.status: working [at=1791884069]: implemented, ready for the pipeline | w-routine.status: working [at=1791883975]: ordinary progress, tests passing

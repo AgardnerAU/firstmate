@@ -1,0 +1,7 @@
+# Adversarial scan of every generated brief for wording that licenses done: on a bare commit
+dpr-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=1  pipeline-handoff=0
+dprg-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=1  pipeline-handoff=0
+lo-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=1  pipeline-handoff=0
+nm-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=1  pipeline-handoff=1
+nmg-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=1  pipeline-handoff=1
+scout-t1: complete-when-committed=0  done:{summary}=0  done-gate-rule4=0  stopgate-rule4=0  pipeline-handoff=0
