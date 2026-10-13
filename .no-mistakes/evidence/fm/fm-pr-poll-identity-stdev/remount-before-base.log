@@ -1,0 +1,16 @@
+ROOT=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-remount.uelzd9/base
+armed poll; registration identity line 10: 16777240:287
+state dir device before remount: 16777240
+pre-remount validation: VALID
+state dir device after remount: 16777244
+DEVICE RENUMBERED: yes
+check bytes unchanged
+post-remount validation: REJECTED 
+watcher rc=0
+--- watcher output ---
+check: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-remount.uelzd9/mp/fm-pr-check-security.j4cMhb/live-remount/home/state/task-a.check.sh: merged
+--- watcher stderr ---
+task-a.check.sh retired
+task-a.pr-poll retired
+task-a.pr-poll-registration retired
+driver exit 0

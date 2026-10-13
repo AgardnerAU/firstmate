@@ -1,0 +1,1 @@
+fm-wake-drain-unread-status exit=0

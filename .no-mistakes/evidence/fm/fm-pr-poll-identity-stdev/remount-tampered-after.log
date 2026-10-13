@@ -1,0 +1,16 @@
+ROOT=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4TFVT818ZFPKQ43ZBB97V9T
+armed poll; registration identity line 10: 16777240:477
+state dir device before remount: 16777240
+pre-remount validation: VALID
+state dir device after remount: 16777244
+DEVICE RENUMBERED: yes
+swapped task-a.check.sh for an identical copy with a new inode: 480
+post-remount validation: REJECTED the sidecar or check is not the file its registration was armed with
+watcher rc=0
+--- watcher output ---
+check: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-remount.uelzd9/mp/fm-pr-check-security.Pld8nS/live-remount/home/state/z-stop.check.sh: stop-cycle
+--- watcher stderr ---
+task-a.check.sh still present
+task-a.pr-poll still present
+task-a.pr-poll-registration still present
+driver exit 0

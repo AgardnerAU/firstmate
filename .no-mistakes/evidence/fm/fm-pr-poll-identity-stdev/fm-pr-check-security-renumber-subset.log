@@ -1,0 +1,5 @@
+ok - a poll armed before a volume renumber keeps authenticating and detecting merges without any rewrite
+ok - a retirement receipt published before a volume renumber still completes
+ok - a renumbered registration still refuses a tampered artifact: swapped-check altered-check swapped-sidecar altered-sidecar altered-template-hash wrong-mode hardlinked-check (foreign-device not exercisable on Darwin)
+ok - a rejected state check names the cause of its rejection
+ok - direct re-arm publication waits without replacing an armed poll
