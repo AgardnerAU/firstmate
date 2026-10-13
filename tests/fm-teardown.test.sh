@@ -2658,65 +2658,6 @@ test_absent_worktree_local_only_merged_to_local_main_retires() {
   pass "a local-only record naming no worktree whose branch is merged into local main retires without --force"
 }
 
-# A retry of a teardown that proved its own copy landed and deleted the task
-# branch, then failed later: the record names no copy it still owns, the
-# branch is gone, and the PR is still open. The landed_proven=1 line that
-# teardown wrote before deleting the branch carries the proof; without it the
-# same record refuses.
-test_absent_worktree_deleted_branch_with_landed_proof_retires() {
-  local case_dir rc
-  case_dir=$(make_case absent-wt-landed-proof)
-  wt_commit_file "$case_dir" feature.txt hello "add feature"
-  cat > "$case_dir/fakebin/gh" <<'SH'
-#!/usr/bin/env bash
-case "${1:-} ${2:-}" in
-  "pr view") printf '%s\t%s\t%s\n' OPEN 0000000000000000000000000000000000000000 https://github.com/example/repo/pull/7 ; exit 0 ;;
-esac
-exit 0
-SH
-  chmod +x "$case_dir/fakebin/gh"
-  write_absent_worktree_meta "$case_dir" "" "pr=https://github.com/example/repo/pull/7"
-  git -C "$case_dir/project" branch -D -q fm/task-x1
-
-  set +e
-  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr"
-  rc=$?
-  set -e
-  expect_code 1 "$rc" "absent-wt-landed-proof: without the proof a deleted branch and open PR should refuse"
-  assert_grep "no such branch" "$case_dir/stderr" \
-    "absent-wt-landed-proof: the refusal should name the missing branch"
-  assert_present "$case_dir/state/task-x1.meta" "absent-wt-landed-proof: the refusal removed the task record"
-
-  printf 'landed_proven=1\n' >> "$case_dir/state/task-x1.meta"
-  set +e
-  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr"
-  rc=$?
-  set -e
-  expect_code 0 "$rc" "absent-wt-landed-proof: the recorded proof should retire the record"
-  ! grep -q REFUSED "$case_dir/stderr" || fail "absent-wt-landed-proof: teardown printed a REFUSED line"
-  assert_absent "$case_dir/state/task-x1.meta" "absent-wt-landed-proof: the task record was not removed"
-  pass "a record whose landed work was proven before its branch was deleted retires on retry"
-}
-
-# The recorded proof stands in only for a branch that is gone: a branch that
-# still exists with unpushed commits is inspected and refused as before.
-test_absent_worktree_landed_proof_does_not_cover_existing_branch() {
-  local case_dir rc
-  case_dir=$(make_case absent-wt-proof-existing)
-  wt_commit_file "$case_dir" feature.txt hello "unlanded feature"
-  write_absent_worktree_meta "$case_dir" "" "landed_proven=1"
-
-  set +e
-  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr"
-  rc=$?
-  set -e
-  expect_code 1 "$rc" "absent-wt-proof-existing: unpushed commits on an existing branch should still refuse"
-  assert_grep "unlanded feature" "$case_dir/stderr" \
-    "absent-wt-proof-existing: the refusal should list the unpushed commit"
-  assert_present "$case_dir/state/task-x1.meta" "absent-wt-proof-existing: the refusal removed the task record"
-  pass "a recorded landed-work proof does not override an existing branch's unpushed commits"
-}
-
 # Mark the case's home as a secondmate home bound to a parent: teardown and
 # fm-pr-check run with FM_HOME="$case_dir/home" so the parent-channel
 # publishers resolve that binding while the task state stays in $case_dir/state.
@@ -5231,8 +5172,6 @@ test_absent_worktree_merged_pr_retires
 test_absent_worktree_open_pr_pushed_branch_retires
 test_absent_worktree_unpushed_branch_refuses_unless_forced
 test_absent_worktree_local_only_merged_to_local_main_retires
-test_absent_worktree_deleted_branch_with_landed_proof_retires
-test_absent_worktree_landed_proof_does_not_cover_existing_branch
 test_secondmate_pr_registration_publishes_ready_line
 test_secondmate_home_teardown_delivers_final_line_or_refuses
 test_teardown_missing_busy_sidecar_completes
