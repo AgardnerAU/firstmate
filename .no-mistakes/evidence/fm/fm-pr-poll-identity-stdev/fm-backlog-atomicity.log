@@ -39,3 +39,63 @@ ok - fm_tasks_axi's GNU timeout forces termination (skipped: no timeout binary o
 ok - Kimi readiness interruptions fail before backlog commit
 ok - dispatch does not resurrect a row closed after preflight
 ok - dispatch fails when its backlog row vanishes after preflight
+ok - completion closes a local-only ship, with its landing note, before reporting success
+ok - completion closes a scout item against its report
+ok - completion leaves legacy records open when no incarnation can be recorded
+ok - completion refuses ambiguous task incarnations
+ok - completion records relocated scout reports relative to the backlog root
+ok - space-containing scout report paths round-trip through recovery
+ok - control-byte data paths fail closed before paired transitions
+ok - unreplayable data paths are refused before destructive cleanup
+ok - completion preserves recovery state when task-record removal fails
+ok - completion refuses to report success while its item is still open, and records what it owes
+ok - restart recovers closes recorded before destructive cleanup
+ok - completion refuses directory-symlink close targets
+ok - completion reports failure until its durable close marker is removed
+ok - session start retries a close whose marker could not be removed
+ok - session start reports owned backlog rows it cannot read
+ok - Orca cleanup recovery is excluded from backlog lifecycle transitions
+ok - session start marks an item In flight when this home already owns a worker for it
+ok - session start rejects internal worker-record symlinks
+ok - session start rejects symlinked worker records
+ok - session start finishes a close an interrupted cleanup recorded but never landed
+ok - session start replays a recorded Gerrit close with its change URL as a note
+ok - recovery backfills recorded links onto already Done items
+ok - session start preserves a pending close across a transient backlog read failure
+ok - recovery preserves incomplete-cleanup evidence across a failed replay
+ok - session start finishes a close for the matching meta incarnation
+ok - recovery preserves closes for ambiguous task incarnations
+ok - recovery preserves both records when meta removal fails
+ok - recovery preserves closes beside symlinked metadata
+ok - recovery binds close-marker identity to its locked filename
+ok - recovery rejects close markers targeting another home's data
+ok - recovery validates an unterminated final marker field
+ok - recovery rejects lexical traversal before resolving marker data
+ok - recovery rejects marker control bytes before parsing
+ok - recovery rejects malformed PR URL values
+ok - a retained pending close is never started by reconciliation
+ok - recovery rejects close-marker arguments outside its protocol
+ok - recovery reports and rejects dangling symlink close markers
+ok - session start drops a close recorded for an older meta incarnation
+ok - session start rejects an unversioned close marker
+ok - bootstrap rechecks worker-record containment after locking
+ok - lifecycle files reject ancestor symlinks outside home roots
+ok - same-home state overrides remain supported
+ok - bootstrap refuses symlinked state before reconciliation
+ok - bootstrap data-disappears fault injection is PATH-based; skipped on Darwin where stat is /usr/bin/stat
+ok - bootstrap preserves secondmate, manual, and absent-backlog exemptions
+ok - session start leaves a captain-held item where the captain put it
+ok - no-backlog teardown refuses symlinked records before resource actions
+ok - teardown rechecks record parents after locking
+ok - teardown refuses symlinked state before resource actions
+ok - a home with no backlog remains exempt from lifecycle transitions
+ok - spawn refuses a special-file tasks-axi config instead of blocking on it
+ok - spawn refuses an unsafe tasks-axi config before any exemption is derived from it
+ok - spawn refuses a data directory symlinked outside the home
+ok - a configured adapter refuses a data directory outside the home
+ok - dispatch and completion transition structurally with evidence
+ok - refused teardown leaves the backlog item in flight
+ok - environment-selected adapters bypass the legacy markdown file override
+ok - a manual-backlog home dispatches and completes without a hard failure
+ok - a secondmate home keeps its own books paired through dispatch and completion
+ok - dispatching a persistent secondmate needs no backlog item

@@ -1,0 +1,21 @@
+== arm: fm-pr-check.sh task-a https://github.com/o/r/pull/1
+armed: state/task-a.check.sh
+rc=0
+== task record:
+window=fm-task-a
+worktree=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.oXcpkZ/wt
+pr=https://github.com/o/r/pull/1
+pr_head=0123456789abcdef0123456789abcdef01234567
+== live state device=16777232; recorded identities before:
+16777232:455897543
+16777232:455897544
+== simulated remount: recorded identities now:
+16777239:455897543
+16777239:455897544
+== watcher: fm-watch.sh (one cycle, forge reports MERGED)
+check: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-live.oXcpkZ/home/state/contributions.check.sh: contributions: observation unavailable for https://github.com/o/r/pull/1
+watch rc=0
+== poll artifacts after:
+task-a.check.sh
+task-a.pr-poll
+task-a.pr-poll-registration
