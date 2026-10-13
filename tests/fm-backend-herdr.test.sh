@@ -2997,6 +2997,14 @@ test_endpoint_identity_gates_reads_and_closes() {
     && fail "gate: the existence read accepted a reissued pane"
   run_gate "$stranger" 'fm_backend_herdr_target_ready default:w1:p2' \
     && fail "gate: a reissued pane passed the read-and-act gate"
+  : > "$IDENTITY_LOG"
+  got=$(FM_FAKE_PANE_READ="own pane" run_gate "$(identity_pane_json w1:p2 term-a "$wt")" 'fm_backend_herdr_visible_capture default:w1:p2') \
+    || fail "gate: the passive visible read refused this task's own pane"
+  [ "$got" = "own pane" ] || fail "gate: the passive visible read returned '$got' for this task's own pane"
+  : > "$IDENTITY_LOG"
+  run_gate "$stranger" 'fm_backend_herdr_visible_capture default:w1:p2' \
+    && fail "gate: the passive visible read accepted a reissued pane"
+  assert_not_contains "$(cat "$IDENTITY_LOG")" 'pane read' "gate: a passive visible read ran against a reissued pane"
   run_gate "$stranger" 'fm_backend_herdr_endpoint_confirmed_gone default:w1:p2' \
     || fail "gate: a reissued pane should confirm this task's endpoint gone"
 
