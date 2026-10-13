@@ -1,0 +1,28 @@
+## scenario B (adversarial): session already ended, so lavish-axi reply is refused
+$ lavish-axi reply board.html --agent-reply probe   (shows the refusal the listener meets)
+error: Lavish Editor session has ended; reply was not sent
+code: SESSION_ENDED
+help[1]: "This Lavish Editor session for $LAB/art/board.html has ended. Stop polling. Deliver any remaining updates directly in this conversation, or run `lavish-axi $LAB/art/board.html` to open a fresh session if the user needs further visual review."
+exit=
+$ cat receipt
+Recorded: board-key-2 (closed). Still open: board-key-3.
+$ bin/fm-procevent-lavish.sh poll board.html  (30s alarm)
+[lavish-axi] Long-polling for user feedback on $LAB/art/board.html. This stays silent until the user sends feedback, ends the session, or leaves every review window disconnected past the reconnect grace period - leave it running. Detected layout issues do NOT return this poll: they wait in the user's Layout issues inbox until the user queues them as ordinary feedback. If it gets killed or times out before feedback arrives, re-run `lavish-axi poll $LAB/art/board.html` - feedback remains queued until delivery. Poll delivery consumes the response, so read it completely.
+session:
+  file: $LAB/art/board.html
+  status: ended
+  ended_by: agent
+next_step: "This Lavish Editor session for $LAB/art/board.html has ended. Stop polling. Deliver any remaining updates directly in this conversation, or run `lavish-axi $LAB/art/board.html` to open a fresh session if the user needs further visual review."
+poll exit=
+$ test -e receipt
+receipt consumed
+$ bin/fm-procevent-lavish.sh poll board.html --agent-reply-file staged-task-reply   (task-owned form, must stay fail-closed)
+error: Lavish did not accept the staged reply: error: Lavish Editor session has ended; reply was not sent
+code: SESSION_ENDED
+help[1]: "This Lavish Editor session for $LAB/art/board.html has ended. Stop polling. Deliver any remaining updates directly in this conversation, or run `lavish-axi $LAB/art/board.html` to open a fresh session if the user needs further visual review."
+poll exit=
+task reply file kept (not consumed)
+## exit codes for scenario B
+receipt-form poll exit=0; stdout bytes=     524; classify=ended; terminal exit=0 (0 = runner may retire source)
+receipt consumed
+task-owned --agent-reply-file poll exit=1 (fail-closed kept); task reply file kept

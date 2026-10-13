@@ -1,0 +1,5 @@
+ok - legacy identities, metadata, bindings, and the shim keep working
+ok - a board answer reaches the keyed-answer intake and wakes firstmate
+ok - a note without a selection keeps its call open, and the receipt names recorded and open calls
+ok - the receipt matches a migrated hold through the id the intake reported
+exit=0

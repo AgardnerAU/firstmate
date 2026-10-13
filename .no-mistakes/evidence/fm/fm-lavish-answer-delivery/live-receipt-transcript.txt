@@ -1,0 +1,96 @@
+# Live: real fm-captain-hold.sh + tasks-axi + fm-procevent-lavish.sh receipt seam, disposable FM_HOME=/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.JWUw35
+$ bin/fm-captain-hold.sh hold sample-route-choice --title Route choice --reason captain must pick the route --repo sample
+sample-route-choice
+[rc=0]
+$ bin/fm-captain-hold.sh hold sample-origin-decision-access --title Access level --reason captain must pick access --repo sample
+sample-origin-decision-access
+[rc=0]
+$ bin/fm-captain-hold.sh hold sample-note-only --title Note only call --reason captain may add a note --repo sample
+sample-note-only
+[rc=0]
+
+# Captured Lavish board round (the result file a listener writes):
+session:
+  status: feedback
+  session_ended: false
+prompts[3]{tag,text,prompt}:
+  "choice","Route choice -> north","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-route-choice\",\"selection\":\"north\",\"note\":\"\",\"intent\":\"answer\"}"
+  "choice","Access level -> read-only","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"access\",\"selection\":\"read-only\",\"note\":\"\",\"intent\":\"answer\"}"
+  "choice","Note only call","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-note-only\",\"selection\":\"\",\"note\":\"Let me think about this one\",\"intent\":\"answer\"}"
+
+$ fm-procevent-lavish.sh answers board-result.txt
+[rc=0]
+sample-route-choice	north	Route choice -> north
+access	read-only	Access level -> read-only
+sample-note-only	Let me think about this one	Note only call
+
+$ fm-captain-hold.sh answers sample-origin --source "live lab board"  < keyed answers
+[rc=0]
+closed: sample-route-choice
+resolved: access sample-origin-decision-access
+closed: sample-origin-decision-access
+closed: sample-note-only
+answers: closed=3 skipped=0
+
+$ fm-procevent-lavish.sh receipt lavish-1abcafe000000001 board-result.txt  < intake report
+receipt: Firstmate received this at 21:57. Recorded: Route choice (north); Access level (read-only); Note only call (your own words).
+[rc=0]
+
+# Staged receipt file state/procevent/.lavish-1abcafe000000001.lavish-receipt:
+Firstmate received this at 21:57. Recorded: Route choice (north); Access level (read-only); Note only call (your own words).
+# Backlog after intake:
+## In flight
+
+## Queued
+## Done
+- [x] sample-note-only - Note only call (repo: sample) (kind: captain) (done 2026-10-13) (hold: fm-hold-v1:Y2FwdGFpbiBtYXkgYWRkIGEgbm90ZQ==) (hold-kind: captain)
+  Resolution recorded by fm-captain-hold.
+  Decision digest: ca202e9659e21151926050b2e654c41d082e5f0d796b9a900bfd1e58d1b3fa10
+  Resolution mode: answered
+
+  Captain decision:
+  Captain answered this call through live lab board.
+  Task: sample-note-only
+  Answer: Let me think about this one
+  Answer as shown to the captain: Note only call
+
+- [x] sample-origin-decision-access - Access level (repo: sample) (kind: captain) (done 2026-10-13) (hold: fm-hold-v1:Y2FwdGFpbiBtdXN0IHBpY2sgYWNjZXNz) (hold-kind: captain)
+  Resolution recorded by fm-captain-hold.
+  Decision digest: 7b25e312ec0931ad76ffbf91d2c69772ee465443563f10e908548dd86ea8da9d
+  Resolution mode: answered
+
+  Captain decision:
+  Captain answered this call through live lab board.
+  Task: sample-origin-decision-access
+  Answer: read-only
+  Answer as shown to the captain: Access level -> read-only
+
+- [x] sample-route-choice - Route choice (repo: sample) (kind: captain) (done 2026-10-13) (hold: fm-hold-v1:Y2FwdGFpbiBtdXN0IHBpY2sgdGhlIHJvdXRl) (hold-kind: captain)
+  Resolution recorded by fm-captain-hold.
+  Decision digest: f4f976921da6282508e55118d6cbd641a750c345f90271ac6aaf31b0fb2db36b
+  Resolution mode: answered
+
+  Captain decision:
+  Captain answered this call through live lab board.
+  Task: sample-route-choice
+  Answer: north
+  Answer as shown to the captain: Route choice -> north
+
+
+# ADVERSARIAL second round: the captain resends access unchanged and changes the already-closed route to south
+session:
+  status: feedback
+  session_ended: false
+prompts[2]{tag,text,prompt}:
+  "choice","Route choice -> south","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"sample-route-choice\",\"selection\":\"south\",\"note\":\"\",\"intent\":\"answer\"}"
+  "choice","Access level -> read-only","Context data: {\"schema\":\"fm-bearings-answer.v1\",\"question\":\"access\",\"selection\":\"read-only\",\"note\":\"\",\"intent\":\"answer\"}"
+[intake rc=1]
+skipped: sample-route-choice (already closed)
+resolved: access sample-origin-decision-access
+closed: sample-origin-decision-access
+answers: closed=1 skipped=1
+receipt: Firstmate received this at 21:57. Recorded: Access level (read-only). Already recorded earlier, this answer not applied: Route choice. Firstmate will follow up.
+[receipt rc=0]
+13:  Answer: Let me think about this one
+24:  Answer: read-only
+35:  Answer: north

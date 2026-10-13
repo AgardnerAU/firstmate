@@ -25,6 +25,7 @@ ok - persistent stale escalates after threshold and clears its marker
 ok - resumed (busy) stale clears its marker without escalating
 ok - housekeeping re-surfaces a stale declared pause on the long cadence and resets its window
 ok - housekeeping re-surfaces a forgotten captain hold on the long cadence and resets its window
+ok - housekeeping silences a captain hold only under an away record, never under quiet mode's
 ok - a busy pane cannot gate the pause clear once its crew's status no longer declares the wait
 ok - housekeeping matures a busy pane's declared-wait window into exactly one recheck per window
 ok - housekeeping bounds a distant declared time, defers to a near one, and rechecks a passed one at once
@@ -77,6 +78,13 @@ ok - an unverifiable status identity surfaces without advancing markers
 ok - a status read failure surfaces without advancing the daemon suppressor
 ok - catch-all routine scans advance before later actionable appends
 ok - failed escalation writes retain durable wakes and classification positions
+ok - stuck inbox escalation reaches supervision in away mode and survives buffering failure
+ok - stuck inbox escalation reaches supervision in quiet mode and survives buffering failure
+ok - write inbox escalation reaches supervision in away mode and survives buffering failure
+ok - write inbox escalation reaches supervision in quiet mode and survives buffering failure
+ok - reset inbox escalation reaches supervision in away mode and survives buffering failure
+ok - reset inbox escalation reaches supervision in quiet mode and survives buffering failure
+ok - inbox dispatch preserves ordinary stale, busy-turn, and other doorbell routing
 ok - catch-all markers advance only after escalation buffering succeeds
 ok - classification failure retains the complete durable wake batch
 ok - missing-status stale wakes remain ordinary and acknowledgeable
@@ -137,3 +145,4 @@ ok - inject_msg: herdr pane-gone check defers before any busy/composer/submit ca
 ok - inject_msg: dispatches busy-guard/composer-guard/submit through the herdr backend and succeeds on a confirmed empty composer
 ok - inject_msg: defers on a dead-shell/unreadable composer (unknown), never typing the escalation into a shell
 ok - inject_msg: unrecognized composer states defer by default
+exit=0
