@@ -1,0 +1,1 @@
+ok - herdr flat teardown never closes a pane id reissued to another terminal and still runs its landed-work checks
