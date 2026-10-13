@@ -431,6 +431,24 @@ mr_read_record_bounded() {  # <host> <path> <number>
   FM_PR_RECORD_MERGED=$merged
 }
 
+forgejo_read_record_bounded() {  # <host> <path> <number>
+  local record state merged
+  # shellcheck disable=SC2016  # The inner script expands after bash -c receives positional args.
+  if ! record=$(fm_run_timed 5 bash -c '
+    . "$1"
+    fm_pr_forgejo_read_record "$2" "$3" "$4" || exit 1
+    printf "state=%s\nmerged=%s\n" "$FM_PR_RECORD_STATE" "$FM_PR_RECORD_MERGED"
+  ' _ "$SCRIPT_DIR/fm-pr-lib.sh" "$1" "$2" "$3" 2>/dev/null); then
+    return 1
+  fi
+  state=$(printf '%s\n' "$record" | sed -n 's/^state=//p' | head -1)
+  merged=$(printf '%s\n' "$record" | sed -n 's/^merged=//p' | head -1)
+  [ -n "$state" ] || return 1
+  [ "$merged" = true ] || [ "$merged" = false ] || return 1
+  FM_PR_RECORD_STATE=$state
+  FM_PR_RECORD_MERGED=$merged
+}
+
 change_read_record_bounded() {  # <host> <number>
   local record state merged
   # shellcheck disable=SC2016  # The inner script expands after bash -c receives positional args.
@@ -505,6 +523,7 @@ pr_disposition() {
   case "$provider" in
     github) pr_read_record_bounded "${path%%/*}" "${path#*/}" "$number" ;;
     gitlab) mr_read_record_bounded "$host" "$path" "$number" ;;
+    forgejo) forgejo_read_record_bounded "$host" "$path" "$number" ;;
     gerrit) change_read_record_bounded "$host" "$number" ;;
     *) false ;;
   esac || {
@@ -521,7 +540,8 @@ pr_disposition() {
     return
   fi
   # GitLab spells an open merge request opened; Gerrit spells an open change NEW
-  # and a closed one ABANDONED.
+  # and a closed one ABANDONED. Forgejo reports a merged pull request as closed
+  # with merged true, so an unmerged one is its own open or closed state.
   state_lc=$(printf '%s' "$FM_PR_RECORD_STATE" | tr '[:upper:]' '[:lower:]')
   case "$state_lc" in
     open|opened|new) PR_DISPOSITION=open; PR_DISPOSITION_TEXT="$label open (forge)" ;;
