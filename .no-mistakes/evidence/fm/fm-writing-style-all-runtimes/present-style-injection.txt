@@ -1,0 +1,45 @@
+===== s-ship: lines 1-12 of generated brief.md =====
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use British English; don't use em dashes.
+- Literal tokens stay literal: $HOME `whoami` $(date) ${FM_HOME} "quoted" (paren
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+>> s-ship: style injected VERBATIM, headings=1
+>> s-ship: no intake reread instruction
+===== s-scout: lines 1-12 of generated brief.md =====
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use British English; don't use em dashes.
+- Literal tokens stay literal: $HOME `whoami` $(date) ${FM_HOME} "quoted" (paren
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+>> s-scout: style injected VERBATIM, headings=1
+>> s-scout: no intake reread instruction
+===== s-2m: lines 1-12 of generated brief.md =====
+You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+- Use British English; don't use em dashes.
+- Literal tokens stay literal: $HOME `whoami` $(date) ${FM_HOME} "quoted" (paren
+
+
+At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+
+
+# Charter
+live charter
+>> s-2m: style injected VERBATIM, headings=1
+>> s-2m: has intake reread instruction

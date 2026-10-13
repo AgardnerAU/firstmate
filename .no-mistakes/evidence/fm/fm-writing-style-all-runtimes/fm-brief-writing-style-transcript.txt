@@ -1,0 +1,45 @@
+== Scenario: absent file, base vs head byte comparison
+rc=0 /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmws.g2Cqki/base ship
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 ship
+IDENTICAL(ship, absent)
+rc=0 /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmws.g2Cqki/base scout
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 scout
+IDENTICAL(scout, absent)
+rc=0 /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fmws.g2Cqki/base secondmate
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 secondmate
+IDENTICAL(secondmate, absent)
+== Scenario: blank file (whitespace only)
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 ship
+IDENTICAL(ship, blank vs base absent)
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 scout
+IDENTICAL(scout, blank vs base absent)
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 secondmate
+IDENTICAL(secondmate, blank vs base absent)
+== Scenario: present file
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 ship
+--- ship diff vs base absent:
+2a3,7
+> # Worker writing style
+> Use British English.
+> Write short sentences.
+> 
+> 
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 scout
+--- scout diff vs base absent:
+2a3,7
+> # Worker writing style
+> Use British English.
+> Write short sentences.
+> 
+> 
+rc=0 /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M4T9RG5V0GJKV0SG73896ZD8 secondmate
+--- secondmate diff vs base absent:
+2a3,10
+> # Worker writing style
+> Use British English.
+> Write short sentences.
+> 
+> 
+> At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+> 
+> 

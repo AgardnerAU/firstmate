@@ -1,0 +1,9 @@
+== Scenario: absent/blank file -> byte-identical to base (main 6407052f) ==
+absent s-ship: IDENTICAL (9096 bytes)
+absent s-nm: IDENTICAL (14076 bytes)
+absent s-scout: IDENTICAL (7888 bytes)
+absent s-2m: IDENTICAL (8293 bytes)
+blank s-ship: IDENTICAL (9096 bytes)
+blank s-nm: IDENTICAL (14076 bytes)
+blank s-scout: IDENTICAL (7888 bytes)
+blank s-2m: IDENTICAL (8293 bytes)

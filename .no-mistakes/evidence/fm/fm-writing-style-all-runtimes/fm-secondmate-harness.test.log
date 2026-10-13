@@ -31,23 +31,3 @@ ok - claude secondmate launches cover the parent-home steering inbox in auto and
 ok - B12c claude-permission-mode inheritance: present values and primary absence converge exactly
 ok - B12c presentation inheritance: the primary default converges on, and only an explicit opt-out propagates off
 ok - B11 bootstrap sweep surfaces config propagation failures
-ok - B11 bootstrap rereads completed config writes after partial propagation
-ok - B12 config-push propagates via shared live discovery, reports items, rereads on change only, and does not fast-forward
-ok - B13 config-push reports dirty, non-allowing, and invalid homes without failing warnings-only runs
-ok - B14 config-push exits nonzero on real propagation errors
-ok - B14 config-push rereads completed config writes after partial propagation
-ok - B15 config reread is per-home, exact-byte, ordered, and pointer-only
-ok - B16 config reread isolation, ABSENT, generation safety, send failure, and retry
-ok - B20 config reread publication failures retain exact generations for retry
-ok - B21 config reread instruction-write failures retain exact retry generations
-ok - B21 config reread preserves exact bytes when temporary adoption also fails
-ok - B21 config reread serializes concurrent propagation and delivery
-ok - B22 full config reread retry queues drain before new publication
-ok - B23 mixed config reread delivery failures still bound sent history
-ok - B26 config reread delivery stops after the oldest failed generation
-ok - B17 config reread skips unchanged homes and reads destination post-write bytes
-ok - B18 bootstrap config reread path works; spawn flexibility remains defaults-only
-ok - B19 bootstrap respawns before inherited-config reread
-ok - B25 spawn quarantines stale rereads without blocking relaunch
-ok - B24 bootstrap detect-only mode remains filesystem read-only
-# all fm-secondmate-harness tests passed

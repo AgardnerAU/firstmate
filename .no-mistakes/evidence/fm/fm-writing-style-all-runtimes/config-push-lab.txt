@@ -1,0 +1,54 @@
+== fm-config-push.sh output ==
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+config-push: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.Tch1s0 -> live secondmate homes
+secondmate alpha (/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-sm.Z78ZFc):
+  crew-dispatch.json: unchanged
+  dispatch-never-send: unchanged
+  crew-harness: pushed
+  worker-writing-style.md: pushed
+  backlog-backend: unchanged
+  backend: unchanged
+  herdr-presentation-spaces: unchanged
+  startup-memory-budget: unchanged
+  trace-context: unchanged - session-scoped
+  launch-env-allowlist: unchanged
+  claude-permission-mode: unchanged
+  lavish-axi-host: unchanged
+  keep-ai-trailers: unchanged
+  supervision-host-off: unchanged
+  data/captain-shared.md: unchanged
+CONFIG_REREAD: secondmate alpha: send failed: error: refusing fleet lifecycle from inside a no-mistakes gate worktree (/Users/agardner/.no-mistakes/repos/c272d8f3fc4c.git)
+rc=1
+== secondmate home config after push ==
+total 16
+-rw-------@ 1 agardner  staff   6 Oct 13 20:55 crew-harness
+-rw-------@ 1 agardner  staff  71 Oct 13 20:55 worker-writing-style.md
+-- worker-writing-style.md:
+- Use British English spelling.
+- Write short sentences; no em dashes.
+>> bytes identical to primary
+== reread instruction files in secondmate state ==
+--- /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-sm.Z78ZFc/state/.fm-inherited-config-reread.20261013T095534.00000001.52DimP
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/crew-harness
+-----BEGIN config/crew-harness-----
+codex
+-----END config/crew-harness-----
+
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+- Use British English spelling.
+- Write short sentences; no em dashes.
+-----END config/worker-writing-style.md-----
+--- /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-sm.Z78ZFc/state/.fm-inherited-config-reread.20261013T095534.00000001.52DimP.pending
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-sm.Z78ZFc/state/.fm-inherited-config-reread.20261013T095534.00000001.52DimP
+== live secondmate pane (fm-alpha) content ==

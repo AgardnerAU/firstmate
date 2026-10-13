@@ -1,0 +1,44 @@
+== fm-config-push.sh with worker-writing-style.md present in primary
+config-push: __W__/home -> live secondmate homes
+secondmate alpha (/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmpush.QwICb3/alpha):
+  crew-dispatch.json: unchanged
+  dispatch-never-send: unchanged
+  crew-harness: unchanged
+  worker-writing-style.md: pushed
+  backlog-backend: unchanged
+  backend: unchanged
+  herdr-presentation-spaces: unchanged
+  startup-memory-budget: unchanged
+  trace-context: unchanged - session-scoped
+  launch-env-allowlist: unchanged
+  claude-permission-mode: unchanged
+  lavish-axi-host: unchanged
+  keep-ai-trailers: unchanged
+  supervision-host-off: unchanged
+  data/captain-shared.md: unchanged
+CONFIG_REREAD: secondmate alpha: send failed: error: refusing fleet lifecycle from inside a no-mistakes gate worktree (/Users/agardner/.no-mistakes/repos/c272d8f3fc4c.git)
+exit=1
+== alpha/config/worker-writing-style.md:
+Use British English.
+Write short sentences.
+== reread instruction file(s):
+--- __W__/alpha/state/.fm-inherited-config-reread.20261013T101450.00000001.Hve8tS
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+Use British English.
+Write short sentences.
+-----END config/worker-writing-style.md-----
+--- __W__/alpha/state/.fm-inherited-config-reread.20261013T101450.00000001.Hve8tS.pending
+/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fmpush.QwICb3/alpha/state/.fm-inherited-config-reread.20261013T101450.00000001.Hve8tS
+--- __W__/home/state/.fm-inherited-config-reread-retry/alpha/.fm-inherited-config-reread.20261013T101450.00000001.Hve8tS
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+Use British English.
+Write short sentences.
+-----END config/worker-writing-style.md-----
+== inbox records:
+== secondmate pane capture:
