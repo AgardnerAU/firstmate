@@ -163,7 +163,7 @@ for _ in $(seq 1 50); do
     | jq -e '.result.process_info.foreground_processes[]? | select(.argv0 == "claude")' >/dev/null 2>&1 && break
   sleep 0.1
 done
-lab pane report-agent --source fm-pane-reuse-e2e --agent claude --state idle "$PANE" >/dev/null \
+lab pane report-agent "$PANE" --source fm-pane-reuse-e2e --agent claude --state idle >/dev/null \
   || fail 'could not register the unrelated agent'
 # shellcheck disable=SC2016 # Positional parameters expand in the adapter shell.
 RAW=$(adapter "$STATE_BOUND" 'fm_backend_herdr_pane_agent_state "$1" "$2"' "$HERDR_LAB_SESSION" "$PANE")
