@@ -1,0 +1,56 @@
+== S1 unconfigured
+error: remote verify is not configured; put user@host in /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-live.d10hlo/config/remote-verify
+exit=78
+== S2 malformed config
+error: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-rv-live.d10hlo/config/remote-verify must contain one user@host SSH destination
+exit=78
+== S3 unreachable host
+ssh: Could not resolve hostname nonexistent.invalid: nodename nor servname provided, or not known
+error: remote verify host runner@nonexistent.invalid is unreachable; run locally if needed
+exit=69
+== S4 happy path (local HEAD=403193119b9de3bef3717567b8d5588e1278ccda)
+remote host: user-Z790-Steel-Legend-WiFi  pwd: /home/runner/.cache/firstmate/verify/b4972c6e5449c0da/work.3679fqgD
+HEAD=403193119b9de3bef3717567b8d5588e1278ccda commits=2 remotes=[]
+git status:
+ D deleted.txt
+?? .env.example
+?? .gitignore
+?? check.sh
+?? new.txt
+present: kept.txt
+present: tools/build/gen.sh
+present: .env.test
+present: .env.example
+present: new.txt
+present: check.sh
+absent: .env
+absent: ignored.key
+absent: node_modules
+absent: deleted.txt
+commit refused (read-only .git)
+PATH head: /home/runner/.local/bin
+exit=0
+== S5 exit code pass-through
+failing on purpose
+exit=7
+== S6 argv not evaluated + --env
+argc=3
+[a b]
+[$(touch pwned)'"]
+[*]
+no injection
+CUDA=[] FOO=[a b]
+exit=0
+== S6b invalid --env
+error: --env needs NAME=VALUE: BAD NAME=1
+exit=64
+== S7 remote cleanup of ~/.cache/firstmate/verify/b4972c6e5449c0da
+entries=0
+== local worktree untouched
+ D deleted.txt
+?? .env
+?? .env.example
+?? .gitignore
+?? check.sh
+?? new.txt
+?? node_modules/
