@@ -1,0 +1,27 @@
+=== S5 (adversarial): slot held by another live task, retiring task's branch unpushed -> REFUSED ===
+$ fm-teardown.sh stale-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+warning: task stale-task's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.fUQGKQ/pool/1/project was reassigned to task live-task (home $LAB), which claimed that pool slot after this record was written; that slot is no longer stale-task's, so its processes, copy, and claim are left untouched and only stale-task's own cleanup runs.
+REFUSED: task stale-task has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/stale not on any remote:
+3822152 stale task work
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+exit=1
+stale-task record: PRESENT; live-task record: PRESENT
+live copy unchanged: yes; slot owner: task=live-task; treehouse calls: 0
+
+=== S6: same, after pushing fm/stale to origin -> retires records-only, live slot untouched ===
+$ fm-teardown.sh stale-task
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task stale-task's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.fUQGKQ/pool/1/project was reassigned to task live-task (home $LAB), which claimed that pool slot after this record was written; that slot is no longer stale-task's, so its processes, copy, and claim are left untouched and only stale-task's own cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+proj: already current
+teardown stale-task complete (window firstmate:fm-stale-task; pool slot $LAB/worktree left to task live-task (home $LAB), which it was reassigned to)
+Backlog: stale-task just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.fUQGKQ/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.fUQGKQ/data/backlog.md - move stale-task to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+exit=0
+stale-task record: REMOVED; live-task record: PRESENT
+live copy unchanged: yes; slot owner: task=live-task; treehouse calls: 0
+
+lab removed: yes

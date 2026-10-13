@@ -1,0 +1,65 @@
+=== S1: record names no worktree (empty worktree=), branch pushed to a fork remote, PR still open -> retires
+$ fm-teardown.sh t1 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s1
+    | warning: task t1's record names no worktree, so there is no copy to inspect, reset, or return; only t1's own records-only cleanup runs.
+    | /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s1/project: already current
+    | teardown t1 complete (window firstmate:fm-t1; no worktree recorded, records-only cleanup)
+    | Backlog: t1 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s1/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s1/data/backlog.md - move t1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+    exit=0  meta_present=no  tmux_windows=[keep ]
+
+=== S2: recorded worktree path no longer exists, branch content squash-landed on origin/main -> retires
+$ fm-teardown.sh t2 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s2
+    | /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s2/project: synced 8fb9a44..f5a4ceb
+    | teardown t2 complete (window firstmate:fm-t2, worktree /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s2/gone-slot/project)
+    | Backlog: t2 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s2/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s2/data/backlog.md - move t2 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+    exit=0  meta_present=no  tmux_windows=[keep ]
+
+=== S3 (adversarial): no worktree line at all, branch holds unpushed unlanded commits -> REFUSES, then --force retires
+$ fm-teardown.sh t3 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s3
+    | warning: task t3's record names no worktree, so there is no copy to inspect, reset, or return; only t3's own records-only cleanup runs.
+    | REFUSED: task t3 has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+    | commits on fm/t3 not on any remote:
+    | 9ccaa8c t3 unlanded secret work
+    | recorded PR: none (not proven merged)
+    | Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+    exit=1  meta_present=yes  tmux_windows=[keep fm-t3 ]
+  branch fm/t3 still in project: yes
+$ fm-teardown.sh t3 --force
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s3
+    | warning: task t3's record names no worktree, so there is no copy to inspect, reset, or return; only t3's own records-only cleanup runs.
+    | /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s3/project: already current
+    | teardown t3 complete (window firstmate:fm-t3; no worktree recorded, records-only cleanup)
+    | Backlog: t3 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s3/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s3/data/backlog.md - move t3 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+    exit=0  meta_present=no  tmux_windows=[keep ]
+
+=== S4: slot claimed by another live task; retiring task's branch unpushed -> REFUSES; once pushed -> retires records-only, live slot untouched
+$ fm-teardown.sh stale 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4
+    | warning: task stale's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s4/pool/1/project was reassigned to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4), which claimed that pool slot after this record was written; that slot is no longer stale's, so its processes, copy, and claim are left untouched and only stale's own cleanup runs.
+    | REFUSED: task stale has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+    | commits on fm/stale not on any remote:
+    | e008356 stale task work
+    | recorded PR: none (not proven merged)
+    | Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+    exit=1  meta_present=yes  tmux_windows=[keep fm-stale fm-live ]
+  (pushed fm/stale to fork remote)
+$ fm-teardown.sh stale 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4
+    | warning: task stale's recorded worktree /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s4/pool/1/project was reassigned to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4), which claimed that pool slot after this record was written; that slot is no longer stale's, so its processes, copy, and claim are left untouched and only stale's own cleanup runs.
+    | /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4/project: STUCK: on diverged main, 0 commits behind origin/main - needs attention
+    | teardown stale complete (window firstmate:fm-stale; pool slot /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4/pool/1/project left to task live (home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s4), which it was reassigned to)
+    | Backlog: stale just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s4/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s4/data/backlog.md - move stale to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+    exit=0  meta_present=no  tmux_windows=[keep fm-live ]
+  live worker alive: yes
+  live copy unchanged: yes  live-work present: yes
+  slot claim: task=live  live meta present: yes
+
+=== S5: local-only project with origin remote, branch merged into LOCAL main only, no worktree -> retires without --force
+$ fm-teardown.sh t5 
+    | fm-gate-refuse: gate agent lifecycle permitted only against lab home /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.zjoUPH/s5
+    | warning: task t5's record names no worktree, so there is no copy to inspect, reset, or return; only t5's own records-only cleanup runs.
+    | teardown t5 complete (window firstmate:fm-t5; no worktree recorded, records-only cleanup)
+    | Backlog: t5 just finished (this home keeps no markdown backlog at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s5/data/backlog.md). Update /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.zjoUPH/s5/data/backlog.md - move t5 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+    exit=0  meta_present=no  tmux_windows=[keep fm-live ]
