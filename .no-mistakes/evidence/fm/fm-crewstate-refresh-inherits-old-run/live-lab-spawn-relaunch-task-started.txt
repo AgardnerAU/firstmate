@@ -1,0 +1,13 @@
+# Live lab: real bin/fm-spawn.sh --scout (claude) then bin/fm-control.sh relaunch, disposable FM_HOME
+## spawn
+before=1791888925
+spawned scout1 harness=claude kind=scout window=primary:fm-scout1 worktree=/Users/agardner/.treehouse/demo-35fc5a/1/demo
+spawn rc=0
+after=1791888935
+## task record after spawn: spawn_gen=s1791888932.60665.1433 task_started=1791888932
+## relaunch
+relaunched scout1 harness=claude from=claude model=default effort=default backend=tmux endpoint=primary:fm-scout1 worktree=/Users/agardner/.treehouse/demo-35fc5a/1/demo
+relaunch rc=0
+## task record after relaunch
+spawn_gen=s1791888966.11490.24100
+task_started=1791888932

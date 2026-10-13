@@ -1,0 +1,14 @@
+ok - a refresh task does not inherit an earlier task run on the same branch and head
+ok - a refresh task's status log answers over an earlier task run
+ok - a run created after the task started is this task's run
+ok - a relaunched task keeps runs from its earlier incarnation
+ok - the spawn generation bounds attribution when no start record exists
+ok - a run whose creation time is unreadable is not attributed to a bounded task
+ok - the legacy route does not inherit an earlier task run
+ok - the coarse ledger does not inherit an earlier task run
+ok - a head-anchor row in the task start minute still anchors the continuation
+ok - a merged claim requires the recorded PR identity
+ok - run-step wording never presents green
+ok - a newer status line is shown beside a finished run
+ok - a deliberate abort is distinct from a failure
+all fm-crew-state tests passed

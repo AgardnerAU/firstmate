@@ -1,0 +1,20 @@
+[base] earlier-task-run (run created -3600s vs task_started, outcome passed):
+  state: done · source: run-step · run passed: PR open · run: 01M4T7P590ABCDEFGHJKMNPQRS
+[target] earlier-task-run (run created -3600s vs task_started, outcome passed):
+  state: unknown · source: pane · harness state unavailable (unknown missing) · run 01M4T7P590ABCDEFGHJKMNPQRS predates this task: not attributed
+
+[base] earlier-task-checks-passed (run created -3600s vs task_started, outcome checks-passed):
+  state: done · source: run-step · checks green: PR ready for review · run: 01M4T7Q3HRABCDEFGHJKMNPQRS
+[target] earlier-task-checks-passed (run created -3600s vs task_started, outcome checks-passed):
+  state: unknown · source: pane · harness state unavailable (unknown missing) · run 01M4T7Q3HRABCDEFGHJKMNPQRS predates this task: not attributed
+
+[base] own-task-run (run created +60s vs task_started, outcome passed):
+  state: done · source: run-step · run passed: PR open · run: 01M4TB7VYGABCDEFGHJKMNPQRS
+[target] own-task-run (run created +60s vs task_started, outcome passed):
+  state: done · source: run-step · run passed: recorded PR open (forge) · run: 01M4TB7VYGABCDEFGHJKMNPQRS
+
+[base] own-task-checks-passed (run created +60s vs task_started, outcome checks-passed):
+  state: done · source: run-step · checks green: PR ready for review · run: 01M4TB98W0ABCDEFGHJKMNPQRS
+[target] own-task-checks-passed (run created +60s vs task_started, outcome checks-passed):
+  state: done · source: run-step · run reports CI checks passed (required checks not verified) · run: 01M4TB98W0ABCDEFGHJKMNPQRS
+

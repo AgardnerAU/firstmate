@@ -1,0 +1,25 @@
+== S1: refresh task (task_started=now) whose branch has an earlier task's PASSED run from 1h ago; worker busy
+$ fm-crew-state.sh refresh   # earlier run predates task
+  [this change] state: working · source: pane · harness busy (claude-hook) · run 01M4TAWRFGABCDEFGHJKMNPQRS predates this task: not attributed 
+  [base 6407052f] state: done · source: run-step · run passed: PR open · run: 01M4TAWRFGABCDEFGHJKMNPQRS 
+
+== S2: same, worker idle with status line 'working: resolving merge conflicts'
+$ fm-crew-state.sh refresh   # status log answers
+  [this change] state: working · source: status-log · resolving merge conflicts · run 01M4TAWRFGABCDEFGHJKMNPQRS predates this task: not attributed 
+  [base 6407052f] state: done · source: run-step · run passed: PR open · run: 01M4TAWRFGABCDEFGHJKMNPQRS 
+
+== S3: the task's OWN run created 60s after task start, passed
+$ fm-crew-state.sh refresh   # own run attributed
+  [this change] state: done · source: run-step · run passed-with-override (approved exception, not green: live checks not all passed: Lint (fail)): run PR open (forge) · run: 01M4TECEPGABCDEFGHJKMNPQRS 
+  [base 6407052f] state: done · source: run-step · run passed: PR open · run: 01M4TECEPGABCDEFGHJKMNPQRS 
+
+== S4: relaunched task: task_started 2h ago, run created 1h ago (earlier incarnation of SAME task)
+$ fm-crew-state.sh refresh   # relaunch keeps incarnation
+  [this change] state: done · source: run-step · run passed-with-override (approved exception, not green: live checks not all passed: Lint (fail)): run PR open (forge) · run: 01M4TAWRFGABCDEFGHJKMNPQRS 
+  [base 6407052f] state: done · source: run-step · run passed: PR open · run: 01M4TAWRFGABCDEFGHJKMNPQRS 
+
+== S5: legacy record without task_started, spawn_gen=s<now> and earlier run
+$ fm-crew-state.sh refresh   # spawn_gen bounds
+  [this change] state: working · source: status-log · rebasing · run 01M4TAWRFGABCDEFGHJKMNPQRS predates this task: not attributed 
+  [base 6407052f] state: done · source: run-step · run passed: PR open · run: 01M4TAWRFGABCDEFGHJKMNPQRS 
+

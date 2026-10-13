@@ -12,3 +12,5 @@ ok - two-level: env-off/file-present keeps the nested worker disabled even thoug
 ok - two unrelated routed tasks through one persistent Secondmate root distinct traces, adopt nothing from its environment, and keep per-task identity across relaunch
 ok - secondmate carrier and FM_TRACE_CONTEXT snapshot always agree, both derived from one frozen decision (file-decided path)
 # all fm-trace-context-spawn tests passed
+bash tests/$t.test.sh  36.42s user 54.34s system 25% cpu 5:56.55 total
+exit=0

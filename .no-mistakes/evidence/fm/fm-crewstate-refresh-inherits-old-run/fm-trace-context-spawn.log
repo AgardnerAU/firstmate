@@ -1,0 +1,10 @@
+ok - enabled: one resolved carrier is recorded in meta and the identical TRACEPARENT is exported before launch
+ok - disabled: neither traceparent= in meta nor a TRACEPARENT export is produced
+ok - fresh spawn: the task start is recorded with the first spawn generation
+ok - failed TRACEPARENT delivery omits metadata while the source task still launches
+ok - uncleared TRACEPARENT input stops before the launch command is appended
+ok - failed traceparent metadata append removes the carrier from the launched task
+ok - duplicate secondmate preflight leaves trace-context unchanged
+ok - relaunch reuses the recorded carrier verbatim for both the meta record and the injected export
+ok - session start freezes the env override and later config or environment edits do not alter spawns
+Terminated: 15             env FM_TRACE_CONTEXT="$penv" FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$prim" HOME="$base/user-home" CLAUDE_CONFIG_DIR='' FM_STATE_OVERRIDE="$prim/state" FM_DATA_OVERRIDE="$prim/data" FM_PROJECTS_OVERRIDE="$prim/projects" FM_CONFIG_OVERRIDE="$prim/config" FM_SPAWN_NO_GUARD=1 CLAUDECODE=1 TMUX="fake,1,0" FM_FAKE_LAUNCH_LOG="$smlog" PATH="$smfake:$PATH" "$SPAWN" "$sm_id" "$sm" --secondmate > /dev/null 2>&1

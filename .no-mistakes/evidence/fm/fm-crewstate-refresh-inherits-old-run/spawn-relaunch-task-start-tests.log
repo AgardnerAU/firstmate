@@ -1,0 +1,3 @@
+ok - fresh spawn: the task start is recorded with the first spawn generation
+# all fm-trace-context-spawn tests passed
+ok - fm-control relaunch: the task start carries across relaunches

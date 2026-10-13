@@ -1,0 +1,9 @@
+## S1 refresh task (task_started=now) over an earlier task's FINISHED PASSED run 01M4T949V0ABCDEFGHJKMNPQRS on the same branch+head; worker busy
+$ fm-crew-state.sh s1
+state: done · source: run-step · run passed: PR state unknown (forge read skipped) · run: 01M4T949V0ABCDEFGHJKMNPQRS
+
+## S2 same earlier run; worker idle with its own status log line
+$ fm-crew-state.sh s2
+state: done · source: run-step · run passed: PR state unknown (forge read skipped) · run: 01M4T949V0ABCDEFGHJKMNPQRS
+
+## S3 this task's own run 01M4TCNTN0ABCDEFGHJKMNPQRS (created after task_started) finished passed: done, PR state names its source
