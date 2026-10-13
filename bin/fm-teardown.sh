@@ -164,7 +164,11 @@
 # branch (a fork counts), or the recorded (or branch-discovered) PR is merged
 # and holds that branch's work, or the branch's content is already in the
 # up-to-date default branch. With no such local branch, no local commit is left
-# and only a merged PR proves it. Anything short of that refuses with the
+# and only a merged PR proves it, unless the record carries landed_proven=1:
+# once a ship's own copy passes the landed-work gate, teardown appends that line
+# before it deletes the task branch, so a retry of a teardown that failed later -
+# whose returned slot another task may since have claimed - keeps the proof the
+# deleted branch can no longer give. Anything short of that refuses with the
 # evidence, and only --force - explicit discard authority - overrides it; scouts
 # keep their report gate. bin/fm-backend.sh's endpoint validator accepts an
 # unrecorded worktree only through teardown's explicit opt-in, never for Orca
@@ -2090,6 +2094,8 @@ validate_recorded_work_landed() {
       && [ -z "$unmerged_raw" ]; then
       return 0
     fi
+  elif [ "$(fm_meta_get "$META" landed_proven)" = 1 ]; then
+    return 0
   fi
   work_is_landed "$branch" && return 0
   echo "REFUSED: task $ID has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed." >&2
@@ -3727,6 +3733,19 @@ fi
 # Fix 3 (see script header): sweep remote job workers abandoned by an already
 # pruned code root. Best effort - a sweep failure never blocks this teardown.
 "$SCRIPT_DIR/fm-remote-job-reap-orphans.sh" >&2 || true
+
+# A ship whose own copy passed the landed-work gate keeps that proof in its
+# record before the branch below is deleted (see the header's absent-worktree
+# paragraph). Best effort: without it a retry only re-proves from the record.
+if [ "$KIND" = ship ] && [ "$FORCE" != "--force" ] && teardown_owns_worktree && [ -d "$WT" ] \
+   && [ "$(fm_meta_get "$META" landed_proven)" != 1 ]; then
+  landed_proven_line='landed_proven=1'
+  if [ -s "$META" ] && [ -n "$(tail -c 1 -- "$META" 2>/dev/null)" ]; then
+    landed_proven_line=$'\n'$landed_proven_line
+  fi
+  printf '%s\n' "$landed_proven_line" >> "$META" \
+    || echo "warning: could not record $ID's landed-work proof; a retry re-proves it from the record" >&2
+fi
 
 # Best-effort: drop the local task branch so the shared repo does not accumulate refs.
 if [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
