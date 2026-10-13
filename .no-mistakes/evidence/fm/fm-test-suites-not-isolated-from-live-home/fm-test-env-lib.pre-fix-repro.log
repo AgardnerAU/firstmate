@@ -1,0 +1,12 @@
+ok - the owner clears every fleet pointer it publishes
+ok - the pollution sentinel genuinely reaches a child process
+ok - a pointer that cannot be cleared is named and refused
+not ok - these suites never isolate their top-level shell through bin/fm-test-env-lib.sh, so they can be handed the live fleet home:
+    fm-calm-claude-mod.test.sh
+    fm-fleet-sync.test.sh
+    fm-grok-continuity-live-e2e.test.sh
+    fm-grok-stop-live-e2e.test.sh
+    fm-harness-adapter-instructions-live-e2e.test.sh
+    fm-harness-precedence.test.sh
+    fm-herdr-lab.test.sh
+    fm-jev-mem-guard.test.sh

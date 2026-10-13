@@ -1,0 +1,19 @@
+$ S=$(mktemp -d .../fm-sentinel-home.XXXXXX); mkdir -p "$S/home"     # throwaway stand-in for a live fleet home
+$ FM_HOME="$S/home" FM_STATE_OVERRIDE="$S/home/state" FM_SUPERVISION_MODEL=autoarm bin/fm-test-run.sh tests/fm-jev-mem-guard.test.sh
+...
+ok - --check exits 0 under fail-forcing thresholds while status is UNKNOWN (fail-open)
+ok - text mode runs cleanly
+ok - all Pattern 46 memory guard tests passed
+FM_TEST_END 2026-10-13T09:45:24Z tests/fm-jev-mem-guard.test.sh exit=0 duration_ms=3237 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=3754
+
+$ FM_HOME="$S/home" FM_SUPERVISION_MODEL=autoarm bash -x tests/fm-jev-mem-guard.test.sh 2>&1 | grep -n -m6 -E 'fm_test_env_isolate|unset FM_HOME|unset FM_SUPERVISION_MODEL|SCRIPT_DIR='
+5:+ fm_test_env_isolate
+8:+ unset FM_HOME
+34:+ unset FM_SUPERVISION_MODEL
+71:+ SCRIPT_DIR=.../tests          # first line of the suite's own body runs only after isolation
+direct exit=0
+
+$ find "$S" | sort                 # after both runs
+<sentinel>
+<sentinel>/home                    # still empty: nothing was written through the inherited pointers
