@@ -1,0 +1,12 @@
+▝▜██████▀  Opus 5.5 · Claude Max
+ ▝▝   ▝▝   /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.J5cQV9/wt-t2 · /rc
+❯ : Firstmate instruction waiting: list "$FM_TASK_INBOX"/*.msg in your 't2.inbox' steering inbox, read and act on each in numeric order, then mv each into its handled/.
+⏺ Listing and read inbox messages
+  ⎿  $ env | grep -i FM_; find /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.J5cQV9 -maxdepth 3 -name '*inbox*' 2>/dev/null
+✢ Catapulting… (9s · ↓ 369 tokens · thought for 1s)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Ctx: 35.3k | Ctx(u) Used: 4.4% | In: 35.3k | Out: 196
+  𖠰 wt-t2 | ⎇ fm/live-t2 | Model: Opus 5.5 | Session: <1m
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← 1 agent

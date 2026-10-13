@@ -1,0 +1,26 @@
+# Live real bin/fm-watch.sh against lab home: t1 stood-down (record + zsh pane), t2 dead without declaration
+## watcher cycle 1
+stdout:
+signal: $LAB/state/t1.status $LAB/state/t2.status
+stale-hash files: 
+drained:
+1791928977	3	signal	t1.status	signal: $LAB/state/t1.status $LAB/state/t2.status
+1791928977	4	signal	t2.status	signal: $LAB/state/t1.status $LAB/state/t2.status
+wake annotation: latest wake-EVENT observed at drain, not current state: t1.status: working: live test
+wake annotation: latest wake-EVENT observed at drain, not current state: t2.status: working: live test
+## watcher cycle 2
+stdout:
+stale: fmlab:fm-t2
+stale-hash files: .hash-fmlab_fm-t2 
+drained:
+1791928987	5	stale	fmlab:fm-t2	stale: fmlab:fm-t2
+## watcher cycle 3
+(still running after 40s - stopping)
+stdout:
+stale-hash files: .hash-fmlab_fm-t2 
+drained:
+## watcher cycle 4
+stdout:
+watcher: already running pid 79483
+stale-hash files: .hash-fmlab_fm-t2 
+drained:
