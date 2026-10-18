@@ -84,7 +84,7 @@ case "${1:-}" in
     fi
     exit 0 ;;
   list-windows)
-    [ "${FM_FAKE_TMUX_ENDPOINT:-}" = missing ] || printf 'fm-t1\n'
+    [ "${FM_FAKE_TMUX_ENDPOINT:-}" = missing ] || printf 'fm-t1\nwin\n'
     exit 0 ;;
 esac
 exit 0
