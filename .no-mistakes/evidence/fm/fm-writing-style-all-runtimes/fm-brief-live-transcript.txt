@@ -1,0 +1,83 @@
+=== Scenario 1: absent config/worker-writing-style.md - base (1aa2a21e) vs PR head (5a9e8cd3) ===
+ship: byte-identical to base (    9321 bytes, sha 6c2a5490c668)
+scout: byte-identical to base (    8113 bytes, sha 1c863512a4b6)
+secondmate: byte-identical to base (    8446 bytes, sha 7bb3e1008a27)
+
+=== Scenario 2: blank file (newlines/spaces/tab only) ===
+ship: byte-identical to base
+ship heading+fallback-pointer count: 0
+scout: byte-identical to base
+scout heading+fallback-pointer count: 0
+secondmate: byte-identical to base
+secondmate heading+fallback-pointer count: 0
+
+=== Scenario 3: present file - exact contents embedded in every new brief ===
+--- config/worker-writing-style.md:
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+--- ship brief, head -12:
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+--- ship: heading count=1; diff vs absent brief:
+2a3,7
+> # Worker writing style
+> Use ASD-STE100 with British spelling for human-facing prose.
+> Use plain hyphens, never typographic dashes.
+> 
+> 
+--- ship: spawn-relevant placeholders still present: 1 {TASK}
+--- scout brief, head -12:
+You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+# Task
+## Captain's intent
+{TASK}
+
+## Firstmate spec
+--- scout: heading count=1; diff vs absent brief:
+2a3,7
+> # Worker writing style
+> Use ASD-STE100 with British spelling for human-facing prose.
+> Use plain hyphens, never typographic dashes.
+> 
+> 
+--- scout: spawn-relevant placeholders still present: 1 {TASK}
+--- secondmate brief, head -12:
+You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
+
+# Worker writing style
+Use ASD-STE100 with British spelling for human-facing prose.
+Use plain hyphens, never typographic dashes.
+
+
+At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+
+
+# Charter
+lab charter
+--- secondmate: heading count=1; diff vs absent brief:
+2a3,10
+> # Worker writing style
+> Use ASD-STE100 with British spelling for human-facing prose.
+> Use plain hyphens, never typographic dashes.
+> 
+> 
+> At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
+> 
+> 
+--- secondmate: spawn-relevant placeholders still present: 0 {TASK}
