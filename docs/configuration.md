@@ -1654,7 +1654,7 @@ For this comparison, the installed version is the first dotted number in the out
 The published version must be a dotted numeric version with an optional leading `v`; other formats, including prerelease suffixes, produce a check failure.
 Components are compared numerically, with leading zeroes and missing trailing zero components ignored.
 These queries use `curl` and the existing `jq` parser, without an npm installation or a GitHub login; `curl` is required only for a `published` or `version_url` probe.
-The HTTP reads ignore curl configuration and send no credentials, follow no redirects, and fail within the probe bound on an unavailable source, HTTP error, or unreadable version.
+The `published` HTTP reads ignore curl configuration and send no credentials, follow no redirects, and fail within the probe bound on an unavailable source, HTTP error, or unreadable version.
 
 All probe kinds are read-only and bounded, and a probe that cannot answer is reported as a check failure rather than assumed current.
 Malformed configuration stops `arm` with a diagnostic.
