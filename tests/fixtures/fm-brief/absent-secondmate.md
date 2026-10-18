@@ -40,7 +40,7 @@ A request arriving through the instruction inbox below follows the same marker a
 
 # Firstmate instruction inbox
 Firstmate steers you through durable message files in '__TMP_ROOT__/home/state/absent-secondmate.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '__TMP_ROOT__/home/state/absent-secondmate.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-secondmate.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-secondmate.inbox'/handled/`.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list them with `find '__TMP_ROOT__/home/state/absent-secondmate.inbox' -maxdepth 1 -name '*.msg' 2>/dev/null | sort -V`, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-secondmate.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-secondmate.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Escalation to main firstmate

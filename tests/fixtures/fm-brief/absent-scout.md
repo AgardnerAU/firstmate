@@ -37,7 +37,7 @@ The report is the only thing that survives, so anything worth keeping must be in
    Name what you are waiting for and what will let you resume; do not repeat the declaration on every poll.
    Do not declare active implementation or reasoning as a wait.
    Firstmate may still raise one first-sight alert; the declared wait then uses the existing long recheck cadence instead of repeated possible-wedge alarms.
-   When you know when the wait clears, include `until <YYYY-MM-DDTHH:MMZ>` (UTC) for a recheck at that time.
+   When you know when the wait clears, include `until <YYYY-MM-DDTHH:MMZ>` (UTC) for a recheck at that time; for your own background job or command with a timeout, that time is its start plus its timeout, rounded up to the minute.
    Follow the resolution rule below when the wait clears, then resume the task.
    Use `blocked:` when you are stuck and need help.
 
@@ -71,7 +71,7 @@ The report is the only thing that survives, so anything worth keeping must be in
 
 # Firstmate instruction inbox
 Firstmate steers you through durable message files in '__TMP_ROOT__/home/state/absent-scout.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '__TMP_ROOT__/home/state/absent-scout.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-scout.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-scout.inbox'/handled/`.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list them with `find '__TMP_ROOT__/home/state/absent-scout.inbox' -maxdepth 1 -name '*.msg' 2>/dev/null | sort -V`, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-scout.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-scout.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Definition of done
