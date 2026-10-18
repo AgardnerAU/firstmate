@@ -1,0 +1,20 @@
+### A. refresh task, earlier task's passed run on same branch+head (1h before task start)
+meta: task_started=1792328284 ; run id 01M57E0J70ABCDEFGHJKMNPQRS created at epoch 1792324684
+$ FM_HOME=$LAB bin/fm-crew-state.sh refresh
+state: unknown · source: none · backend target gone: fm:fm-refresh · run 01M57E0J70ABCDEFGHJKMNPQRS predates this task: not attributed
+
+### B. same task, its own run created after task start
+meta: task_started=1792328284 ; run id 01M57HEJQ8ABCDEFGHJKMNPQRS created at epoch 1792328289
+$ FM_HOME=$LAB bin/fm-crew-state.sh refresh
+state: done · source: run-step · run passed: PR state unknown (no PR identity) · run: 01M57HEJQ8ABCDEFGHJKMNPQRS
+
+### C. legacy record without task_started: spawn_gen epoch bounds it
+meta: spawn_gen=s1792328284.1.1 ; run id 01M57E0J70ABCDEFGHJKMNPQRS created at epoch 1792324684
+$ FM_HOME=$LAB bin/fm-crew-state.sh refresh
+state: unknown · source: none · backend target gone: fm:fm-refresh · run 01M57E0J70ABCDEFGHJKMNPQRS predates this task: not attributed
+
+### D. control: no start record at all (pre-change behaviour, unbounded)
+meta: x=1 ; run id 01M57E0J70ABCDEFGHJKMNPQRS created at epoch 1792324684
+$ FM_HOME=$LAB bin/fm-crew-state.sh refresh
+state: done · source: run-step · run passed: PR state unknown (no PR identity) · status-log since run start: working: resolving merge conflicts after merging upstream main · run: 01M57E0J70ABCDEFGHJKMNPQRS
+
