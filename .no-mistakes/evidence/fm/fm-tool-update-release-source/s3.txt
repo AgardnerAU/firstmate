@@ -1,0 +1,4 @@
+# PATH resolves 0.0.1 first; second copy is 0.9.5 == GitHub latest release
+$ bin/fm-tool-update-check.sh check
+tool updates: herdr update not in effect: PATH resolves 0.0.1 at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-tu.lKdGLV/s3old/herdr-lab but 0.9.5 is installed at /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-tu.lKdGLV/s3new/herdr-lab
+exit=0

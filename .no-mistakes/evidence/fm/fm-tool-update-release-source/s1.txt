@@ -1,0 +1,12 @@
+# live published: herdr=0.9.5 tasks-axi=0.2.6 gnhf=0.1.51; installed fixtures report 0.0.1
+$ cat config/watched-tools.json
+{"tools":[
+ {"name":"herdr","command":"herdr-lab","published":{"source":"github","repo":"herdrdev/herdr"}},
+ {"name":"tasks-axi","command":"tasks-axi-lab","published":{"source":"npm","package":"tasks-axi"}},
+ {"name":"gnhf","command":"gnhf-lab","published":{"source":"npm","package":"gnhf"}}
+]}
+$ bin/fm-tool-update-check.sh check   (first sweep)
+tool updates: herdr update available: installed 0.0.1, published 0.9.5 at https://api.github.com/repos/herdrdev/herdr/releases/latest; tasks-axi update available: installed 0.0.1, published 0.2.6 at https://registry.npmjs.org/tasks-axi/latest; gnhf update available: installed 0.0.1, published 0.1.51 at https://registry.npmjs.org/gnhf/latest
+exit=0
+$ bin/fm-tool-update-check.sh check   (second sweep, same findings -> deduplicated, silent)
+exit=0

@@ -1,0 +1,9 @@
+$ cat config/watched-tools.json
+{"tools":[
+ {"name":"ghost","command":"ghost-lab","published":{"source":"npm","package":"fm-nonexistent-pkg-zz9x"}},
+ {"name":"ghost2","command":"ghost2-lab","published":{"source":"github","repo":"herdrdev/fm-nonexistent-repo-zz9x"}},
+ {"name":"gnhf","command":"gnhf-lab","published":{"source":"npm","package":"gnhf"}}
+]}
+$ bin/fm-tool-update-check.sh check
+tool updates: ghost check failed: published source https://registry.npmjs.org/fm-nonexistent-pkg-zz9x/latest could not be reached or read (exit 56); ghost2 check failed: published source https://api.github.com/repos/herdrdev/fm-nonexistent-repo-zz9x/releases/latest could not be reached or read (exit 56); gnhf update available: installed 0.0.1, published 0.1.51 at https://registry.npmjs.org/gnhf/latest
+exit=0

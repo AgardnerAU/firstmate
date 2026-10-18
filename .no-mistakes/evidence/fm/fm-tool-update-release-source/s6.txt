@@ -1,0 +1,5 @@
+$ cat config/watched-tools.json
+{"tools":[{"name":"gnhf","command":"gnhf","published":{"source":"npm","package":"https://evil.example/x"}},{"name":"ok","command":"ok","published":{"source":"pypi","package":"x"}}]}
+$ bin/fm-tool-update-check.sh check
+tool updates: watched tool registry: tool gnhf published.package must be an npm package name
+exit=0

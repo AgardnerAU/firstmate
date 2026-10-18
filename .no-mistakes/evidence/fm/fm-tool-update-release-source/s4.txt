@@ -1,0 +1,13 @@
+$ cat config/watched-tools.json
+{"tools":[
+ {"name":"gnhf","command":"gnhf-lab","published":{"source":"npm","package":"gnhf"}},
+ {"name":"herdr","command":"herdr-lab","published":{"source":"github","repo":"herdrdev/herdr"},"version_url":"https://registry.npmjs.org/gnhf/latest"}
+]}
+$ bin/fm-tool-update-check.sh check
+tool updates: watched tool registry: tool herdr may set published or version_url, not both
+exit=0
+$ bin/fm-tool-update-check.sh arm
+fm-tool-update-check: tool herdr may set published or version_url, not both (/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-tu.lKdGLV/s4/config/watched-tools.json)
+exit=1
+$ ls state/
+.tool-updates
