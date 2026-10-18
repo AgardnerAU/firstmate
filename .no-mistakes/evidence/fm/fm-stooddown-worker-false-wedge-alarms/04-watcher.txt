@@ -1,0 +1,9 @@
+# second fm-watch.sh live run (FM_POLL=1, status wakes already acknowledged): t1=stood-down record + shell pane, t2=no record + shell pane, t1/t2 both report 'working'
+--- stdout
+stale: fmses:fm-t2
+--- stderr (tail)
+--- .wake-queue
+1792330152	5	stale	fmses:fm-t2	stale: fmses:fm-t2
+--- hash/count files
+.count-fmses_fm-t2
+.hash-fmses_fm-t2

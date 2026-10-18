@@ -1,0 +1,3 @@
+$ fm-crew-state.sh t1   # before stand-down, live claude worker
+state: unknown · source: pane · harness state unavailable (unknown missing)
+rc=0

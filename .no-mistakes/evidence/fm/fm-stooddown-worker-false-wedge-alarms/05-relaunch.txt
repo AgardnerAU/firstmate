@@ -1,0 +1,14 @@
+$ fm-control.sh t1 relaunch --note "hold lifted; lab validation only"
+rc=0
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+warning: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/data/t1/launch-brief.md records no ship branch; defaulting to legacy branch fm/t1
+warning: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/data/t1/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+relaunched t1 harness=claude from=claude model=default effort=default backend=tmux endpoint=fmses:fm-t1 worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/wt
+$ ls state/t1.worker-state
+ls: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/state/t1.worker-state: No such file or directory
+$ pane foreground
+2.1.302
+$ fm-crew-state.sh t1
+state: working · source: pane · harness busy (fm-spawn)

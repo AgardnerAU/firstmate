@@ -1,0 +1,16 @@
+$ fm-send.sh t1 "please rebase now"   # task is stood down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task t1 deliberately has no worker; relaunch it before sending an instruction
+rc=1
+$ ls state/t1.inbox
+ls: /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/state/t1.inbox: No such file or directory
+$ pane tail (no typed input expected)
+agardner@AG-MBP-96 wt  fm/t1 ❯ claude
+agardner@AG-MBP-96 wt  fm/t1 ❯

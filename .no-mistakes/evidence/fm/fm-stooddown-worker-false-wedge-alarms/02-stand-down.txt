@@ -1,0 +1,17 @@
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/wt
+rc=0
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+$ tmux pane foreground
+zsh
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down
+$ fm-control.sh t1 stand-down  # repeat
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7
+already-stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/wt
+rc=0

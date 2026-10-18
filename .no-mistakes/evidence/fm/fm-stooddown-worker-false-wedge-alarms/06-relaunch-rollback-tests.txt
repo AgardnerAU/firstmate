@@ -1,0 +1,4 @@
+ok - fm-control relaunch: a stood-down task restarts in its preserved worktree and clears only the no-worker declaration
+ok - fm-spawn relaunch: a refused polytoken relaunch of a stood-down task keeps the project hook layer and restores the stand-down declaration
+ok - fm-control relaunch: a pre-publication abort returns the task to its declared stand-down
+ok - fm-control relaunch: an unprovable worker-state record leaves the prior worker intact

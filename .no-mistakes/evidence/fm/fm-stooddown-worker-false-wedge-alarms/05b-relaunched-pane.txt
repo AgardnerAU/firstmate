@@ -1,0 +1,14 @@
+ ▐▛███▛█   Claude Code v2.1.302
+▝▜██████▀  Opus 5.5 · Claude Max
+ ▝▝   ▝▝   /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/wt · /rc
+❯ : Firstmate operational input waiting: read '/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/state/operational-inbox/1792330208-7fa3a5900b91bfaf.msg' and handle its contents
+  as Firstmate operational input.
+  Running cat '/private/var/folders/41/64hrmnwx11q5lw3l9d7z…
+  ⎿  $ cat '/private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-lab.u5zYi7/state/operational-inbox/1792330208-7fa3a5900b91bfaf.msg'
+✢ Deliberating… (10s · ↓ 132 tokens)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Ctx: 29.7k | Ctx(u) Used: 3.7% | In: 29.7k | Out: 132
+  𖠰 wt | ⎇ fm/t1 | Model: Opus 5.5 | Session: <1m
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← 1 agent
