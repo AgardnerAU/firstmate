@@ -1,0 +1,40 @@
+## ADVERSARIAL: picker already open with row 2 'Move to background and exit' selected
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 903
+     1. Exit and stop tasks
+   ❯ 2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+## FIXED bin/fm-control.sh lv1 exit:
+error: task lv1's composer visibly holds pending text; refusing to type the /exit exit command because it would concatenate onto that text. Clear or submit the pending text, then retry 'exit'
+rc=1
+## pane after (picker must still be open, row 2 still selected, nothing confirmed):
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 903
+     1. Exit and stop tasks
+   ❯ 2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+## sleep 903 still running:
+78045
+
+## picker already open with row 1 'Exit and stop tasks' selected
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 903
+   ❯ 1. Exit and stop tasks
+     2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+## FIXED bin/fm-control.sh lv1 exit:
+stopped lv1 harness=claude backend=tmux endpoint=primary:fm-lv1 worktree=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M57HJX9AMR8WCG9JQWMW24HE
+rc=0
+## pane after:
+Resume this session with:
+claude --resume 3f445ff6-ea4a-4ee4-9f8f-5631641c8526
+AG-MBP-96%
+## pane_current_command: zsh
+## sleep 903 after:
+(none - background shell stopped)

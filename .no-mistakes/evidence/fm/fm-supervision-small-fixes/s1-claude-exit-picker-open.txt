@@ -1,0 +1,24 @@
+## BASE (1aa2a21e) bin/fm-control.sh lv1 exit
+error: task lv1 is blocked on a prompt: Claude background-task exit picker. Refusing to type Enter into it.  (rc=1)
+## pane after base exit:
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 901
+   ❯ 1. Exit and stop tasks
+     2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+## sleep 901 before fixed exit:
+  PID COMMAND
+99734 /bin/zsh -c source /Users/agardner/.claude/shell-snapshots/snapshot-zsh-1792329114390-mwz9qv.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'sleep 901' < /dev/null && pwd -P >| /tmp/claude-cf00-cwd
+99781 sleep 901
+## FIXED (2b9d61c7) bin/fm-control.sh lv1 exit, picker already open
+error: exit-delivered lv1 interrupt=not-needed exit-command=not-needed agent-state=missing exit=unconfirmed; the agent did not stop within 30s
+rc=1
+## pane after fixed exit:
+no server running on /private/tmp/fml.f8pwN6/tmux-501/fm-lab
+## pane command:
+no server running on /private/tmp/fml.f8pwN6/tmux-501/fm-lab
+## sleep 901 after fixed exit:
+(none - background shell stopped)

@@ -1,0 +1,34 @@
+## Claude Code 2.1.302 (Claude Code), lab tmux, worker pane before exit:
+  Ran 1 shell command
+⏺ started
+✻ Baked for 19s · done 9:14 PM · 1 shell still running
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Ctx: 56.8k | Ctx(u) Used: 7.1% | In: 56.8k | Out: 3
+  𖠰 01M57HJX9AMR8WCG9JQWMW24HE | ⎇ no git | Model: Opus 5.5 | Session: <1m
+  ⏵⏵ auto mode on · 1 shell · ← 1 agent
+## background shell before exit:
+  PID COMMAND
+41353 sleep 902
+
+## FIXED (2b9d61c7): FM_HOME=<lab> bin/fm-control.sh lv1 exit
+## picker observed mid-exit:
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 902
+   ❯ 1. Exit and stop tasks
+     2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+stopped lv1 harness=claude backend=tmux endpoint=primary:fm-lv1 worktree=/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M57HJX9AMR8WCG9JQWMW24HE
+rc=0
+## pane after exit:
+AG-MBP-96% claude
+Resume this session with:
+claude --resume 956f5d17-2ecb-475b-a1cc-fc7dd865c04f
+AG-MBP-96%
+## pane_current_command: zsh
+## sleep 902 after exit:
+(none - background shell stopped)

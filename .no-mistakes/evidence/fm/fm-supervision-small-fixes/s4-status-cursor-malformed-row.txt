@@ -1,0 +1,31 @@
+## cursor after priming drain:
+healthy^Istrong:16777234:467743611:1792329446.293874884^I28^I0
+## cursor with malformed ghost row appended (non-numeric offset):
+healthy^Istrong:16777234:467743611:1792329446.293874884^I28^I0
+ghost^Iident^INaN^I0
+
+## BASE (1aa2a21e) bin/fm-wake-drain.sh:
+rc=0
+
+## FIXED (2b9d61c7) bin/fm-wake-drain.sh:
+UNREAD STATUS (new since last drain, not re-printed after this presentation):
+healthy note: unread line written after a malformed ghost row
+rc=0
+
+## FIXED drain again (healthy line not repeated):
+rc=0
+
+## ADVERSARIAL: the malformed row still fails its OWN task's lookup; healthy's lookup succeeds
+ghost offset=0 rc=0
+healthy offset=82 rc=0
+
+## cursor after fixed drains (drain's commit rewrote the manifest, dropping the ghost row):
+healthy^Istrong:16777234:467743611:1792329446.293874884^I82^I0
+## re-appended malformed ghost row; ghost.status exists now:
+healthy^Istrong:16777234:467743611:1792329446.293874884^I82^I0
+ghost^Iident^INaN^I0
+ghost lookup failed rc=1
+healthy offset=82 rc=0
+## same lookups on BASE:
+ghost lookup failed rc=1
+healthy lookup failed rc=1

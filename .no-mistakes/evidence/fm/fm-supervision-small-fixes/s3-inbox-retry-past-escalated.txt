@@ -1,0 +1,33 @@
+## inbox state:
+total 32
+drwxr-xr-x@ 7 agardner  wheel  224 Oct 18 21:16 .
+drwxr-xr-x@ 5 agardner  wheel  160 Oct 18 21:16 ..
+-rw-r--r--@ 1 agardner  wheel    8 Oct 18 21:16 .escalated
+-rw-r--r--@ 1 agardner  wheel    8 Jan  1  2020 .retry-ring
+-rw-------@ 1 agardner  wheel   81 Jan  1  2020 001.msg
+-rw-------@ 1 agardner  wheel   90 Oct 18 21:16 002.msg
+drwxr-xr-x@ 2 agardner  wheel   64 Oct 18 21:16 handled
+.escalated=001.msg  .retry-ring=002.msg
+
+## BASE (1aa2a21e) watcher inbox_steer_check:
+due_action: quiet
+inbox_steer_check rc=0
+pane:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Try "refactor herdr.sh"
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+retry mark still present: /tmp/fmlabi.4Nzu63/state/t1.inbox/.retry-ring
+
+## FIXED (2b9d61c7) watcher inbox_steer_check:
+due_action: retry /tmp/fmlabi.4Nzu63/state/t1.inbox/002.msg
+inbox_steer_check rc=0
+pane:
+❯ : Firstmate instruction waiting: list "$FM_TASK_INBOX"/*.msg in your 't1.inbox' steering inbox, read and act on each in numeric order, then mv each into its handled/.
+  ⎿  $ echo "$FM_TASK_INBOX"; ls -la "$FM_TASK_INBOX"; for f in "$FM_TASK_INBOX"/*.msg; do echo "== $f"; cat "$f"; done
+❯ 
+retry mark after: ls: /tmp/fmlabi.4Nzu63/state/t1.inbox/.retry-ring: No such file or directory
+wake queue: (empty)
+
+## FIXED second check (mark spent - must stay quiet):
+due_action: quiet
+inbox_steer_check rc=0
