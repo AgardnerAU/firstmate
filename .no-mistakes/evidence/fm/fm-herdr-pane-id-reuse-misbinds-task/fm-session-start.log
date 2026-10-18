@@ -57,6 +57,7 @@ ok - the portable timeout path force-kills a command that ignores TERM
 ok - a session start inside its budget prints no truncation banner
 ok - the runtime bound leaves enough ancestry headroom for a deeply nested session to take the lock
 ok - --reemit reprints the digest without repeating startup's mutating sweeps and still drains queued wakes
+ok - --reemit puts its read cue in the first 2000 characters and a normal start omits it
 ok - true-start AGENTS baselines stay immutable while every drifted Pi compact re-emits the current contract
 ok - read-only Pi compact refreshes against the rebuilding session identity without mutation
 ok - Codex reset sources do not claim an unavailable instruction-refresh channel

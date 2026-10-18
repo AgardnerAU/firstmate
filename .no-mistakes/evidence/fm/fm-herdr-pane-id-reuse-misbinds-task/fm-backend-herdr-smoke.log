@@ -1,5 +1,5 @@
 ok - real herdr: version_check accepts the installed binary's protocol
-ok - real herdr: container_ensure starts the isolated session's server, creates the firstmate workspace (fm-lab-backend-smoke-1278:w1), and reports its seeded default tab id (w1:t1)
+ok - real herdr: container_ensure starts the isolated session's server, creates the firstmate workspace (fm-lab-backend-smoke-28746:w1), and reports its seeded default tab id (w1:t1)
 ok - real herdr: session status normalizes running and compatible
 ok - real herdr: container_ensure is idempotent (reuses/adopts the existing firstmate workspace, reports no seeded default tab on adoption)
 ok - real herdr: create_task prunes the freshly-created workspace's seeded default tab, leaving exactly one clean fm-<id> task tab
@@ -16,4 +16,3 @@ ok - real herdr: current_path reads the pane's live cwd
 note: FM_HERDR_SMOKE_REAL_CLAUDE=1 not set; skipping the real-agent busy_state check
 ok - real herdr: kill removes the pane and is idempotent/best-effort
 ok - real herdr: list_live discovers a live task tab by fm-<id> label
-bash tests/$t.test.sh  1.32s user 1.84s system 32% cpu 9.854 total

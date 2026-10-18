@@ -29,5 +29,6 @@ ok - R6 dirty, diverged, and feature-branch remote homes skip and are left untou
 ok - R7 a sync with no target still follows the host's own refreshed Firstmate copy
 ok - R8 session start converges a remote home on the primary's default-branch commit
 ok - R10 a host too old for a parent-targeted sync is reported with the command that fixes it
+ok - R11 a remote home is nudged only for an owed reread or a real instruction change, never for a cut-off attempt that changed nothing
 ok - R9 a remote launch leaves the home on the parent's commit while an ordinary spawn follows its own checkout
 # all fm-secondmate-sync tests passed

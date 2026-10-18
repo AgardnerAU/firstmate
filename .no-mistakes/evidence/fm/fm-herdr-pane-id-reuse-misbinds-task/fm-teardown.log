@@ -1,3 +1,4 @@
+ok - teardown leaves opencode's busy plugin in the returned pool worktree as on main
 ok - a missing teardown startup source refuses before cleanup
 ok - an unreadable teardown startup source refuses before cleanup
 ok - a missing adapter sibling refuses before cleanup
@@ -6,6 +7,7 @@ ok - a forced secondmate with a missing own adapter sibling refuses before child
 ok - present required sources still reach the ordinary teardown refusal
 ok - local-only worktree with HEAD on a fork remote is torn down and the home summary is refreshed
 ok - teardown closes its own backlog item before reporting success
+ok - teardown closes a landed Gerrit task with its change URL as a note and a GitHub task with --pr
 ok - teardown honors config/backlog-backend=manual and still finishes cleanly
 ok - local-only worktree with truly unpushed work is refused (safety preserved)
 ok - local-only worktree with work merged into local main is torn down (no regression)
@@ -15,11 +17,16 @@ ok - local-only worktree with unpushed work is torn down under --force (escape h
 ok - fm-pr-check publishes the PR-ready line on a secondmate's parent channel once
 ok - a secondmate home's teardown delivers the child's final line or refuses until it can
 ok - teardown completes when an exact busy-state sidecar is already absent
+ok - teardown retires a polytoken task's generated worktree wiring on pool return
+ok - teardown never deletes a tracked .polytoken hook layer
+ok - teardown never deletes a .polytoken hook layer firstmate did not generate
+ok - teardown scopes .polytoken wiring removal to polytoken tasks
 ok - herdr teardown removes pane-owned escalation dedupe state
 ok - herdr flat teardown refuses before returning the isolated copy under lock contention and the retry completes cleanly
 ok - herdr flat teardown never closes a pane id reissued to another terminal and still runs its landed-work checks
 ok - herdr flat teardown never erases records when pane presence is unparseable
 ok - herdr flat teardown preflight refuses before every destructive change
+ok - herdr teardown refuses a foreign-owned per-account namespace (owner-shim arms need the non-Darwin stat branch; skipped on Darwin)
 ok - forced secondmate teardown preflights every Herdr child before cleanup mutation
 ok - forced secondmate teardown holds every descendant lifecycle and metadata lock
 ok - forced secondmate teardown retains Herdr child identity until exact pane disappearance
@@ -38,6 +45,7 @@ ok - teardown discovers a merged PR by branch name and tears down when no pr= wa
 ok - squash-merged PR accepts replayed unpushed local patches contained in the PR head
 ok - merged PR does not allow teardown after a later local commit
 ok - squash-merged task whose local branch followed the pipeline rebase is torn down
+ok - teardown proves a Forgejo task landed from the merged pull request when the content check is inconclusive
 ok - squash-merged same-path different content still refuses
 ok - squash-merged rebased local still refuses a genuinely unlanded follow-up commit
 ok - squash-merged stale local still refuses when the forge is unreachable
@@ -50,8 +58,23 @@ fm-contributions: data directory unavailable
 contributions: observation not armed; coverage is unconfirmed
 ok - fm-pr-check records the remote PR head when the local worktree lags
 ok - worktree whose content already landed in the default branch is torn down (content fallback)
+ok - the content-landed fallback checks a task's recorded base branch, not the default branch
 ok - content fallback refreshes origin default before comparing trees
 ok - dirty worktree is refused even when its committed work has landed (dirty always wins)
+ok - untracked/no-mistakes: dirty refusal classifies leftovers and preserves work
+ok - untracked/local-only: dirty refusal classifies leftovers and preserves work
+ok - tracked/no-mistakes: dirty refusal classifies leftovers and preserves work
+ok - tracked/local-only: dirty refusal classifies leftovers and preserves work
+ok - mixed/no-mistakes: dirty refusal classifies leftovers and preserves work
+ok - mixed/local-only: dirty refusal classifies leftovers and preserves work
+ok - scout copy with a nested clone and a scratch file returns with no untracked entries
+ok - ship copy with a nested clone is refused and its bytes stay
+ok - a return that leaves residue names the lost slot and the remaining paths
+ok - a dirty return is reported even when a later teardown step refuses
+ok - a forced secondmate teardown returns a child scout copy with a nested clone clean
+ok - a forced secondmate teardown warns about a dirty child return and still completes
+ok - a return that leaves no readable copy reports the slot as unverified, not clean
+ok - ignored files survive the scratch clean and plain scratch does not
 ok - gh lookup error with content not in default refuses (fail-safe)
 ok - a record predating spawn_gen refuses teardown until --legacy-record is passed
 ok - a windowless leftover with no spawn_gen and no worktree tears down without --legacy-record
@@ -76,6 +99,9 @@ ok - transient index.lock cleared after first failed return is retried successfu
 ok - persistent index.lock exhausts retries and refuses without force-removing the lock
 ok - empty retry wait overrides use the default without aborting teardown
 ok - fractional legacy retry wait remains supported without arithmetic
+ok - teardown records the task's pipeline spend before removing its branch and record
+ok - teardown skips all pipeline-spend recording when the home has not opted in
+ok - teardown records unavailable pipeline spend for an owned ship task whose copy is gone
 ok - a task's own parked no-mistakes run is aborted, not orphaned, before the worker is removed
 ok - a run that lands on passed-with-override after abort is still recognized as terminal
 ok - a run that lands on passed-with-skips after abort is still recognized as terminal
