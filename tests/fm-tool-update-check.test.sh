@@ -461,11 +461,33 @@ test_tools_the_sweep_budget_did_not_reach_are_not_checked_not_failed() {
   run_check "$home" "$(fixture_path "$slow:$fast")" "$out" FM_TOOL_UPDATE_PROBE_SECS=10 FM_TOOL_UPDATE_BUDGET_SECS=2
   report=$(cat "$out")
   assert_contains "$report" "herdr not checked: the sweep time budget ran out while $slow/$TOOL was asked for its version" "a probe cut short by the sweep budget was not reported as not checked"
-  assert_contains "$report" "not checked, the sweep time budget ran out first: fast" "a tool the sweep never reached was not reported as not checked"
+  assert_contains "$report" "fast not checked: the sweep time budget ran out before it was reached" "a tool the sweep never reached was not reported as not checked"
   assert_not_contains "$report" "check failed" "the sweep's own budget was reported as a failed tool"
   assert_not_contains "$report" "timed out" "a probe the sweep budget cut short was blamed on the tool"
   assert_not_contains "$report" "check incomplete" "an unreached tool was folded into an incomplete-run sentence"
   pass "a probe cut short by the sweep budget, and a tool never reached, are reported as not checked"
+}
+
+test_each_unreached_tool_is_its_own_finding() {
+  local home slow out
+  # Unreached tools named in one joined finding make any change to that list a
+  # new finding, so a tool already reported as not checked was announced again
+  # whenever another tool was reached. Each one is its own finding instead.
+  home=$(make_home budget-unreached-set)
+  slow="$TMP_ROOT/budget-unreached-set/bin"
+  make_slow_copy "$slow" "$TOOL" 30
+  make_copy "$slow" c-fixture 'c 1.0.0'
+  make_copy "$slow" d-fixture 'd 1.0.0'
+  out="$home/out.txt"
+  write_config "$home" "{\"tools\":[{\"name\":\"herdr\",\"command\":\"$TOOL\"},{\"name\":\"c\",\"command\":\"c-fixture\"},{\"name\":\"d\",\"command\":\"d-fixture\"}]}"
+  run_check "$home" "$(fixture_path "$slow")" "$out" FM_TOOL_UPDATE_PROBE_SECS=10 FM_TOOL_UPDATE_BUDGET_SECS=2
+  assert_contains "$(cat "$out")" "c not checked: the sweep time budget ran out before it was reached" "an unreached tool was not reported as not checked"
+  assert_contains "$(cat "$out")" "d not checked: the sweep time budget ran out before it was reached" "an unreached tool was not reported as not checked"
+
+  write_config "$home" "{\"tools\":[{\"name\":\"herdr\",\"command\":\"$TOOL\"},{\"name\":\"d\",\"command\":\"d-fixture\"}]}"
+  run_check "$home" "$(fixture_path "$slow")" "$out" FM_TOOL_UPDATE_PROBE_SECS=10 FM_TOOL_UPDATE_BUDGET_SECS=2
+  [ ! -s "$out" ] || fail "an unreached tool already reported was announced again: $(cat "$out")"
+  pass "each tool the sweep did not reach is its own finding, reported once"
 }
 
 test_quiet_tool_with_announce_pattern_is_silent() {
@@ -575,6 +597,35 @@ test_unreadable_version_url_is_a_failure_not_a_pass() {
   run_check "$home" "$(fixture_path "$dir")" "$out"
   assert_contains "$(cat "$out")" "claude check failed: https://downloads.example.invalid/latest did not report a version" "a version_url body with no version was taken for current"
   pass "a version_url that does not answer with a version is a check failure"
+}
+
+test_a_version_url_read_out_of_time_is_not_a_failed_tool() {
+  local home dir out report url=https://downloads.example.invalid/latest
+  # A version_url read that ran out of time has not failed. Past its own bound it
+  # timed out; past a bound the sweep budget had cut, it was not checked.
+  home=$(make_home version-url-slow)
+  dir="$TMP_ROOT/version-url-slow/bin"
+  make_copy "$dir" claude-fixture '2.1.271 (Claude Code)'
+  make_curl_fixture "$dir" '' 28
+  write_config "$home" "{\"tools\":[{\"name\":\"claude\",\"command\":\"claude-fixture\",\"version_url\":\"$url\"}]}"
+  out="$home/out.txt"
+  run_check "$home" "$(fixture_path "$dir")" "$out"
+  report=$(cat "$out")
+  assert_contains "$report" "claude timed out: $url did not answer within 5s when asked for its published version" "a version_url read past curl's own time limit was not reported as timed out"
+  assert_not_contains "$report" "check failed" "a version_url read that was only slow was reported as a failed tool"
+
+  cat > "$dir/curl" <<'SH'
+#!/usr/bin/env bash
+sleep 30
+printf '2.1.273\n'
+SH
+  rm -f "$home/state/.tool-updates"
+  run_check "$home" "$(fixture_path "$dir")" "$out" FM_TOOL_UPDATE_PROBE_SECS=10 FM_TOOL_UPDATE_BUDGET_SECS=2
+  report=$(cat "$out")
+  assert_contains "$report" "claude not checked: the sweep time budget ran out while $url was asked for its published version" "a version_url read cut short by the sweep budget was not reported as not checked"
+  assert_not_contains "$report" "check failed" "the sweep's own budget was reported as a failed tool"
+  assert_not_contains "$report" "timed out" "a version_url read the sweep budget cut short was blamed on the tool"
+  pass "a version_url read that runs out of time is timed out or not checked, not a failed tool"
 }
 
 # A probe PATH with every ambient binary except curl, so the version_url probe
@@ -778,7 +829,7 @@ test_git_probes_stop_when_the_sweep_budget_is_gone() {
   # either way of saying it was not checked is the right report.
   case "$report" in
     *"firstmate not checked: the sweep time budget ran out before $work answered"*) ;;
-    *"not checked, the sweep time budget ran out first: firstmate"*) ;;
+    *"firstmate not checked: the sweep time budget ran out before it was reached"*) ;;
     *) fail "a sweep with no budget left did not say which tool it did not check: $report" ;;
   esac
   assert_not_contains "$report" "check failed" "the sweep's own budget was reported as a failed tool"
@@ -1325,11 +1376,13 @@ test_an_unchecked_announcement_source_is_not_read_as_current
 test_an_announcement_probe_that_does_not_answer_is_reported
 test_a_version_probe_past_its_own_bound_is_timed_out_not_failed
 test_tools_the_sweep_budget_did_not_reach_are_not_checked_not_failed
+test_each_unreached_tool_is_its_own_finding
 test_quiet_tool_with_announce_pattern_is_silent
 test_published_version_newer_than_installed_is_reported
 test_published_version_already_installed_is_not_double_reported
 test_published_version_equal_to_path_is_silent
 test_unreadable_version_url_is_a_failure_not_a_pass
+test_a_version_url_read_out_of_time_is_not_a_failed_tool
 test_missing_curl_is_a_failure_not_a_pass
 test_version_url_must_be_https_with_a_command
 test_commits_behind_origin_are_reported

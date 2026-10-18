@@ -537,10 +537,14 @@ EOF
     elif ! command -v curl >/dev/null 2>&1; then
       emit "$name check failed: curl is required to read $version_url"
     else
-      out=$(fm_run_timed "$(probe_bound)" curl -fsS --max-time "$(probe_bound)" -- "$version_url" 2>/dev/null)
+      bound=$(probe_bound)
+      out=$(fm_run_timed "$bound" curl -fsS --max-time "$bound" -- "$version_url" 2>/dev/null)
       status=$?
       published=$(parse_version "$out")
-      if [ "$status" -ne 0 ] || [ -z "$published" ]; then
+      # curl reports its own --max-time with status 28.
+      if fm_timed_out "$status" || [ "$status" -eq 28 ]; then
+        emit_probe_timeout "$name" "$bound" "$version_url" "for its published version"
+      elif [ "$status" -ne 0 ] || [ -z "$published" ]; then
         emit "$name check failed: $version_url did not report a version"
       elif version_newer "$published" "$best_version"; then
         emit "$name update available: $published published at $version_url, PATH resolves $resolved_version"
@@ -774,7 +778,7 @@ record_write() {
 
 action_check() {
   local name command_name args_joined announce announce_args repo remote branch version_url
-  local line now finding news='' unreached=''
+  local line now finding news=''
 
   [ -f "$CONFIG" ] || return 0
 
@@ -799,13 +803,12 @@ action_check() {
       # A tool the sweep never reached was not asked anything, so it is named as
       # not checked rather than reported as failing or read as current.
       if budget_exhausted; then
-        unreached="${unreached:+$unreached, }$name"
+        emit "$name not checked: the sweep time budget ran out before it was reached"
         continue
       fi
       [ -z "$command_name" ] || command_findings "$name" "$command_name" "$args_joined" "$announce" "$announce_args" "$version_url"
       [ -z "$repo" ] || git_findings "$name" "$repo" "$remote" "$branch"
     done < <(config_records)
-    [ -z "$unreached" ] || emit "not checked, the sweep time budget ran out first: $unreached"
   fi
 
   # Only a finding the recorded set does not hold is news. Comparing the sets
