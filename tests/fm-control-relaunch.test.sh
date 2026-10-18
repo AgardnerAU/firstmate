@@ -767,8 +767,8 @@ case "$*" in
 esac
 SH
   chmod +x "$dir/fakebin/polytoken"
-  out=$(run_control "$dir" rl46 relaunch --harness polytoken \
-    --model zai/glm-5.3-flash --effort low --note "switching runtime"); rc=$?
+  out=$(run_spawn "$dir" rl46 --relaunch --harness polytoken \
+    --model zai/glm-5.3-flash --effort low); rc=$?
   [ "$rc" -ne 0 ] || fail "a relaunch onto polytoken over a project hook layer must refuse"$'\n'"$out"
   assert_contains "$out" "not firstmate's to clobber" \
     "the refusal must come from the polytoken arm"$'\n'"$out"
@@ -777,7 +777,7 @@ SH
   cmp -s "$dir/worker-state.before" "$dir/home/state/rl46.worker-state" \
     || fail "an aborted relaunch must restore the stood-down declaration it cleared"
   [ -z "$(cat "$dir/fake/literal")" ] || fail "a refused relaunch onto polytoken must send nothing"
-  pass "fm-control relaunch: a refused polytoken relaunch of a stood-down task keeps the project hook layer and the stand-down declaration"
+  pass "fm-spawn relaunch: a refused polytoken relaunch of a stood-down task keeps the project hook layer and restores the stand-down declaration"
 }
 
 test_refused_polytoken_profile_leaves_the_running_agent() {
