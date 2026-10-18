@@ -1449,7 +1449,7 @@ A worker pane parked on it keeps the ordinary stale triage and schedule, and its
 A second mate stays off that path, and a finished worker in away mode is handled as before.
 That watcher and away-daemon reporting is covered by fakes in `tests/fm-watch-triage.test.sh` and `tests/fm-daemon.test.sh`, not by a live measurement.
 No recorded screen was available for a model-downgrade confirmation, an MCP approval, or a Claude exit confirmation other than this picker, so those dialogs are not covered.
-Refusing an Enter that would confirm a dialog restores an existing safety path, so it is not gated behind a flag.
+Stopping submit retries before an Enter that would confirm a dialog restores an existing safety path, so it is not gated behind a flag.
 
 ### Prune and respawn
 
