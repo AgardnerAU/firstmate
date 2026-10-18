@@ -1629,7 +1629,7 @@ This section is the single owner of the canonical schema.
 **Entry fields and probe behavior**
 
 - Each entry needs a unique non-empty `name` and at least one of `command` or `git`; an entry may carry both.
-- A `published` probe also requires `command` to supply the installed version; it can accompany `git` and an announcement on the same entry.
+- A `published` probe also requires `command` to supply the installed version; it can accompany `git` and an announcement on the same entry, but not `version_url`, so an entry has at most one published-version source.
 - A `command` entry gives the `PATH` comparison above, and adding `announce_pattern` also reads the tool's own update announcement, which is how a tool that already reports its own updates is read rather than reimplemented.
 - The announcement counts as `update available` only when the version it names is newer than the newest installed copy found; a version already installed is reported only as `update not in effect`, so one completed install does not report both in the same sweep. An announcement naming no readable version is reported as an available update as before.
 - A tool does not always announce a new release on the command that prints its version: `no-mistakes --version` prints only the version, while its other commands carry the announcement.

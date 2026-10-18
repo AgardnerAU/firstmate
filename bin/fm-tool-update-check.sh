@@ -351,6 +351,7 @@ config_validate() {
       elif ($t | has("git")) and ($t.git | has("branch")) and (($t.git.branch | type) != "string" or ($t.git.branch | test("^[A-Za-z0-9._/-]+$") | not)) then "tool \($t.name) git.branch must be a simple branch name"
       elif ($t | has("published")) and (($t.published | type) != "object") then "tool \($t.name) published must be an object"
       elif ($t | has("published")) and (($t | has("command")) | not) then "tool \($t.name) published needs command to report the installed version"
+      elif ($t | has("published")) and ($t | has("version_url")) then "tool \($t.name) may set published or version_url, not both"
       elif ($t | has("published")) and ($t.published.source != "npm" and $t.published.source != "github") then "tool \($t.name) published.source must be npm or github"
       elif ($t | has("published")) and $t.published.source == "npm" and
         (($t.published.package | type) != "string" or ($t.published.package | test("^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$") | not)) then "tool \($t.name) published.package must be an npm package name"

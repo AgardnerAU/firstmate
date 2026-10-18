@@ -599,6 +599,24 @@ test_version_url_must_be_https_with_a_command() {
   pass "version_url is validated as one https URL beside a command"
 }
 
+test_published_and_version_url_together_are_refused() {
+  local home dir out status
+  home=$(make_home published-and-version-url)
+  dir="$home/bin"
+  out="$home/out.txt"
+  make_counting_copy "$dir" "$TOOL" '0.8.0' "$home/probes"
+  write_config "$home" "{\"tools\":[{\"name\":\"herdr\",\"command\":\"$TOOL\",\"published\":{\"source\":\"github\",\"repo\":\"herdrdev/herdr\"},\"version_url\":\"https://downloads.example.invalid/latest\"}]}"
+  status=0
+  FM_HOME="$home" "$CHECK" arm > "$out" 2>&1 || status=$?
+  expect_code 1 "$status" "arm with both published and version_url"
+  assert_contains "$(cat "$out")" "tool herdr may set published or version_url, not both" "arm accepted an entry with two published-version sources"
+  assert_absent "$home/state/tool-updates.check.sh" "an entry with two published-version sources armed the watcher"
+  run_check "$home" "$(fixture_path "$dir")" "$out"
+  assert_contains "$(cat "$out")" "tool herdr may set published or version_url, not both" "a sweep accepted an entry with two published-version sources"
+  assert_absent "$home/probes" "an entry with two published-version sources was probed"
+  pass "an entry may not set both published and version_url"
+}
+
 # --- git sources ------------------------------------------------------------
 
 # git_fixture <name>: a work repo whose origin branch is two commits ahead,
@@ -1588,6 +1606,7 @@ test_published_version_equal_to_path_is_silent
 test_unreadable_version_url_is_a_failure_not_a_pass
 test_missing_curl_is_a_failure_not_a_pass
 test_version_url_must_be_https_with_a_command
+test_published_and_version_url_together_are_refused
 test_commits_behind_origin_are_reported
 test_default_branch_is_detected_when_branch_is_omitted
 test_default_branch_is_asked_of_the_remote_when_the_clone_has_no_record
