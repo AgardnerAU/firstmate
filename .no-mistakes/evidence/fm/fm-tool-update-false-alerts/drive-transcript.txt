@@ -1,0 +1,50 @@
+===== S1: 2026-09-16 shape - three slow update --check probes + two tools after them, sweep budget 10s, probe bound 5s
+--- OLD (base 1aa2a21eOLD)
+tool updates: chrome-axi check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/chrome-axi-fx did not answer when asked for its update announcement; check incomplete: the time budget ran out before tasks-axi
+[exit=0]
+--- NEW (NEWbranch 29fb827c)
+tool updates: chrome-axi not checked: the sweep time budget ran out while /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/chrome-axi-fx was asked for its update announcement; tasks-axi not checked: the sweep time budget ran out before it was reached; lavish-axi not checked: the sweep time budget ran out before it was reached
+[exit=0]
+
+===== S2: one tool whose announce probe overruns its own bound (probe 2s, tool takes 4s, ample budget)
+--- OLD
+tool updates: gh-axi check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/gh-axi-fx did not answer when asked for its update announcement
+[exit=0]
+--- NEW
+tool updates: gh-axi timed out: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/gh-axi-fx did not answer within 2s when asked for its update announcement
+[exit=0]
+
+===== S3: adversarial - a genuinely broken tool is still a check failure, distinguishable from timeouts
+tool updates: broken check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/broken-fx did not report a version; absent check failed: absent-fx-nope is not on PATH
+[exit=0]
+
+===== S4: 2026-09-13 set flap - A=pending no-mistakes update, B=slow lavish probe that flaps
+--- OLD
+sweep 1 (lavish slow): tool updates: no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0; lavish-axi check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/lav-fx did not answer when asked for its update announcement [exit=0]
+sweep 2 (lavish fast): tool updates: no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0 [exit=0]
+sweep 3 (lavish slow): tool updates: no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0; lavish-axi check failed: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/lav-fx did not answer when asked for its update announcement [exit=0]
+sweep 4 (lavish slow): [exit=0]
+sweep 5 (lavish fast): tool updates: no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0 [exit=0]
+record after sweep 5:
+    fm-tool-updates-v1
+    epoch=1792327395
+    reported=no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0
+--- NEW
+sweep 1 (lavish slow): tool updates: no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0; lavish-axi timed out: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/lav-fx did not answer within 2s when asked for its update announcement [exit=0]
+sweep 2 (lavish fast): [exit=0]
+sweep 3 (lavish slow): tool updates: lavish-axi timed out: /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/lav-fx did not answer within 2s when asked for its update announcement [exit=0]
+sweep 4 (lavish slow): [exit=0]
+sweep 5 (lavish fast): [exit=0]
+record after sweep 5:
+    fm-tool-updates-v2
+    epoch=1792327404
+    found=no-mistakes update available: A new version of no-mistakes is available: v1.64.0 -> v1.72.0
+
+===== S5: unreached-tool list flaps (C,D unreached, then only D) - D not re-announced
+sweep 1: tool updates: slowtool not checked: the sweep time budget ran out while /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-tuc-lab.085fAC/tools/slowtool-fx was asked for its update announcement; c not checked: the sweep time budget ran out before it was reached; d not checked: the sweep time budget ran out before it was reached [exit=0] 
+sweep 2 (C reached/removed, D still unreached): [exit=0] 
+
+===== S6: version_url read out of time
+curl exits 28 (own --max-time): tool updates: claude timed out: https://downloads.example.invalid/latest did not answer within 5s when asked for its published version 
+curl hangs, budget 2s < probe 10s: tool updates: claude not checked: the sweep time budget ran out while https://downloads.example.invalid/latest was asked for its published version 
+curl answers with no version: tool updates: claude check failed: https://downloads.example.invalid/latest did not report a version 
