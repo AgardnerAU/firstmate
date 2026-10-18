@@ -1,0 +1,4 @@
+# Present mode: real bin/fm-watch.sh on a lab FM_HOME; appended 'working [at=...]: implemented, ready for the pipeline' to state/t-nm.status
+watcher exited rc=0 (queued wake for firstmate)
+stdout:
+signal: <lab>/state/t-nm.status

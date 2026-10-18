@@ -1,0 +1,9 @@
+# Away-mode routing via real bin/fm-supervise-daemon.sh handle_wake against a fresh disposable lab FM_HOME (state/.afk set)
+t-routine                                  "working [at=1760745600]: ordinary progress, tests written"            -> SELF-HANDLED (no wake)
+t-nm                                       "working [at=1760745600]: implemented, ready for the pipeline"         -> ESCALATE (wakes firstmate): t-nm.status: working [at=1760745600]: implemented, ready for the pipeline 
+t-nm-bare                                  "working: implemented, ready for the pipeline"                         -> ESCALATE (wakes firstmate): t-nm-bare.status: working: implemented, ready for the pipeline 
+t-near                                     "working: implemented, ready for the pipeline review"                  -> SELF-HANDLED (no wake)
+t-legacy                                   "working: rebased onto merged #76"                                     -> SELF-HANDLED (no wake)
+t-override  FM_CAPTAIN_RE=custom-verb:     "working [at=1760745600]: implemented, ready for the pipeline"         -> ESCALATE (wakes firstmate): t-override.status: working [at=1760745600]: implemented, ready for the pipeline 
+t-ovr-rout  FM_CAPTAIN_RE=custom-verb:     "working [at=1760745600]: ordinary progress"                           -> SELF-HANDLED (no wake)
+t-done                                     "done [at=1760745600]: PR https://github.com/o/r/pull/1 checks green"  -> ESCALATE (wakes firstmate): t-done.status: done [at=1760745600]: PR https://github.com/o/r/pull/1 checks green 
