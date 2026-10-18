@@ -145,4 +145,8 @@ ok - inject_msg: herdr pane-gone check defers before any busy/composer/submit ca
 ok - inject_msg: dispatches busy-guard/composer-guard/submit through the herdr backend and succeeds on a confirmed empty composer
 ok - inject_msg: defers on a dead-shell/unreadable composer (unknown), never typing the escalation into a shell
 ok - inject_msg: unrecognized composer states defer by default
+ok - a dialog name on a first-sight stale reaches the away persistence line
+ok - a seen terminal status on the picker clears like a plain stale
+ok - a dialog name joins the escalation of an unseen status
+ok - a dialog name after demand-deep-inspection still escalates, and a declared wait still pauses
 exit=0
