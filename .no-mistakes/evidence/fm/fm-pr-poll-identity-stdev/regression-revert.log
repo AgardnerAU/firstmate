@@ -1,0 +1,39 @@
+### Revert fm-captain-hold.sh to pre-fix (4f826d14) and re-run attestation test
+pr_head=0123456789abcdef0123456789abcdef01234552
+decisions_reviewed=1
+decision_keys=
+rc=
+### Revert fm-spawn.sh to pre-fix (b226ea9a) and re-run traced relaunch test
+/Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M57KG67TMEFN7WH579KASEH0/bin/fm-dod-lib.sh: line 139: $3: unbound variable
+error: the replacement agent for rl48 could not be launched on claude
+error: rl48's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /private/var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T/fm-control-relaunch.MhRpRL/armed-poll-traced-3855/wt: expected exit 0, got 1
+rc=
+### Revert only the spawn_record_traceparent hunk (4f826d14) and re-run traced relaunch test
+ok - fm-control relaunch: the trace carrier lands ahead of the pr= block, so an armed merge poll still authenticates
+### Restored; re-run
+ok - fm-control relaunch: the trace carrier lands ahead of the pr= block, so an armed merge poll still authenticates
+### Revert spawn_record_traceparent to the pre-fix append (awk filter + printf traceparent= at the tail) and re-run traced relaunch test
+diff --git a/bin/fm-spawn.sh b/bin/fm-spawn.sh
+index 5b1567cc..95a36984 100755
+--- a/bin/fm-spawn.sh
++++ b/bin/fm-spawn.sh
+@@ -6218,7 +6218,8 @@ spawn_record_traceparent() {
+   fi
+   SPAWN_META_TMP="$STATE/.$ID.meta.trace.${BASHPID:-$$}"
+   if [ ! -f "$meta" ] || [ ! -w "$meta" ] ||
+-    ! fm_pr_metadata_print_with "$meta" "traceparent=$SPAWN_TRACEPARENT" >"$SPAWN_META_TMP" ||
++    ! awk -F= '$1 != "traceparent"' "$meta" >"$SPAWN_META_TMP" ||
++    ! printf 'traceparent=%s\n' "$SPAWN_TRACEPARENT" >>"$SPAWN_META_TMP" ||
+     ! fm_backlog_atomic_transition publish "$SPAWN_META_TMP" "$meta" "task record" "$STATE"; then
+     status=1
+     rm -f "$SPAWN_META_TMP" 2>/dev/null || true
+model=default
+effort=default
+busy_gen=g1792330675.40216.18783
+spawn_gen=s1792330675.38903.22584
+control_relaunch_tx=36772.20261018T133754Z.23371
+pr=https://github.com/example/repo/pull/48
+pr_head=0123456789abcdef0123456789abcdef01234568
+traceparent=00-ac5792ca89fcfd2c721eceda11f3b535-89279e2665fce411-01
+### Restored fix; re-run
+ok - fm-control relaunch: the trace carrier lands ahead of the pr= block, so an armed merge poll still authenticates

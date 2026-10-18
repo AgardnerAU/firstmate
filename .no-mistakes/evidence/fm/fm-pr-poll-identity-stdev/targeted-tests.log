@@ -1,0 +1,24 @@
+### fm-control-relaunch: test_relaunch_keeps_an_armed_merge_poll_verifiable test_traced_relaunch_keeps_an_armed_merge_poll_verifiable test_relaunch_preserves_durable_task_metadata
+ok - fm-control relaunch: lifecycle keys land ahead of the pr= block, so an armed merge poll still authenticates
+ok - fm-control relaunch: the trace carrier lands ahead of the pr= block, so an armed merge poll still authenticates
+ok - fm-control relaunch: durable task metadata survives replacement launch publication
+rc=0
+### fm-captain-hold-lifecycle: test_completion_attestation_keeps_an_armed_merge_poll_verifiable
+ok - completion attestation lands ahead of the pr= block and keeps the record private, so an armed merge poll still authenticates
+rc=0
+### fm-backlog-atomicity: test_respawn_keeps_an_armed_merge_poll_verifiable
+ok - a respawn keeps the task's pr= block, so its armed merge poll still authenticates
+rc=0
+### fm-polytoken-harness: test_polytoken_session_binding_keeps_an_armed_merge_poll_verifiable
+ok - fm-spawn: the polytoken session binding lands ahead of the pr= block, so an armed merge poll still authenticates
+rc=0
+### fm-pr-check-security: test_device_renumbered_poll_stays_armed test_device_renumbered_retirement_completes test_renumbered_poll_still_refuses_tampered_artifacts test_rejection_names_its_cause test_teardown_removes_poll_artifacts
+ok - a poll armed before a volume renumber keeps authenticating and detecting merges without any rewrite
+ok - a retirement receipt published before a volume renumber still completes
+ok - a renumbered registration still refuses a tampered artifact: swapped-check altered-check swapped-sidecar altered-sidecar altered-template-hash wrong-mode hardlinked-check (foreign-device not exercisable on Darwin)
+ok - a rejected state check names the cause of its rejection
+ok - teardown removes safe poll artifacts and refuses directory-shaped check files without traversal
+rc=0
+### fm-wake-drain-unread-status: test_volume_renumber_does_not_replay_presented_history
+ok - a volume renumber keeps the presentation cursor while a replaced file still starts unread
+rc=0
