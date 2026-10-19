@@ -1,0 +1,107 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: Lavish
+      - generic [ref=e5]: Editor
+    - button "Annotate" [pressed] [ref=e6] [cursor=pointer]
+    - button "More" [ref=e11] [cursor=pointer]
+  - generic [ref=e16]:
+    - iframe [ref=e18]:
+      - generic [ref=f1e1]:
+        - banner [ref=f1e2]:
+          - generic [ref=f1e3]: bearings
+        - main [ref=f1e10]:
+          - generic [ref=f1e11]:
+            - generic [ref=f1e12]:
+              - generic [ref=f1e13]: "2"
+              - generic [ref=f1e14]: need you
+            - generic [ref=f1e15]:
+              - generic [ref=f1e16]: "0"
+              - generic [ref=f1e17]: underway
+            - generic [ref=f1e18]:
+              - generic [ref=f1e19]: "0"
+              - generic [ref=f1e20]: landed recently
+            - generic [ref=f1e21]:
+              - generic [ref=f1e22]: "0"
+              - generic [ref=f1e23]: charted next
+          - generic [ref=f1e24]:
+            - generic [ref=f1e25]:
+              - generic [ref=f1e26]:
+                - generic [ref=f1e27]: Captain's Call
+                - generic [ref=f1e31]: 2 items wait on you, captain
+              - generic [ref=f1e32]:
+                - generic [ref=f1e100]:
+                  - generic [ref=f1e101]:
+                    - generic [ref=f1e102]: decision
+                    - generic [ref=f1e103]: sample
+                  - heading "Region" [level=3] [ref=f1e104]
+                  - generic [ref=f1e105]:
+                    - generic [ref=f1e106]:
+                      - generic [ref=f1e107] [cursor=pointer]:
+                        - radio "EU" [ref=f1e108]
+                        - generic [ref=f1e109]: EU
+                      - generic [ref=f1e111] [cursor=pointer]:
+                        - radio "US" [ref=f1e112]
+                        - generic [ref=f1e113]: US
+                      - generic [ref=f1e115] [cursor=pointer]:
+                        - radio "Reconcile Re-check the latest state, then close this with evidence or keep it open with a note" [checked] [ref=f1e116]
+                        - generic [ref=f1e117]:
+                          - generic [ref=f1e118]: Reconcile
+                          - generic [ref=f1e119]: Re-check the latest state, then close this with evidence or keep it open with a note
+                    - generic [ref=f1e120]:
+                      - button "Queue answer" [ref=f1e121] [cursor=pointer]
+                      - generic [ref=f1e125]: queued - use Send to deliver
+                - generic [ref=f1e57]:
+                  - generic [ref=f1e58]: card 2 of 2 · 2 answered
+                  - button "Previous card" [ref=f1e59] [cursor=pointer]
+                  - button "Next card" [disabled] [ref=f1e62] [cursor=pointer]
+                - generic [ref=f1e122]:
+                  - generic [ref=f1e123]: 1 answer queued - use Send to deliver
+                  - button "Send answers" [ref=f1e124] [cursor=pointer]
+            - generic [ref=f1e65]:
+              - generic [ref=f1e66]: Charted Next
+              - generic [ref=f1e71]:
+                - generic [ref=f1e72]: Nothing is queued.
+                - generic [ref=f1e74]:
+                  - generic [ref=f1e75]: nothing picked
+                  - button "Queue dispatch order" [ref=f1e76] [cursor=pointer]
+          - generic [ref=f1e77]:
+            - generic [ref=f1e78]:
+              - generic [ref=f1e79]: Underway
+              - generic [ref=f1e85]: Nothing is underway.
+            - generic [ref=f1e88]:
+              - generic [ref=f1e89]: Recently Landed
+              - generic [ref=f1e94]: No recent completions are in the current baseline.
+          - generic [ref=f1e97]: fm-bearings-board.v1 · 2026-10-19T00:00Z
+    - complementary [ref=e19]:
+      - heading "Conversation" [level=2] [ref=e22]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e79]:
+            - generic [ref=e80]: You
+            - generic "Deploy route -> north div#bb-call > div:nth-of-type(1) > div > form" [ref=e81]:
+              - generic [ref=e82]: <choice>
+              - generic [ref=e83]: “Deploy route -> north”
+            - generic [ref=e84]: "Captain's Call answer - Deploy route: north Context data: { \"schema\": \"fm-bearings-answer.v1\", \"question\": \"sample-route\", \"selection\": \"north\", \"note\": \"\", \"intent\": \"answer\" }"
+          - generic [ref=e85]:
+            - generic [ref=e86]: Agent
+            - paragraph [ref=e88]: "Firstmate received this at 14:44. Recorded: Deploy route (north)."
+          - generic [ref=e89]:
+            - generic [ref=e90]: You
+            - generic "Region -> reconcile div#bb-call > div:nth-of-type(2) > div > form" [ref=e91]:
+              - generic [ref=e92]: <choice>
+              - generic [ref=e93]: “Region -> reconcile”
+            - generic [ref=e94]: "Captain's Call answer - Region: reconcile Context data: { \"schema\": \"fm-bearings-answer.v1\", \"question\": \"sample-region\", \"selection\": \"reconcile\", \"note\": \"\", \"intent\": \"answer\" }"
+          - generic [ref=e95]:
+            - generic [ref=e96]: You
+            - generic [ref=e97]: Please check the region with the infra team first.
+          - generic [ref=e98]: Working...
+        - text: Agent hasn't sent a message yet. Click an element in the artifact to annotate, or type below to start.
+      - generic [ref=e25]:
+        - textbox "Write a message for the agent..." [ref=e26]
+        - generic [ref=e27]:
+          - button "Attach images" [ref=e28] [cursor=pointer]
+          - status
+        - generic [ref=e29]:
+          - button "Send & End" [ref=e30] [cursor=pointer]
+          - button "Send to Agent" [active] [ref=e35] [cursor=pointer]

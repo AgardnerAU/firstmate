@@ -135,14 +135,14 @@ ok - a stop the guard cannot prove is retried until the expired runner is reaped
 ok - retirement escalates after TERM leaves a surviving child (absent leader)
 ok - retirement escalates after TERM leaves a surviving child (zombie leader)
 ok - an expired runner's guard escalates past a signal-proof child
-guard phase: fresh read 6.487-6.522s, expiry 8s, two full intervals could not finish before 18.487s (deadline 17s)
-guard bound: lease=7s check=6s reaped 13.4s after the last owner activity, documented bound 15s
+guard phase: fresh read 6.362-6.376s, expiry 8s, two full intervals could not finish before 18.362s (deadline 17s)
+guard bound: lease=7s check=6s reaped 13.0s after the last owner activity, documented bound 15s
 ok - an orphaned runner is reaped within the lease plus ONE check interval
 decimal interval: 08 halves to 4s and its listener started
 decimal interval: 010 halves to 5s and its listener started
 ok - a zero-prefixed decimal interval starts its listener and halves as decimal
 ok - one unreadable read does not end a live runner
-ordinary stop: start status=143 retirement=653ms sampled windows=4660/4731ms
+ordinary stop: start status=143 retirement=527ms sampled windows=4564/4854ms
 ok - a runner exits on the ordinary stop signal instead of outliving it
 ok - a group whose leader died to something else is still refused, not signalled
 ok - arm reports ready only after the listener is running
