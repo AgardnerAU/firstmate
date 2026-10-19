@@ -1,0 +1,4 @@
+G1 pending (non-escalated) ordinary record + due retry -> ring t2.inbox/001.msg  (expect ring of 001, retry waits)
+G2 escalated + retry inside grace -> quiet  (expect quiet)
+G3 escalated + due retry, wait-no-turns flag absent -> quiet; mark kept: yes  (expect quiet, kept)
+G4 escalated + retry mark naming a vanished record -> quiet; mark dropped: yes  (expect quiet, dropped)

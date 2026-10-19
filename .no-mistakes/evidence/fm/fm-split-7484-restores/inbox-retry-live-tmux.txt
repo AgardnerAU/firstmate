@@ -1,0 +1,23 @@
+== [base-45dd50a5] code root: /tmp/fm-base.CrLG
+inbox: .escalated .retry-ring 001.msg 002.msg handled 
+escalated marker -> 001.msg
+due_action -> quiet
+inbox_steer_check rc=0
+--- real tmux pane sess:fm-t1 after watcher check:
+--- retry mark present after check: yes
+doorbell rings in pane after a 2nd check: 0
+wake queue: 0 lines
+
+== [head-9f079251] code root: /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M592GT5WV1YMM0RZDCFZJB1F
+inbox: .escalated .retry-ring 001.msg 002.msg handled 
+escalated marker -> 001.msg
+due_action -> retry /var/folders/41/64hrmnwx11q5lw3l9d7zmfgr0000gn/T//fm-lab.GKAXBi/state/t1.inbox/002.msg
+inbox_steer_check rc=0
+--- real tmux pane sess:fm-t1 after watcher check:
+: Firstmate instruction waiting: list "$FM_TASK_INBOX"/*.msg in your 't1.inbox' steering inbox, read and act on each in numeric order, then mv each into its han
+dled/.
+: Firstmate instruction waiting: list "$FM_TASK_INBOX"/*.msg in your 't1.inbox' steering inbox, read and act on each in numeric order, then mv each into its han
+dled/.
+--- retry mark present after check: no
+doorbell rings in pane after a 2nd check: 2
+wake queue: 0 lines

@@ -1,0 +1,5 @@
+== base 45dd50a5 code + new tests ==
+ok - inbox: a writer retries when a competing lock vanishes after its failed claim
+not ok - a due retry waited behind an escalated record, got: quiet
+inbox exit=
+not ok - a malformed row for another task hid this task's unread status: 

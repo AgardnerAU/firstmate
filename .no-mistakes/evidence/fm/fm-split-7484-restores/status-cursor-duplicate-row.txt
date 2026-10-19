@@ -1,0 +1,4 @@
+a status_presentation_cursor_offset rc=1 out=''
+a status_outcome_backstop_cursor_offset rc=1 out=''
+b status_presentation_cursor_offset rc=0 out='0'
+b status_outcome_backstop_cursor_offset rc=0 out='0'

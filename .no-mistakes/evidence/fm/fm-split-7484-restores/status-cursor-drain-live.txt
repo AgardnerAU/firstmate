@@ -1,0 +1,45 @@
+== [base-45dd50a5] bin/fm-wake-drain.sh from /tmp/fm-base.CrLG
+bootstrap drain rc=0
+--- cursor now:
+    healthy<TAB>strong:16777234:469227420:1792380162.970130705<TAB>21<TAB>0
+    ghost<TAB>ident<TAB>0<TAB>0<TAB>extra
+--- drain rc=0 output:
+    
+--- cursor now:
+    healthy<TAB>strong:16777234:469227420:1792380162.970130705<TAB>21<TAB>0
+    ghost<TAB>ident<TAB>0<TAB>0<TAB>extra
+    ghost<TAB>ident<TAB>NaN<TAB>0
+--- drain rc=0 output:
+    
+--- cursor now:
+    healthy<TAB>strong:16777234:469227420:1792380162.970130705<TAB>21<TAB>0
+    ghost<TAB>ident<TAB>0<TAB>0<TAB>extra
+    ghost<TAB>ident<TAB>NaN<TAB>0
+    ghost<TAB><TAB>0<TAB>0
+--- drain rc=0 output:
+    
+lookup other: presentation offset rc=1 out=''; backstop offset rc=1 out=''
+lookup healthy: presentation offset rc=1 out=''; backstop offset rc=0 out='0'
+
+== [head-9f079251] bin/fm-wake-drain.sh from /Users/agardner/.no-mistakes/worktrees/c272d8f3fc4c/01M592GT5WV1YMM0RZDCFZJB1F
+bootstrap drain rc=0
+--- cursor now:
+    healthy<TAB>strong:16777234:469227534:1792380165.285372676<TAB>21<TAB>0
+    ghost<TAB>ident<TAB>0<TAB>0<TAB>extra
+--- drain rc=0 output:
+    UNREAD STATUS (new since last drain, not re-printed after this presentation):
+    healthy note: captain says use REST ($'ghost\tident\t0\t0\textra')
+--- cursor now:
+    healthy<TAB>strong:16777234:469227534:1792380165.285372676<TAB>80<TAB>0
+    ghost<TAB>ident<TAB>NaN<TAB>0
+--- drain rc=0 output:
+    UNREAD STATUS (new since last drain, not re-printed after this presentation):
+    healthy note: captain says use REST ($'ghost\tident\tNaN\t0')
+--- cursor now:
+    healthy<TAB>strong:16777234:469227534:1792380165.285372676<TAB>134<TAB>0
+    ghost<TAB><TAB>0<TAB>0
+--- drain rc=0 output:
+    UNREAD STATUS (new since last drain, not re-printed after this presentation):
+    healthy note: captain says use REST ($'ghost\t\t0\t0')
+lookup other: presentation offset rc=1 out=''; backstop offset rc=1 out=''
+lookup healthy: presentation offset rc=0 out='181'; backstop offset rc=0 out='0'
