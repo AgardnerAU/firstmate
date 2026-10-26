@@ -77,10 +77,14 @@ If the top-level path is the primary checkout or not the worktree you were launc
      that it is free, and returning your own worktree is firstmate's job at cleanup, not yours.
    If you genuinely need a second checkout, another slot, or the daemon touched, append
    `blocked [at=<epoch>]: {what you need}` and stop; firstmate arranges it.
+8. Never start a shell command with `cd`, and never run a search whose path depends on the current directory.
+   Use absolute paths, `git -C <abs>`, or a `( cd <abs> && ... )` subshell.
+   Pass this rule to every sub-agent you launch.
 
 # Firstmate instruction inbox
 Firstmate steers you through durable message files in '__TMP_ROOT__/home/state/absent-ship.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list them with `find '__TMP_ROOT__/home/state/absent-ship.inbox' -maxdepth 1 -name '*.msg' 2>/dev/null | sort -V`, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-ship.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-ship.inbox'/handled/`.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list them with `find '__TMP_ROOT__/home/state/absent-ship.inbox' -maxdepth 1 -name '*.msg' 2>/dev/null | sort -V`, read the complete contents of each record (including its final line even when it is not newline-terminated) and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '__TMP_ROOT__/home/state/absent-ship.inbox'/NNN.msg '__TMP_ROOT__/home/state/absent-ship.inbox'/handled/`.
+Prefer the format-aware `fm_task_inbox_body` reader from `bin/fm-task-inbox-lib.sh` when it is available. If you read manually, a header line `body-terminator=1` means the writer added exactly one synthetic final newline to terminate the record file; that marked newline is not part of the logical message body, so remove only it and preserve any intentional trailing newlines. Legacy records without that marker may end without a newline; read them through the file end.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
