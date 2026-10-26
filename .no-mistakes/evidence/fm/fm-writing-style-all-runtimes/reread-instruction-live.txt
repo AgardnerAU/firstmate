@@ -1,0 +1,14 @@
+rc=0
+These inherited config files changed. Re-read and apply their exact contents at every future intake. They are defaults/rules and do not remove your judgment to choose differently when warranted.
+
+config/crew-harness
+-----BEGIN config/crew-harness-----
+codex
+-----END config/crew-harness-----
+
+This inherited config file changed. Re-read and apply its exact contents at every future intake. Its rules must be applied as written and are not subject to worker discretion.
+
+config/worker-writing-style.md
+-----BEGIN config/worker-writing-style.md-----
+Use British English.
+-----END config/worker-writing-style.md-----

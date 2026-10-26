@@ -1,26 +1,25 @@
-=== Scenario 1: absent config/worker-writing-style.md - base (1aa2a21e) vs PR head (5a9e8cd3) ===
-ship: byte-identical to base (    9321 bytes, sha 6c2a5490c668)
-scout: byte-identical to base (    8113 bytes, sha 1c863512a4b6)
-secondmate: byte-identical to base (    8446 bytes, sha 7bb3e1008a27)
-
-=== Scenario 2: blank file (newlines/spaces/tab only) ===
-ship: byte-identical to base
-ship heading+fallback-pointer count: 0
-scout: byte-identical to base
-scout heading+fallback-pointer count: 0
-secondmate: byte-identical to base
-secondmate heading+fallback-pointer count: 0
-
-=== Scenario 3: present file - exact contents embedded in every new brief ===
---- config/worker-writing-style.md:
-Use ASD-STE100 with British spelling for human-facing prose.
-Use plain hyphens, never typographic dashes.
---- ship brief, head -12:
+## 1. No worker-writing-style.md: ship brief
+scaffolded: /tmp/fm-lab.DVfJkR/data/t-absent/brief.md (ship, mode=no-mistakes; replace {TASK} and {FIRSTMATE_SPEC})
+exit=0
+0
+## 2. Blank worker-writing-style.md: ship brief
+scaffolded: /tmp/fm-lab.DVfJkR/data/t-blank/brief.md (ship, mode=no-mistakes; replace {TASK} and {FIRSTMATE_SPEC})
+exit=0
+0
+blank == absent bytes (modulo id)
+## 3. Style present: ship, scout, secondmate
+scaffolded: /tmp/fm-lab.DVfJkR/data/t-ship/brief.md (ship, mode=no-mistakes; replace {TASK} and {FIRSTMATE_SPEC})
+ship exit=0
+scaffolded: /tmp/fm-lab.DVfJkR/data/t-scout/brief.md (scout; replace {TASK} and {FIRSTMATE_SPEC})
+scout exit=0
+scaffolded: /tmp/fm-lab.DVfJkR/data/t-sm/brief.md (secondmate charter)
+secondmate exit=0
+--- t-ship (head)
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
 
 # Worker writing style
-Use ASD-STE100 with British spelling for human-facing prose.
-Use plain hyphens, never typographic dashes.
+- Use British English.
+- Use plain hyphens.
 
 
 # Task
@@ -28,20 +27,12 @@ Use plain hyphens, never typographic dashes.
 {TASK}
 
 ## Firstmate spec
---- ship: heading count=1; diff vs absent brief:
-2a3,7
-> # Worker writing style
-> Use ASD-STE100 with British spelling for human-facing prose.
-> Use plain hyphens, never typographic dashes.
-> 
-> 
---- ship: spawn-relevant placeholders still present: 1 {TASK}
---- scout brief, head -12:
+--- t-scout (head)
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
 
 # Worker writing style
-Use ASD-STE100 with British spelling for human-facing prose.
-Use plain hyphens, never typographic dashes.
+- Use British English.
+- Use plain hyphens.
 
 
 # Task
@@ -49,35 +40,26 @@ Use plain hyphens, never typographic dashes.
 {TASK}
 
 ## Firstmate spec
---- scout: heading count=1; diff vs absent brief:
-2a3,7
-> # Worker writing style
-> Use ASD-STE100 with British spelling for human-facing prose.
-> Use plain hyphens, never typographic dashes.
-> 
-> 
---- scout: spawn-relevant placeholders still present: 1 {TASK}
---- secondmate brief, head -12:
+--- t-sm (head)
 You are a persistent second mate managed by the main firstmate. Work on your own; do not wait for a human.
 
 # Worker writing style
-Use ASD-STE100 with British spelling for human-facing prose.
-Use plain hyphens, never typographic dashes.
+- Use British English.
+- Use plain hyphens.
 
 
 At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
 
 
 # Charter
-lab charter
---- secondmate: heading count=1; diff vs absent brief:
-2a3,10
-> # Worker writing style
-> Use ASD-STE100 with British spelling for human-facing prose.
-> Use plain hyphens, never typographic dashes.
-> 
-> 
-> At every intake, read `$FM_HOME/config/worker-writing-style.md` and apply its current contents. If the file is absent, use the embedded rules above as the fallback.
-> 
-> 
---- secondmate: spawn-relevant placeholders still present: 0 {TASK}
+Demo charter
+## 4. Ship/scout briefs have no secondmate intake reread line
+/tmp/fm-lab.DVfJkR/data/t-scout/brief.md:0
+/tmp/fm-lab.DVfJkR/data/t-sm/brief.md:1
+/tmp/fm-lab.DVfJkR/data/t-ship/brief.md:0
+## 5. Absent brief vs repo fixture absent-ship.md
+16c16
+< You are in a disposable git worktree of demo, at a detached HEAD on a clean default branch.
+---
+> You are in a disposable git worktree of some-proj, at a detached HEAD on a clean default branch.
+22,23c22
