@@ -1,0 +1,9 @@
+ok - Pi extension reports external healthy watcher output
+ok - Pi custom tool exposes repair-only metadata and returns automatic-continuation guidance
+ok - Pi redundant tool call returns ownership guidance and spawns no second child
+not ok - Pi scheduled-retry call must not duplicate the extension-owned retry: expected exit 0, got 1
+
+real	0m14.569s
+user	0m2.573s
+sys	0m1.534s
+exit=1

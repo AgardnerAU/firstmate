@@ -67,4 +67,8 @@ ok - OpenCode watcher plugin coordinates with the turn-end guard
 ok - OpenCode healthy arm output does not suppress the turn-end guard
 ok - OpenCode turn-end guard survives an encoder that never reads stdin
 ok - Pi suite leaves no orphaned process from its temporary root
-exit=0 secs=97
+
+real	1m28.035s
+user	0m35.801s
+sys	0m28.269s
+exit=0
