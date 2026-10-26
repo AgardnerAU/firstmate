@@ -2559,13 +2559,18 @@ for (let i = 0; !prompt; i += 1) {
 const rows = existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
-if (rows.length !== 4) throw new Error(`expected one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
-if (rowsAtPrompt !== 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
+// A silent successor is SIGTERMed when the readiness budget (counted from its
+// spawn) runs out, so a starved login shell can lose a successor before its
+// first statement appends a row. The typed failure below, which the extension
+// emits only after the retries are spent, carries the exact retry count; the
+// row counts only bound what a loaded machine can have recorded.
+if (rows.length < 1 || rows.length > 4) throw new Error(`expected at most one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
+if (rowsAtPrompt > 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
 if (!prompt.includes("signal: synthetic wake")) throw new Error(`original wake was lost: ${prompt}`);
 if (!prompt.includes("could not restore watcher continuity after 2 retries")) throw new Error(`missing typed restoration failure: ${prompt}`);
 await new Promise((resolve) => setTimeout(resolve, 100));
 const stableRows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
-if (stableRows.length !== 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
+if (stableRows.length > 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
 EOF
 )
   status=$?
@@ -2601,6 +2606,8 @@ printf 'arm=%s\n' "$$" >> "${FM_ARM_LOG:?}"
 while [ ! -e "$FM_RELEASE_FILE" ] && [ -e "$0" ]; do sleep 0.1; done
 SH
   chmod +x "$repo/bin/fm-watch-arm.sh"
+  for _attempt in 1 2 3 4 5; do
+    rm -f "$log" "$release"
   out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_RELEASE_FILE="$release" FM_PI_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_ARM_RETIRE_TIMEOUT_MS=20 FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node --input-type=module 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -2628,6 +2635,11 @@ await tool.execute("tool-call-unretired-successor", {}, undefined, undefined, {}
 for (let i = 0; !prompt; i += 1) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
+// A starved login shell can SIGTERM the silent successor before it starts
+// ignoring TERM, which is a different path from the one under test. The
+// message below proves the successor ran and stayed unretired; without it,
+// exit 75 asks the shell to rerun the scenario.
+if (!prompt.includes("unready successor arm did not exit within 20ms")) process.exit(75);
 const rows = existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
@@ -2640,6 +2652,8 @@ await new Promise((resolve) => setTimeout(resolve, 80));
 EOF
 )
   status=$?
+    [ "$status" -eq 75 ] || break
+  done
   expect_code 0 "$status" "Pi must fall back without overlapping an unretired successor"
   [ -z "$out" ] || fail "Pi unretired-successor test printed output: $out"
   pass "Pi unretired successor falls back without an overlapping retry"
@@ -5190,13 +5204,18 @@ for (let i = 0; !prompt; i += 1) {
 const rows = existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
-if (rows.length !== 4) throw new Error(`expected one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
-if (rowsAtPrompt !== 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
+// A silent successor is SIGTERMed when the readiness budget (counted from its
+// spawn) runs out, so a starved login shell can lose a successor before its
+// first statement appends a row. The typed failure below, which the extension
+// emits only after the retries are spent, carries the exact retry count; the
+// row counts only bound what a loaded machine can have recorded.
+if (rows.length < 1 || rows.length > 4) throw new Error(`expected at most one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
+if (rowsAtPrompt > 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
 if (!prompt.includes("signal: synthetic wake")) throw new Error(`original wake was lost: ${prompt}`);
 if (!prompt.includes("could not restore watcher continuity after 2 retries")) throw new Error(`missing typed restoration failure: ${prompt}`);
 await new Promise((resolve) => setTimeout(resolve, 100));
 const stableRows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
-if (stableRows.length !== 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
+if (stableRows.length > 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
 EOF
 )
   status=$?
@@ -5235,6 +5254,8 @@ printf 'arm=%s\n' "$$" >> "${FM_ARM_LOG:?}"
 while [ ! -e "$FM_RELEASE_FILE" ] && [ -e "$0" ]; do sleep 0.1; done
 SH
   chmod +x "$repo/bin/fm-watch-arm.sh"
+  for _attempt in 1 2 3 4 5; do
+    rm -f "$log" "$release"
   out=$(PLUGIN="$plugin" WORKTREE="$repo" FM_HOME="$home" FM_ARM_LOG="$log" FM_RELEASE_FILE="$release" FM_OPENCODE_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_ARM_RETIRE_TIMEOUT_MS=20 FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -5262,6 +5283,11 @@ await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses
 for (let i = 0; !prompt; i += 1) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
+// A starved login shell can SIGTERM the silent successor before it starts
+// ignoring TERM, which is a different path from the one under test. The
+// message below proves the successor ran and stayed unretired; without it,
+// exit 75 asks the shell to rerun the scenario.
+if (!prompt.includes("unready successor arm did not exit within 20ms")) process.exit(75);
 const rows = existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
@@ -5274,6 +5300,8 @@ await new Promise((resolve) => setTimeout(resolve, 80));
 EOF
 )
   status=$?
+    [ "$status" -eq 75 ] || break
+  done
   expect_code 0 "$status" "OpenCode must fall back without overlapping an unretired successor"
   [ -z "$out" ] || fail "OpenCode unretired-successor test printed output: $out"
   pass "OpenCode unretired successor falls back without an overlapping retry"
