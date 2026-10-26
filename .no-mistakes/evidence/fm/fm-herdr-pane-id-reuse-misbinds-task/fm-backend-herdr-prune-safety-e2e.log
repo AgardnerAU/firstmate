@@ -1,0 +1,6 @@
+ok - repro setup: a pre-existing workspace labeled 'firstmate' collides with the primary home's own label
+ok - repro setup: a live long-running process is running in the startup workspace's single tab (label '1'), heartbeating to a marker file
+ok - fixed: container_ensure adopts the label-colliding startup workspace and reports NO seeded default tab (never a prune candidate)
+ok - fixed: the live pane (and its live process) survived create_task untouched - the exact 2026-07-02 self-kill incident does not reproduce
+ok - fixed: the startup workspace's original live tab is still present in tab list after the spawn
+ok - happy path: a genuinely fresh workspace's seeded default tab is still pruned, leaving exactly one clean fm-<id> task tab
