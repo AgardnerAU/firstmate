@@ -981,7 +981,6 @@ Tests use thin compatibility wrappers in `tests/herdr-test-safety.sh` and never 
 - Mutable labels can collide; they are never placement or destructive authority.
 - A Firstmate outside Herdr cannot resolve a launcher workspace, so a colliding home label refuses new spawns until the collision is cleared.
 - Ghost and placeholder recognition uses ANSI de-emphasis when available; an unstyled glyph row carrying trailing non-idle text fails safely to `unknown`.
-- Only tmux and Herdr can host the away-mode supervisor terminal.
 - A record without `herdr_terminal_id=` reads its own pane as gone while the foreground process works outside the recorded worktree, and could still match a reissued pane that works inside that same worktree.
 - A restored pane after a server restart reads `missing` to its terminal-bound record, so recovery replaces it instead of reusing it, and cleanup outside restored projection reclaim leaves it open.
 - When two records of one home name the same pane, a read that no task record binds, such as an ad hoc `<session>:<pane>` selector, reads `unknown` and refuses.
