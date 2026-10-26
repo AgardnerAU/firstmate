@@ -1,0 +1,38 @@
+job: Repo invariants
+=== clean tree (no extra paths)
+exit=0
+=== scratch .tmp-ax/.tasks.toml (the reported leak)
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.tmp-ax/.tasks.toml
+exit=1
+=== personal fleet path state/x
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+state/x
+exit=1
+=== each legacy deny-list name
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.no-mistakes/f
+config/f
+data/f
+projects/f
+exit=1
+=== non-ASCII scratch dir .tmp-é/x (quotePath)
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.tmp-é/x
+exit=1
+=== leading/trailing whitespace name ' pad /x'
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+ pad /x
+exit=1
+=== name with newline
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+nl
+x/f
+exit=1
+=== root .tasks.toml allowed, nested allowed dir file
+exit=0
+=== prefix lookalike bin2/x and docsx file
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+bin2/x
+docsx
+exit=1
