@@ -86,9 +86,16 @@ trap 'pi_teardown; exit 131' QUIT
 # too small a budget reports a lost successor instead of the bounded recovery
 # under test. A stock login shell already costs about 200ms on an idle
 # workstation, and a loaded CI runner is slower, so keep an order of magnitude
-# over that rather than a value that only holds locally. The wait loops in those
-# tests are sized against this number.
+# over that rather than a value that only holds locally.
 ARM_READY_TIMEOUT_MS=2000
+
+# One owner for how long every node poll below waits for an expected signal
+# before it falls through to its named assertion. A heavily loaded machine has
+# delivered signals tens of seconds late, so the deadline sits far above that
+# and above any sum of the readiness budgets a test spends. A signal that never
+# arrives still fails its case well inside the CI job cap instead of hanging the
+# shard.
+export FM_PI_TEST_WAIT_MS=120000
 
 install_pi_watch_extension_fixture() {
   local repo=$1
@@ -191,7 +198,7 @@ if (!notification.includes("started Pi extension arm child")) {
   console.error(notification);
   process.exit(1);
 }
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.startsWith("\u2063FIRSTMATE_OP: v1 watcher: ")) {
@@ -327,7 +334,7 @@ if (/^watcher: healthy\b/.test(redundant.content[0]?.text)) {
 if (!redundant.content[0]?.text.includes("only after a later notification says the cycle is missing, failed, or unhealthy")) {
   throw new Error(`redundant call omitted the repair-only condition: ${redundant.content[0]?.text}`);
 }
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) throw new Error("initial arm child did not start");
@@ -375,7 +382,7 @@ const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-first", {}, undefined, undefined, {});
 let redundant = null;
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
   redundant = await tool.execute("tool-call-during-retry", {}, undefined, undefined, {});
   if (redundant.content[0]?.text.includes("scheduled continuity retry")) break;
@@ -456,7 +463,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-continuity", {}, undefined, undefined, {});
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const rows = existsSync(process.env.FM_ARM_LOG)
     ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
     : [];
@@ -556,7 +563,7 @@ const readRows = () => existsSync(process.env.FM_ARM_LOG)
   : [];
 // The wake delivery is the last event under test, so wait for it rather than
 // for a fixed interval that a loaded machine can outrun.
-while (!readRows().includes("delivery")) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !readRows().includes("delivery") && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 const rows = readRows();
@@ -650,7 +657,7 @@ async function runScenario(withAcceptor) {
   const mod = await import(`${pathToFileURL(process.env.PLUGIN).href}?scenario=${withAcceptor}`);
   mod.default(pi);
   await tool.execute("tool-call-branch-offer", {}, undefined, undefined, {});
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     const settled = withAcceptor ? offers.length > 0 : mainPrompt !== "";
     if (settled) break;
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -756,7 +763,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.wake-queue`, "1\t1\theartbeat\thear
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-branch-heartbeat", {}, undefined, undefined, {});
-for (let i = 0; offers.length === 0; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 1) throw new Error(`expected one branch offer, got ${offers.length}`);
@@ -843,7 +850,7 @@ mod.default(pi);
 await tool.execute("tool-call-heartbeat-mixed-queue", {}, undefined, undefined, {});
 // The offer is what this asserts on, so wait for it and then give any
 // erroneous main delivery a real chance to land before calling it absent.
-for (let i = 0; offers.length === 0; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 for (let i = 0; i < 25 && !prompt; i += 1) {
@@ -941,7 +948,7 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-main-only-check", {}, undefined, undefined, {});
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 1 || offers[0].eligible !== false) {
@@ -1036,7 +1043,7 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-captain-held-signal", {}, undefined, undefined, {});
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 1 || offers[0].eligible !== false) {
@@ -1126,10 +1133,10 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-later-stale-alias", {}, undefined, undefined, {});
-for (let i = 0; offers.length === 0; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 1 || offers[0].eligible !== false) {
@@ -1224,10 +1231,10 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-distinct-mixed-batch", {}, undefined, undefined, {});
-for (let i = 0; offers.length === 0; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 1 || offers[0].eligible !== false) {
@@ -1314,7 +1321,7 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-heartbeat-needs-decision", {}, undefined, undefined, {});
-for (let i = 0; offers.length === 0; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 for (let i = 0; i < 25 && !prompt; i += 1) {
@@ -1393,7 +1400,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-heartbeat-restoration-failure", {}, undefined, undefined, {});
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 if (offers.length !== 0) {
@@ -1466,7 +1473,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await handler("", { ui: { notify() {} } });
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("external healthy watcher")) {
@@ -1559,7 +1566,7 @@ writeFileSync(
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-away", {}, undefined, undefined, {});
-for (let i = 0; offers.length === 0 && !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 // Give a wrongly-routed main follow-up time to show up before asserting its absence.
@@ -1641,7 +1648,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await handler("", { ui: { notify() {} } });
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("external healthy watcher")) {
@@ -1705,7 +1712,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-handling-fail", {}, undefined, undefined, {});
-for (let i = 0; !prompt.includes("handling delivery confirmation was rejected"); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("handling delivery confirmation was rejected") && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("FIRSTMATE WATCHER WAKE")) throw new Error(`missing follow-up: ${prompt}`);
@@ -1781,14 +1788,14 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-confirm-distinct", {}, undefined, undefined, {});
-for (let i = 0; !prompt.includes("handling delivery confirmation was rejected"); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("handling delivery confirmation was rejected") && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("handling delivery confirmation was rejected")) {
   throw new Error(`failed handshake was swallowed: ${prompt}`);
 }
 let retired = false;
-for (let i = 0; !retired; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !retired && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
   retired = existsSync(process.env.FM_RETIRED_FILE);
 }
@@ -1883,11 +1890,11 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-confirm-newer-first", {}, undefined, undefined, {});
-for (let i = 0; armRows().length < 2; i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < 2 && performance.now() < end;) await sleep(20);
 if (armRows().length < 2) throw new Error("restoration never started a successor");
 const successorPid = Number(armRows()[1].slice("arm=".length));
 let dead = false;
-for (let i = 0; !dead; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !dead && performance.now() < end;) {
   try {
     process.kill(successorPid, 0);
     await sleep(20);
@@ -1900,11 +1907,11 @@ const repair = await tool.execute("tool-call-confirm-newer-repair", {}, undefine
 if (!repair.content[0].text.includes("started Pi extension arm child")) {
   throw new Error(`repair did not start a newer arm: ${repair.content[0].text}`);
 }
-for (let i = 0; armRows().length < 3; i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < 3 && performance.now() < end;) await sleep(20);
 if (armRows().length !== 3) throw new Error(`expected a newer third arm: ${armRows().join(" | ")}`);
 const newerPid = Number(armRows()[2].slice("arm=".length));
 writeFileSync(process.env.FM_GO_FILE, "go\n");
-for (let i = 0; !prompt.includes("handling delivery confirmation was rejected"); i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("handling delivery confirmation was rejected") && performance.now() < end;) await sleep(20);
 if (!prompt.includes("handling delivery confirmation was rejected")) {
   throw new Error(`the stale successor's confirmation never failed: ${prompt}`);
 }
@@ -1978,7 +1985,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-handling-superseded", {}, undefined, undefined, {});
-for (let i = 0; !prompt.includes("FIRSTMATE WATCHER WAKE"); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("FIRSTMATE WATCHER WAKE") && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("FIRSTMATE WATCHER WAKE")) throw new Error(`missing follow-up: ${prompt}`);
@@ -2078,7 +2085,7 @@ async function runScenario(confirmStatus) {
   const mod = await import(`${pathToFileURL(process.env.PLUGIN).href}?confirm=${confirmStatus}`);
   mod.default(pi);
   await tool.execute(`tool-call-superseded-branch-${confirmStatus}`, {}, undefined, undefined, {});
-  for (let i = 0; offers.length === 0 && mainPrompt === ""; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); offers.length === 0 && mainPrompt === "" && performance.now() < end;) {
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
   const rows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
@@ -2166,7 +2173,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-handling-superseded", {}, undefined, undefined, {});
-for (let i = 0; !prompt.includes("FIRSTMATE WATCHER WAKE"); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("FIRSTMATE WATCHER WAKE") && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!prompt.includes("FIRSTMATE WATCHER WAKE")) throw new Error(`missing follow-up: ${prompt}`);
@@ -2263,14 +2270,14 @@ const armRows = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
 let armPid = "";
-for (let i = 0; !armPid; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !armPid && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
   const row = armRows().find((line) => line.startsWith("arm="));
   if (row) armPid = row.split(" ")[0].slice("arm=".length);
 }
 if (!armPid) throw new Error("first arm never logged its pid");
 let dead = false;
-for (let i = 0; !dead; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !dead && performance.now() < end;) {
   try {
     process.kill(Number(armPid), 0);
   } catch {
@@ -2288,7 +2295,7 @@ if (text.includes("unchanged")) {
   throw new Error(`repair no-opped on a dead child: ${text}`);
 }
 let rearmed = false;
-for (let i = 0; !rearmed; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !rearmed && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
   rearmed = armRows().filter((line) => line.startsWith("arm=")).length >= 2;
 }
@@ -2355,12 +2362,12 @@ const armRows = () => existsSync(process.env.FM_ARM_LOG)
   : [];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function waitForArms(count) {
-  for (let i = 0; armRows().length < count; i += 1) await sleep(20);
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < count && performance.now() < end;) await sleep(20);
   if (armRows().length < count) throw new Error(`expected ${count} arms: ${armRows().join(" | ")}`);
   return Number(armRows()[count - 1].slice("arm=".length));
 }
 async function waitForExit(pid) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     try {
       process.kill(pid, 0);
     } catch {
@@ -2381,7 +2388,7 @@ if (!repair.content[0].text.includes("started Pi extension arm child")) {
 }
 await waitForExit(await waitForArms(2));
 writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
-for (let i = 0; armRows().length < 3; i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < 3 && performance.now() < end;) await sleep(20);
 if (armRows().length !== 3) {
   throw new Error(`the first arm's close scheduled no retry over the dead second arm: ${armRows().join(" | ")}`);
 }
@@ -2461,12 +2468,12 @@ const armRows = () => existsSync(process.env.FM_ARM_LOG)
   : [];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function waitForArms(count) {
-  for (let i = 0; armRows().length < count; i += 1) await sleep(20);
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < count && performance.now() < end;) await sleep(20);
   if (armRows().length < count) throw new Error(`expected ${count} arms: ${armRows().join(" | ")}`);
   return Number(armRows()[count - 1].slice("arm=".length));
 }
 async function waitForExit(pid) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     try {
       process.kill(pid, 0);
     } catch {
@@ -2481,7 +2488,7 @@ const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-deferred-dead-first", {}, undefined, undefined, {});
 const successorPid = await waitForArms(2);
-for (let i = 0; !deliveryStarted; i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !deliveryStarted && performance.now() < end;) await sleep(20);
 if (!deliveryStarted) throw new Error("the restored wake was never delivered");
 writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
 await waitForExit(successorPid);
@@ -2492,7 +2499,7 @@ if (!repair.content[0].text.includes("started Pi extension arm child")) {
 }
 await waitForExit(await waitForArms(3));
 finishDelivery();
-for (let i = 0; armRows().length < 4; i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); armRows().length < 4 && performance.now() < end;) await sleep(20);
 if (armRows().length !== 4) {
   throw new Error(`the deferred close started no retry over the dead repair arm: ${armRows().join(" | ")}`);
 }
@@ -2528,12 +2535,24 @@ while [ -e "$0" ]; do sleep 0.02; done
 SH
   chmod +x "$repo/bin/fm-watch-arm.sh"
   out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_PI_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node --input-type=module 2>&1 <<'EOF'
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+
+// Each restoration attempt spawns one arm, so counting those spawns gives the
+// exact attempt count even when a starved login shell never reaches its row.
+const originalSpawn = childProcess.spawn;
+let armSpawns = 0;
+childProcess.spawn = function(command, args, ...rest) {
+  if (command === "bash" && Array.isArray(args) && String(args.at(-1)).endsWith(" --restart")) armSpawns += 1;
+  return originalSpawn.call(this, command, args, ...rest);
+};
+syncBuiltinESMExports();
 
 let tool = null;
 let prompt = "";
-let rowsAtPrompt = 0;
+let spawnsAtPrompt = 0;
 const pi = {
   on() {},
   registerCommand() {},
@@ -2542,9 +2561,7 @@ const pi = {
   },
   sendUserMessage: async (message) => {
     prompt += message;
-    rowsAtPrompt = existsSync(process.env.FM_ARM_LOG)
-      ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n").length
-      : 0;
+    spawnsAtPrompt = armSpawns;
   },
 };
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
@@ -2553,24 +2570,19 @@ mod.default(pi);
 await tool.execute("tool-call-hung-successor", {}, undefined, undefined, {});
 // Three unready successors each cost the full readiness budget, so wait well
 // past their sum. The wait ends as soon as the wake lands.
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
-const rows = existsSync(process.env.FM_ARM_LOG)
-  ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
-  : [];
 // A silent successor is SIGTERMed when the readiness budget (counted from its
 // spawn) runs out, so a starved login shell can lose a successor before its
-// first statement appends a row. The typed failure below, which the extension
-// emits only after the retries are spent, carries the exact retry count; the
-// row counts only bound what a loaded machine can have recorded.
-if (rows.length < 1 || rows.length > 4) throw new Error(`expected at most one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
-if (rowsAtPrompt > 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
+// first statement appends an arm row. The typed failure text names the
+// configured retry limit, not the attempts that ran, so the spawn count is what
+// proves the initial arm plus one successor and two retries.
+if (spawnsAtPrompt !== 4) throw new Error(`expected one successor plus two retries before the wake, got ${spawnsAtPrompt} arm spawns`);
 if (!prompt.includes("signal: synthetic wake")) throw new Error(`original wake was lost: ${prompt}`);
 if (!prompt.includes("could not restore watcher continuity after 2 retries")) throw new Error(`missing typed restoration failure: ${prompt}`);
 await new Promise((resolve) => setTimeout(resolve, 100));
-const stableRows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
-if (stableRows.length > 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
+if (armSpawns !== 4) throw new Error(`single-flight recovery launched ${armSpawns} arms`);
 EOF
 )
   status=$?
@@ -2632,7 +2644,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-unretired-successor", {}, undefined, undefined, {});
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 // A starved login shell can SIGTERM the silent successor before it starts
@@ -2717,7 +2729,7 @@ const rows = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
 async function waitFor(predicate, message) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (predicate()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -2739,7 +2751,7 @@ await waitFor(
 if (rows().length !== 2) throw new Error(`unretired arm overlapped before fallback: ${rows().join(" | ")}`);
 if (!prompts[0]?.includes("original wake")) throw new Error(`missing original fallback: ${prompts.join(" | ")}`);
 writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   if (rows().length >= 3 && (process.env.FM_LATE_KIND !== "actionable" || prompts.some((message) => message.includes("late wake")))) break;
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
@@ -2799,7 +2811,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-empty", {}, undefined, undefined, {});
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const rows = existsSync(process.env.FM_ARM_LOG)
     ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
     : [];
@@ -2854,7 +2866,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-established-empty", {}, undefined, undefined, {});
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 const rows = existsSync(process.env.FM_ARM_LOG)
@@ -2912,7 +2924,7 @@ const other = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { s
 try {
   writeFileSync(lock, `${other.pid}\n`);
   writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
-  for (let i = 0; !prompt.includes("no longer owns the lock"); i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("no longer owns the lock") && performance.now() < end;) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   const rows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
@@ -2998,7 +3010,7 @@ const owned = await callArm();
 if (owned.details?.ok !== true || !owned.details.message.includes("started Pi extension arm child")) {
   throw new Error(`owned lock did not arm: ${JSON.stringify(owned.details)}`);
 }
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) throw new Error("owned lock did not run the watcher arm");
@@ -3080,7 +3092,7 @@ const owned = await armOn("win32", `win:${process.pid}`);
 if (owned.details?.ok !== true || !owned.details.message.includes("started Pi extension arm child")) {
   throw new Error(`an owned tagged lock did not arm: ${JSON.stringify(owned.details)}`);
 }
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) throw new Error("an owned tagged lock did not run the watcher arm");
@@ -3689,7 +3701,7 @@ function makePi() {
 }
 
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -3821,7 +3833,7 @@ const arms = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").split("\n").filter((row) => row.startsWith("arm=")).length
   : 0;
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -3950,7 +3962,7 @@ const arms = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").split("\n").filter((row) => row.startsWith("arm=")).length
   : 0;
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -4035,7 +4047,7 @@ function makePi() {
 }
 
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -4142,7 +4154,7 @@ function makePi() {
 }
 
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -4252,7 +4264,7 @@ const pi = {
 };
 
 async function waitFor(pred, label) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (pred()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -4424,7 +4436,7 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-exit", {}, undefined, undefined, {});
-for (let i = 0; !existsSync(process.env.FM_CHILD_PID_FILE); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_CHILD_PID_FILE) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_CHILD_PID_FILE)) throw new Error("arm child did not start");
@@ -4432,7 +4444,7 @@ const firstChild = readFileSync(process.env.FM_CHILD_PID_FILE, "utf8").trim();
 await handlers.get("session_shutdown")?.({ type: "session_shutdown" }, {});
 await handlers.get("session_start")?.({ type: "session_start" }, {});
 await tool.execute("tool-call-replacement", {}, undefined, undefined, {});
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const currentChild = readFileSync(process.env.FM_CHILD_PID_FILE, "utf8").trim();
   if (currentChild !== firstChild) break;
   await new Promise((resolve) => setTimeout(resolve, 20));
@@ -4511,7 +4523,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) {
@@ -4581,7 +4593,7 @@ if (existsSync(process.env.FM_ARM_LOG)) {
   process.exit(1);
 }
 push({ type: "session.execution.interrupted", data: { sessionID: "ses-root" } });
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) await sleep(20);
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) await sleep(20);
 if (!existsSync(process.env.FM_ARM_LOG)) {
   console.error("an interrupted turn did not arm the watcher");
   process.exit(1);
@@ -4622,7 +4634,7 @@ const ctx = {
 };
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default.setup(ctx);
-for (let i = 0; calls.length === 0; i += 1) await new Promise((r) => setTimeout(r, 20));
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); calls.length === 0 && performance.now() < end;) await new Promise((r) => setTimeout(r, 20));
 const first = calls[0];
 if (!first || first.sessionID !== "ses-1" || first.text !== "NUDGE_TEXT") {
   console.error(JSON.stringify(calls));
@@ -4748,7 +4760,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) {
@@ -4815,7 +4827,7 @@ if (existsSync(process.env.FM_ARM_LOG)) {
 }
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event(event);
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) {
@@ -4937,7 +4949,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 const event = { event: { type: "session.idle", properties: { sessionID: "session-test" } } };
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event(event);
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const rows = existsSync(process.env.FM_ARM_LOG)
     ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
     : [];
@@ -5033,7 +5045,7 @@ const client = { session: { promptAsync: async (request) => { prompts.push(reque
 const hooks = await mod.FmPrimaryWatchArm({ client, directory: process.env.WORKTREE, worktree: process.env.WORKTREE });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; prompts.length < 1; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); prompts.length < 1 && performance.now() < end;) await new Promise((resolve) => setTimeout(resolve, 10));
 const rows = existsSync(process.env.FM_ARM_LOG) ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n") : [];
 writeFileSync(process.env.FM_STOP_FILE, "stop\n");
 if (rows.some((row) => row.startsWith("plain-arm="))) throw new Error(`an opted-in home ran the plain arm: ${rows.join(" | ")}`);
@@ -5118,7 +5130,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const rows = existsSync(process.env.FM_ARM_LOG)
     ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
     : [];
@@ -5131,7 +5143,7 @@ if (!prompts.some((message) => message.includes("original wake"))) throw new Err
 await new Promise((resolve) => setTimeout(resolve, 150));
 if (existsSync(process.env.FM_PRE_READY_RETIRED_FILE)) throw new Error("pre-ready actionable successor was retired before its close");
 writeFileSync(process.env.FM_PRE_READY_RELEASE_FILE, "release\n");
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const successorRows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
   if (successorRows.length >= 3 && prompts.some((message) => message.includes("pre-ready successor wake"))) break;
   await new Promise((resolve) => setTimeout(resolve, 10));
@@ -5173,19 +5185,29 @@ while [ -e "$0" ]; do sleep 0.02; done
 SH
   chmod +x "$repo/bin/fm-watch-arm.sh"
   out=$(PLUGIN="$plugin" WORKTREE="$repo" FM_HOME="$home" FM_ARM_LOG="$log" FM_OPENCODE_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node 2>&1 <<'EOF'
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+
+// Each restoration attempt spawns one arm, so counting those spawns gives the
+// exact attempt count even when a starved login shell never reaches its row.
+const originalSpawn = childProcess.spawn;
+let armSpawns = 0;
+childProcess.spawn = function(command, args, ...rest) {
+  if (command === "bash" && Array.isArray(args) && String(args.at(-1)).endsWith(" --restart")) armSpawns += 1;
+  return originalSpawn.call(this, command, args, ...rest);
+};
+syncBuiltinESMExports();
 
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 let prompt = "";
-let rowsAtPrompt = 0;
+let spawnsAtPrompt = 0;
 const client = {
   session: {
     promptAsync: async (request) => {
       prompt += request.body.parts[0].text;
-      rowsAtPrompt = existsSync(process.env.FM_ARM_LOG)
-        ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n").length
-        : 0;
+      spawnsAtPrompt = armSpawns;
     },
   },
 };
@@ -5198,24 +5220,19 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
 // Three unready successors each cost the full readiness budget, so wait well
 // past their sum. The wait ends as soon as the wake lands.
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
-const rows = existsSync(process.env.FM_ARM_LOG)
-  ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
-  : [];
 // A silent successor is SIGTERMed when the readiness budget (counted from its
 // spawn) runs out, so a starved login shell can lose a successor before its
-// first statement appends a row. The typed failure below, which the extension
-// emits only after the retries are spent, carries the exact retry count; the
-// row counts only bound what a loaded machine can have recorded.
-if (rows.length < 1 || rows.length > 4) throw new Error(`expected at most one successor plus two retries, got ${rows.length}: ${rows.join(" | ")}`);
-if (rowsAtPrompt > 4) throw new Error(`wake arrived before restoration exhausted (${rowsAtPrompt} arm rows)`);
+// first statement appends an arm row. The typed failure text names the
+// configured retry limit, not the attempts that ran, so the spawn count is what
+// proves the initial arm plus one successor and two retries.
+if (spawnsAtPrompt !== 4) throw new Error(`expected one successor plus two retries before the wake, got ${spawnsAtPrompt} arm spawns`);
 if (!prompt.includes("signal: synthetic wake")) throw new Error(`original wake was lost: ${prompt}`);
 if (!prompt.includes("could not restore watcher continuity after 2 retries")) throw new Error(`missing typed restoration failure: ${prompt}`);
 await new Promise((resolve) => setTimeout(resolve, 100));
-const stableRows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
-if (stableRows.length > 4) throw new Error(`single-flight recovery launched ${stableRows.length} arms`);
+if (armSpawns !== 4) throw new Error(`single-flight recovery launched ${armSpawns} arms`);
 EOF
 )
   status=$?
@@ -5280,7 +5297,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 // A starved login shell can SIGTERM the silent successor before it starts
@@ -5361,7 +5378,7 @@ const rows = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
 async function waitFor(predicate, message) {
-  for (let i = 0; ; i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
     if (predicate()) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -5386,7 +5403,7 @@ await waitFor(
 if (rows().length !== 2) throw new Error(`unretired arm overlapped before fallback: ${rows().join(" | ")}`);
 if (!prompts[0]?.includes("original wake")) throw new Error(`missing original fallback: ${prompts.join(" | ")}`);
 writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   if (rows().length >= 3 && (process.env.FM_LATE_KIND !== "actionable" || prompts.some((message) => message.includes("late wake")))) break;
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
@@ -5449,7 +5466,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; ; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); performance.now() < end;) {
   const rows = existsSync(process.env.FM_ARM_LOG)
     ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
     : [];
@@ -5506,7 +5523,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !prompt; i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 const rows = existsSync(process.env.FM_ARM_LOG)
@@ -5563,7 +5580,7 @@ const hooks = await mod.FmPrimaryWatchArm({
 const lock = `${process.env.FM_HOME}/state/.lock`;
 writeFileSync(lock, `${process.pid}\n`);
 const eventPromise = hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 10));
 }
 const other = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
@@ -5571,7 +5588,7 @@ try {
   writeFileSync(lock, `${other.pid}\n`);
   writeFileSync(process.env.FM_RELEASE_FILE, "release\n");
   await eventPromise;
-  for (let i = 0; !prompt.includes("no longer owns the lock"); i += 1) {
+  for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !prompt.includes("no longer owns the lock") && performance.now() < end;) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   const rows = readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n");
@@ -5639,7 +5656,7 @@ const guardHooks = await guardMod.FmPrimaryTurnendGuard({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await guardHooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !existsSync(process.env.FM_ARM_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_ARM_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) {
@@ -5713,7 +5730,7 @@ const guardHooks = await guardMod.FmPrimaryTurnendGuard({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await guardHooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
-for (let i = 0; !existsSync(process.env.FM_GUARD_LOG); i += 1) {
+for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !existsSync(process.env.FM_GUARD_LOG) && performance.now() < end;) {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 if (!existsSync(process.env.FM_ARM_LOG)) {
