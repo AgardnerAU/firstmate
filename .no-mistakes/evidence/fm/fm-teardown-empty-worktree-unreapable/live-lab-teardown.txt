@@ -1,0 +1,90 @@
+### S1: record names NO worktree (empty worktree=), branch pushed to origin
+$ bin/fm-teardown.sh l1
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task l1's record names no worktree, so there is no copy to inspect, reset, or return; only l1's own records-only cleanup runs.
+proj: already current
+teardown l1 complete (window firstmate:fm-l1; no worktree recorded, records-only cleanup)
+Backlog: l1 is closed in /tmp/fm-lab.62jqsc/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record present: no
+tmux window fm-l1: gone
+backlog: done
+
+### S2: recorded worktree path is gone, branch has UNPUSHED commit -> refuse, then --force
+$ bin/fm-teardown.sh l2
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFUSED: task l2 has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/l2 not on any remote:
+d78ceb9 work for l2
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+record present: yes
+tmux window fm-l2: present
+backlog: in_flight
+$ bin/fm-teardown.sh l2 --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+proj: already current
+teardown l2 complete (window firstmate:fm-l2, worktree /tmp/fm-lab.62jqsc/wt-l2)
+Backlog: l2 is closed in /tmp/fm-lab.62jqsc/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record present: no
+tmux window fm-l2: gone
+backlog: done
+
+### S3: recorded worktree now belongs to ANOTHER task's checkout? (adversarial: two worktree= lines stay ambiguous)
+$ bin/fm-teardown.sh l3
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+REFUSED: task l3 has a missing, empty, or ambiguous worktree identity; preserving task state.
+[exit 1]
+record present: yes
+tmux window fm-l3: present
+backlog: in_flight
+
+### S4: no worktree= line at all, local-only, branch merged into local main
+$ bin/fm-teardown.sh l4
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  2 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task l4's record names no worktree, so there is no copy to inspect, reset, or return; only l4's own records-only cleanup runs.
+teardown l4 complete (window firstmate:fm-l4; no worktree recorded, records-only cleanup)
+Backlog: l4 is closed in /tmp/fm-lab.62jqsc/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+[exit 0]
+record present: no
+tmux window fm-l4: gone
+backlog: done
+
+### S5: gone worktree, branch deleted locally, no PR -> refuse
+$ bin/fm-teardown.sh l5
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.62jqsc
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: task l5 has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+recorded branch: fm/l5 (no such branch in /tmp/fm-lab.62jqsc/projects/proj)
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1]
+record present: yes
+tmux window fm-l5: present
+backlog: in_flight
+
+lab removed: yes
