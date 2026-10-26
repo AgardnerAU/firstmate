@@ -436,6 +436,22 @@ run_extension_section_lane() {
   return "$section_rc"
 }
 
+# Contended hosts slow every lane, so the default deadline grows with the
+# one-minute load per online CPU. The factor is capped to keep the deadline bounded.
+section_lane_load_factor() {
+  local load cpus
+  load=$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || sysctl -n vm.loadavg 2>/dev/null | tr -d '{}' | awk '{print $1}')
+  cpus=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+  awk -v load="${load:-0}" -v cpus="${cpus:-1}" 'BEGIN {
+    if (cpus < 1) cpus = 1
+    factor = int(load / cpus)
+    if (factor < load / cpus) factor++
+    if (factor < 1) factor = 1
+    if (factor > 8) factor = 8
+    print factor
+  }'
+}
+
 run_extension_section_lanes() {
   local section result_file section_rc timeout_seconds deadline index remaining launched total maximum_sections
   local active maximum_concurrent
@@ -449,6 +465,8 @@ run_extension_section_lanes() {
     ''|*[!0-9]*) return 64 ;;
   esac
   [ "$timeout_seconds" -gt 0 ] && [ "$timeout_seconds" -lt 121 ] || return 64
+  [ -n "${FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS:-}" ] \
+    || timeout_seconds=$((timeout_seconds * $(section_lane_load_factor)))
   section_result_root=$(mktemp -d "$TMP_ROOT/section-lanes.XXXXXX") || return 1
   total=${#sections[@]}
   # Sixteen selectors are validated here. The bounded aggregate keeps its
