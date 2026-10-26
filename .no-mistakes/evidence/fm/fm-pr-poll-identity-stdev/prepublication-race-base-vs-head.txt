@@ -1,0 +1,4 @@
+base 127f0f30:
+not ok - relaunch did not reach its pre-publication endpoint check
+head d25d33a5:
+not ok - relaunch did not reach its pre-publication endpoint check

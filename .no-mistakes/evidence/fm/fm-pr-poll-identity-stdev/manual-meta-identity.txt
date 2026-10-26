@@ -1,0 +1,12 @@
+ok.meta: accepted url=https://github.com/o/r/pull/1
+nopr.meta: rejected - has no pr= line
+after.meta: rejected - has key relaunch after its pr= block
+two.meta: rejected - has more than one pr= line
+--- fm_pr_metadata_print_with rl.meta relaunch=2 attempt=3:
+window=fm-a
+relaunch=2
+attempt=3
+pr=https://github.com/o/r/pull/1
+pr_head=0123456789abcdef0123456789abcdef01234567
+renumbered device (66306:1060870 -> 66307:1060870): match
+byte-identical replaced file (new inode 1060876): refused

@@ -35,7 +35,7 @@ ok - a signal-deferred spawn bounds its verification so an unresponsive tasks-ax
 ok - fm_tasks_axi bounds the call through its perl watchdog when no timeout binary exists
 ok - fm_tasks_axi's perl watchdog passes the child status and output through unchanged
 ok - fm_tasks_axi fails closed rather than running unbounded when no bounding mechanism exists
-ok - fm_tasks_axi's GNU timeout forces termination (skipped: no timeout binary on this host)
+ok - fm_tasks_axi's GNU timeout kills a child that ignores SIGTERM after one further bound
 ok - Kimi readiness interruptions fail before backlog commit
 ok - dispatch does not resurrect a row closed after preflight
 ok - dispatch fails when its backlog row vanishes after preflight
@@ -82,7 +82,7 @@ ok - bootstrap rechecks worker-record containment after locking
 ok - lifecycle files reject ancestor symlinks outside home roots
 ok - same-home state overrides remain supported
 ok - bootstrap refuses symlinked state before reconciliation
-ok - bootstrap data-disappears fault injection is PATH-based; skipped on Darwin where stat is /usr/bin/stat
+ok - bootstrap stops when backlog data disappears before reconciliation
 ok - bootstrap preserves secondmate, manual, and absent-backlog exemptions
 ok - session start leaves a captain-held item where the captain put it
 ok - no-backlog teardown refuses symlinked records before resource actions
@@ -99,3 +99,4 @@ ok - environment-selected adapters bypass the legacy markdown file override
 ok - a manual-backlog home dispatches and completes without a hard failure
 ok - a secondmate home keeps its own books paired through dispatch and completion
 ok - dispatching a persistent secondmate needs no backlog item
+exit=0 secs=522
