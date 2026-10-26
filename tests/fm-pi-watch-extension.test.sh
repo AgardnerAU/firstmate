@@ -2650,7 +2650,7 @@ for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !pr
 // A starved login shell can SIGTERM the silent successor before it starts
 // ignoring TERM, which is a different path from the one under test, and the
 // 20ms retirement message is printed for that lost successor too. The
-// successor's own arm row proves it ran, so without that row exit 75 asks the
+// arm row of the successor proves it ran, so without that row exit 75 asks the
 // shell to rerun the scenario.
 if (prompt && rowsAtPrompt < 2) process.exit(75);
 const rows = existsSync(process.env.FM_ARM_LOG)
@@ -5304,7 +5304,7 @@ for (const end = performance.now() + Number(process.env.FM_PI_TEST_WAIT_MS); !pr
 // A starved login shell can SIGTERM the silent successor before it starts
 // ignoring TERM, which is a different path from the one under test, and the
 // 20ms retirement message is printed for that lost successor too. The
-// successor's own arm row proves it ran, so without that row exit 75 asks the
+// arm row of the successor proves it ran, so without that row exit 75 asks the
 // shell to rerun the scenario.
 if (prompt && rowsAtPrompt < 2) process.exit(75);
 const rows = existsSync(process.env.FM_ARM_LOG)
