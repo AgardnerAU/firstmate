@@ -1320,7 +1320,10 @@ if [ "$BACKEND" = herdr ]; then
       TEARDOWN_ENDPOINT_RETIRED=1
       echo "note: herdr pane $T for $ID now belongs to another terminal; its own endpoint is already gone, so no pane will be closed" >&2
       ;;
-    match) FM_BACKEND_HERDR_IDENTITY_PIN=$T ;;
+    match)
+      # shellcheck disable=SC2034 # Read by the sourced Herdr adapter.
+      FM_BACKEND_HERDR_IDENTITY_PIN=$T
+      ;;
     absent|unbound) ;;
     *)
       echo "error: herdr pane $T for $ID could not be verified as this task's own endpoint; nothing was changed - rerun teardown once the pane can be read" >&2
