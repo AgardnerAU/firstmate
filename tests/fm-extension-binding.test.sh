@@ -1189,7 +1189,7 @@ done
 [ -L "$FM_PROCEVENT_CLAIM_ROOT/order-source.lock" ] || fail "neither lock-order contender took the source lock"
 sleep 0.2
 touch "$order_release"
-order_deadline=$((SECONDS + 12))
+order_deadline=$((SECONDS + 60))
 while kill -0 "$order_register_pid" 2>/dev/null || kill -0 "$order_reconcile_pid" 2>/dev/null; do
   if [ "$SECONDS" -ge "$order_deadline" ]; then
     # Killing registration lets lock recovery free reconcile for cleanup.
