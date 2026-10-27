@@ -1,0 +1,21 @@
+++ /tmp/tmp.NH9K81EDVO/run1.sh tests/fm-control-relaunch.test.sh test_relaunch_keeps_an_armed_merge_poll_verifiable test_traced_relaunch_keeps_an_armed_merge_poll_verifiable
+ok - fm-control relaunch: lifecycle keys land ahead of the pr= block, so an armed merge poll still authenticates
+ok - fm-control relaunch: the trace carrier lands ahead of the pr= block, so an armed merge poll still authenticates
+++ echo exit=0
+exit=0
+++ /tmp/tmp.NH9K81EDVO/run1.sh tests/fm-backlog-atomicity.test.sh test_respawn_keeps_an_armed_merge_poll_verifiable
+ok - a respawn keeps the task's pr= block, so its armed merge poll still authenticates
+++ echo exit=0
+exit=0
+++ /tmp/tmp.NH9K81EDVO/run1.sh tests/fm-captain-hold-lifecycle.test.sh test_completion_attestation_keeps_an_armed_merge_poll_verifiable
+ok - completion attestation lands ahead of the pr= block and keeps the record private, so an armed merge poll still authenticates
+++ echo exit=0
+exit=0
+++ /tmp/tmp.NH9K81EDVO/run1.sh tests/fm-polytoken-harness.test.sh test_polytoken_session_binding_keeps_an_armed_merge_poll_verifiable
+ok - fm-spawn: the polytoken session binding lands ahead of the pr= block, so an armed merge poll still authenticates
+++ echo exit=0
+exit=0
+++ /tmp/tmp.NH9K81EDVO/run1.sh tests/fm-wake-drain-unread-status.test.sh test_volume_renumber_does_not_replay_presented_history
+ok - a volume renumber keeps the presentation cursor while a replaced file still starts unread
+++ echo exit=0
+exit=0

@@ -1,0 +1,15 @@
+# base 7da4c362 bin/ with this PR's tests
+not ok - a poll whose only change is a renumbered volume failed validation: 
+exit=1
+not ok - a volume renumber replayed already-presented history: UNREAD STATUS (new since last drain, not re-printed after this presentation):
+remount note: settled history before the reboot
+remount note: first event after the reboot
+exit=1
+not ok - relaunch of a task with an armed merge poll should succeed
+warning: /tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/home/data/rl47/launch-brief.md records no ship branch; defaulting to legacy branch fm/rl47
+warning: /tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/home/data/rl47/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: spawn refused for rl47: cannot determine whether /tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/proj shares firstmate's history (the code root /tmp/tmp.Semf7l36Xl has no readable history, or a shallow clone shares no root commit); fetch full history (git fetch --unshallow) before dispatching publishing work
+error: to let this home publish to path:/tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/proj, write 'maintainer path:/tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/proj' into /tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/home/config/firstmate-role (docs/configuration.md "Firstmate role"), or pass --upstream-consent path:/tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/proj for this one task with the captain's explicit approval
+error: the replacement agent for rl47 could not be launched on claude
+error: rl47's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-control-relaunch.Lg2nBm/armed-poll-6494/wt: expected exit 0, got 1
+exit=1
