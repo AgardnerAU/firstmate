@@ -1,0 +1,85 @@
+=== branch head 9c413906: fm-teardown.sh from /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M5Y24C05QHEZ4FD11ZY34NY5 ===
+--- records ---
+# dupwt.meta
+window=firstmate:fm-dupwt
+endpoint_task_id=dupwt
+worktree=
+worktree=
+project=$LAB/projects/proj
+kind=ship
+mode=no-mistakes
+branch=fm/dupwt
+# emptywt.meta
+window=firstmate:fm-emptywt
+endpoint_task_id=emptywt
+worktree=
+project=$LAB/projects/proj
+kind=ship
+mode=no-mistakes
+branch=fm/emptywt
+# gonewt.meta
+window=firstmate:fm-gonewt
+endpoint_task_id=gonewt
+worktree=$LAB/wt-gonewt
+project=$LAB/projects/proj
+kind=ship
+mode=no-mistakes
+branch=fm/gonewt
+# nowt-unpushed.meta
+window=firstmate:fm-nowt-unpushed
+endpoint_task_id=nowt-unpushed
+project=$LAB/projects/proj
+kind=ship
+mode=no-mistakes
+branch=fm/nowt-unpushed
+
+$ fm-teardown.sh emptywt
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  4 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+warning: task emptywt's record names no worktree, so there is no copy to inspect, reset, or return; only emptywt's own records-only cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+proj: already current
+teardown emptywt complete (window firstmate:fm-emptywt; no worktree recorded, records-only cleanup)
+Backlog: emptywt just finished (this home keeps no markdown backlog at $LAB/data/backlog.md). Update $LAB/data/backlog.md - move emptywt to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0] record: removed; window: gone
+
+$ fm-teardown.sh gonewt
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+proj: already current
+teardown gonewt complete (window firstmate:fm-gonewt, worktree $LAB/wt-gonewt)
+Backlog: gonewt just finished (this home keeps no markdown backlog at $LAB/data/backlog.md). Update $LAB/data/backlog.md - move gonewt to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0] record: removed; window: gone
+
+$ fm-teardown.sh nowt-unpushed
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task nowt-unpushed's record names no worktree, so there is no copy to inspect, reset, or return; only nowt-unpushed's own records-only cleanup runs.
+REFUSED: task nowt-unpushed has no worktree of its own to inspect, and its recorded work cannot be proven landed or pushed.
+commits on fm/nowt-unpushed not on any remote:
+b18e397 work for nowt-unpushed
+recorded PR: none (not proven merged)
+Push the branch, land its PR, or get the captain's explicit OK to discard, then --force.
+[exit 1] record: present; window: alive
+
+$ fm-teardown.sh nowt-unpushed --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+warning: task nowt-unpushed's record names no worktree, so there is no copy to inspect, reset, or return; only nowt-unpushed's own records-only cleanup runs.
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+proj: already current
+teardown nowt-unpushed complete (window firstmate:fm-nowt-unpushed; no worktree recorded, records-only cleanup)
+Backlog: nowt-unpushed just finished (this home keeps no markdown backlog at $LAB/data/backlog.md). Update $LAB/data/backlog.md - move nowt-unpushed to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+[exit 0] record: removed; window: gone
+
+$ fm-teardown.sh dupwt
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+REFUSED: task dupwt has a missing, empty, or ambiguous worktree identity; preserving task state.
+[exit 1] record: present; window: alive
