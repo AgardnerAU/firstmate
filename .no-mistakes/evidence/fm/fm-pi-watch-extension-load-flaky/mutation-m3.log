@@ -1,0 +1,11 @@
+### mutation m3 (diagnostic echo added to expect_code in the disposable copy only)
+node diagnostic: file:///tmp/fm-mut.K4EjKc/m3/[eval1]:37
+if (rowsAtPrompt !== 2) throw new Error(`wake arrived after an overlapping retry (${rowsAtPrompt} arm rows)`);
+                              ^
+
+Error: wake arrived after an overlapping retry (0 arm rows)
+    at file:///tmp/fm-mut.K4EjKc/m3/[eval1]:37:31
+
+Node.js v24.19.0
+not ok - Pi must fall back without overlapping an unretired successor: expected exit 0, got 1
+exit=1 seconds=139

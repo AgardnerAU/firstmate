@@ -1,0 +1,7 @@
+ATTEMPT kind=actionable attempt=1 status=0
+ATTEMPT kind=non-actionable attempt=1 status=0
+ok - Pi late unretired closes resume classified supervision
+ATTEMPT kind=actionable attempt=1 status=0
+ATTEMPT kind=non-actionable attempt=1 status=0
+ok - OpenCode late unretired closes resume classified supervision
+ok - Pi suite leaves no orphaned process from its temporary root

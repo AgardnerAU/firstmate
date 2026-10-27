@@ -59,11 +59,5 @@ ok - OpenCode watcher plugin runs the supervision host on an opted-in home and r
 ok - OpenCode pre-ready actionable close preserves its successor
 ok - OpenCode hung successor falls back to one typed actionable wake
 ok - OpenCode unretired successor falls back without an overlapping retry
-ok - OpenCode late unretired closes resume classified supervision
-ok - OpenCode clean empty close triggers a bounded continuity retry
-ok - OpenCode established clean closes stop at the configured retry limit
-ok - OpenCode close handler verifies session-lock ownership before successor launch
-ok - OpenCode watcher plugin coordinates with the turn-end guard
-ok - OpenCode healthy arm output does not suppress the turn-end guard
-ok - OpenCode turn-end guard survives an encoder that never reads stdin
-ok - Pi suite leaves no orphaned process from its temporary root
+not ok - OpenCode late non-actionable close must remain supervised after fallback: expected exit 0, got 1
+exit=1 seconds=563

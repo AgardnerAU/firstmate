@@ -1,0 +1,11 @@
+### mutation m1 (diagnostic echo added to expect_code in the disposable copy only)
+node diagnostic: file:///tmp/fm-mut.K4EjKc/m1/[eval1]:44
+if (spawnsAtPrompt !== 4) throw new Error(`expected one successor plus two retries before the wake, got ${spawnsAtPrompt} arm spawns`);
+                                ^
+
+Error: expected one successor plus two retries before the wake, got 3 arm spawns
+    at file:///tmp/fm-mut.K4EjKc/m1/[eval1]:44:33
+
+Node.js v24.19.0
+not ok - Pi must deliver the actionable wake after bounded hung-successor recovery: expected exit 0, got 1
+exit=1 seconds=11

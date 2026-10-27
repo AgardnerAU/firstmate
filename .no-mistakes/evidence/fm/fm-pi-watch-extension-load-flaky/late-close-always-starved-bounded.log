@@ -1,0 +1,10 @@
+ATTEMPT kind=actionable attempt=1 status=75
+ATTEMPT kind=actionable attempt=2 status=75
+ATTEMPT kind=actionable attempt=3 status=75
+ATTEMPT kind=actionable attempt=4 status=75
+ATTEMPT kind=actionable attempt=5 status=75
+not ok - Pi late actionable close must remain supervised after fallback: expected exit 0, got 75
+
+real	0m12.109s
+user	0m2.275s
+sys	0m1.449s

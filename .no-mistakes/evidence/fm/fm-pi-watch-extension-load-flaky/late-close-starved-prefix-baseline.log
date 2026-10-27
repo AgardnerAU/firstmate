@@ -1,0 +1,5 @@
+not ok - Pi late actionable close must remain supervised after fallback: expected exit 0, got 1
+
+real	2m0.458s
+user	0m1.425s
+sys	0m0.532s
