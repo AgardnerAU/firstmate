@@ -1,0 +1,4 @@
+ok - register-extension and reconcile of an unhandled extension result take their locks in one order
+
+all extension-binding tests passed
+lifecycle-order run 2 exit=0 elapsed=60s load=17.38 14.06 7.62 19/3325 3824745

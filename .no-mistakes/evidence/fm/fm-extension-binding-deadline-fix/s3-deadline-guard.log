@@ -1,0 +1,17 @@
+== FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=120 segment=coordinator
+ok - the section coordinator propagates ordered failures and bounded cleanup
+
+all coordinator tests passed
+exit=0
+== FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=121 segment=coordinator
+ok - unknown extension conformance section selectors fail before setup
+not ok - the coordinator probe did not start its waiting child
+exit=1
+== FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=0 segment=coordinator
+ok - unknown extension conformance section selectors fail before setup
+not ok - the coordinator probe did not start its waiting child
+exit=1
+== FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=abc segment=coordinator
+ok - unknown extension conformance section selectors fail before setup
+not ok - the coordinator probe did not start its waiting child
+exit=1

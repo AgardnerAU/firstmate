@@ -1,0 +1,15 @@
+21.93 15.55 15.25 17/2977 1904314
+ok - unknown extension conformance section selectors fail before setup
+tests/fm-extension-binding.test.sh: line 410: 1969100 Killed                  FM_EXTENSION_BINDING_SECTION_CHILD=1 FM_EXTENSION_BINDING_SEGMENT="$section" bash "$0"
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-backend.sh: No such file or directory
+ok - the section coordinator propagates ordered failures and bounded cleanup
+not-autohandled: example-file (left for the handler; still unacknowledged)
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-backend.sh: No such file or directory
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.ShbkxC/remote-root/bin/fm-backend.sh: No such file or directory
+not ok - an isolated extension conformance section failed
+override34 rc=1 elapsed=116 loadavg=22.96 17.50 15.97 21/3005 1999197
+not-autohandled: flow-source (left for the handler; still unacknowledged)
+not-autohandled: remote-source (left for the handler; still unacknowledged)

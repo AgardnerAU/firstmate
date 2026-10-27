@@ -1,0 +1,35 @@
+hogs: 12 busy loops pinned to cpus 0,1 together with the suite
+env: FM_X=2
+uptime before:  07:34:55 up 29 days, 16:44,  6 users,  load average: 14.38, 15.18, 12.20
+ok - unknown extension conformance section selectors fail before setup
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-backend.sh: No such file or directory
+ok - the section coordinator propagates ordered failures and bounded cleanup
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-backend.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-backend.sh: No such file or directory
+not-autohandled: example-file (left for the handler; still unacknowledged)
+not-autohandled: flow-source (left for the handler; still unacknowledged)
+ok - the shipped file-signal package is a runnable end-to-end external adapter
+not-autohandled: remote-source (left for the handler; still unacknowledged)
+ok - one external adapter registers, invokes, captures unhandled evidence, classifies, and terminally retires end to end
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-backend.sh: No such file or directory
+ok - register-extension and reconcile of an unhandled extension result take their locks in one order
+
+all extension-binding tests passed
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.mzmvem/remote-root/bin/fm-backend.sh: No such file or directory
+ok - serialized remote binding crosses fm-on through addressed-home capture and retirement
+
+all extension-binding tests passed
+not-autohandled: example-symlinked (left for the handler; still unacknowledged)
+ok - a home reached through a symlinked ancestor captures external evidence normally
+ok - inner result.silent host crash releases the parent lifecycle lock before terminal retry
+ok - handshake execution rejects and reaps foreground descendants
+
+all extension-binding tests passed
+not ok - an isolated extension conformance section failed
+uptime after:  07:38:19 up 29 days, 16:47,  5 users,  load average: 28.14, 21.81, 15.36
+rc=1 elapsed=204s

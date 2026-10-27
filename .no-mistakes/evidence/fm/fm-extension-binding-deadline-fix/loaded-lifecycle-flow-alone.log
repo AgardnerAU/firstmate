@@ -1,0 +1,11 @@
+hogs: 12 busy loops pinned to cpus 0,1 together with the suite
+env: FM_EXTENSION_BINDING_SEGMENT=lifecycle-flow
+uptime before:  07:39:23 up 29 days, 16:49,  6 users,  load average: 13.42, 18.65, 14.70
+not-autohandled: flow-source (left for the handler; still unacknowledged)
+ok - one external adapter registers, invokes, captures unhandled evidence, classifies, and terminally retires end to end
+ok - inner result.silent host crash releases the parent lifecycle lock before terminal retry
+ok - local binding retirement requires its exact identity and disables invocation
+
+all extension-binding tests passed
+uptime after:  07:41:37 up 29 days, 16:51,  6 users,  load average: 20.51, 19.70, 15.64
+rc=0 elapsed=134s

@@ -1,0 +1,5 @@
+FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=121 -> rc=1 elapsed=2s; last line: not ok - the coordinator probe did not start its waiting child
+FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=0 -> rc=1 elapsed=2s; last line: not ok - the coordinator probe did not start its waiting child
+FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=abc -> rc=1 elapsed=3s; last line: not ok - the coordinator probe did not start its waiting child
+FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=120 -> rc=0 elapsed=19s; last line: all extension-binding tests passed
+FM_EXTENSION_BINDING_SEGMENT=coordinator -> rc=0 elapsed=8s; ok - unknown extension conformance section selectors fail before setup|ok - the section coordinator propagates ordered failures and bounded cleanup|all coordinator tests passed|

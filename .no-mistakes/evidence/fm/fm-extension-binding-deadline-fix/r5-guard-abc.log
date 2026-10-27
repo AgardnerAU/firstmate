@@ -1,0 +1,3 @@
+ok - unknown extension conformance section selectors fail before setup
+not ok - the coordinator probe did not start its waiting child
+v=abc rc=1 elapsed=8

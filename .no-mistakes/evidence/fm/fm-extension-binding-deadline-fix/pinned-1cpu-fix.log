@@ -1,0 +1,7 @@
+=== fix (default deadline 120 s), suite pinned to CPU 0 with 4 competing CPU-0 busy loops; host loadavg: 7.46 3.15 1.67 4/3455 3345729
+
+all extension-binding tests passed
+ok - independent extension conformance sections complete through isolated public homes
+
+all extension-binding tests passed
+rc=0 elapsed=99s

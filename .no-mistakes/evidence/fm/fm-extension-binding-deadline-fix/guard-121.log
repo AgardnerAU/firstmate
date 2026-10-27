@@ -1,0 +1,4 @@
+FM_EXTENSION_BINDING_COORDINATOR_TIMEOUT_SECONDS=121
+ok - unknown extension conformance section selectors fail before setup
+not ok - the coordinator probe did not start its waiting child
+rc=1 elapsed=9s

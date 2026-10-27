@@ -1,0 +1,7 @@
+=== base (default deadline 34 s), suite pinned to CPU 0 with 4 competing CPU-0 busy loops; host loadavg: 2.42 1.74 1.17 10/3294 3325888
+/tmp/fm-extension-binding.deMO7S/remote-root/bin/fm-procevent.sh: line 257: /tmp/fm-extension-binding.deMO7S/remote-root/bin/fm-task-inbox-lib.sh: No such file or directory
+/tmp/fm-extension-binding.deMO7S/remote-root/bin/fm-procevent.sh: line 259: /tmp/fm-extension-binding.deMO7S/remote-root/bin/fm-backend.sh: No such file or directory
+not-autohandled: flow-source (left for the handler; still unacknowledged)
+tests/.base-extension-binding.test.sh: line 66: 3344016 Killed                  FM_HOME="$H_ORDER" "$PROCEVENT" register-extension ext-lock-order order-source --config-ref no-result > "$TMP_ROOT/lock-order-register.out" 2>&1
+not ok - an isolated extension conformance section failed
+rc=1 elapsed=37s

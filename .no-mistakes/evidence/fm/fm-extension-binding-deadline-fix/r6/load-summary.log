@@ -1,0 +1,7 @@
+== default-1 start loadavg=10.90 10.18 12.94 16/3158 2242640 nproc(pinned)=2
+== default-1 rc=0 elapsed=199s loadavg=21.91 15.68 14.54 20/3142 2409534 last: all extension-binding tests passed
+== override-34 start loadavg=21.91 15.68 14.54 17/3143 2409539 nproc(pinned)=2
+== override-34 rc=1 elapsed=139s loadavg=21.38 17.08 15.18 20/3084 2515901 last: not-autohandled: flow-source (left for the handler; still unacknowledged)
+== default-2 start loadavg=21.38 17.08 15.18 20/3083 2515907 nproc(pinned)=2
+== default-2 rc=0 elapsed=196s loadavg=21.00 18.97 16.28 16/3065 2681869 last: all extension-binding tests passed
+DONE
