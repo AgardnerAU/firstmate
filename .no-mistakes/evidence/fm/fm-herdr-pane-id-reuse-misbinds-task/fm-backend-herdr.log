@@ -17,6 +17,7 @@ ok - herdr stale registration: a registered agent with a live Pi foreground proc
 ok - herdr stale registration: only a shell-only pane demotes a registration
 ok - herdr stale registration: a transient prompt helper settles into stale-agent instead of reading live
 ok - herdr stale registration: an exhausted settle window still reads a non-shell foreground as live
+Terminated
 ok - herdr stale registration: an agent process outside the foreground group still counts as alive
 Terminated
 ok - herdr stale registration: the descendant walk reads a spaced executable path whole
@@ -99,9 +100,9 @@ ok - herdr presentation cleanup: an ambiguous workspace layout falls back to the
 ok - herdr presentation cleanup: a failed repositioning move falls back to the plain close with a warning
 ok - herdr presentation cleanup: a pane with a live foreground process falls back to the plain close
 ok - herdr presentation cleanup: a transient prompt helper settles into the pane-death path instead of the plain close
-tests/fm-backend-herdr.test.sh: line 2708: 2546375 Killed                  bash -c 'trap "" HUP; sleep 300'
+tests/fm-backend-herdr.test.sh: line 2708: 498059 Killed                  bash -c 'trap "" HUP; sleep 300'
 ok - herdr presentation cleanup: a SIGHUP-surviving shell is escalated to SIGKILL before giving up
-tests/fm-backend-herdr.test.sh: line 2746: 2550507 Killed                  bash -c 'trap "" HUP; sleep 300'
+tests/fm-backend-herdr.test.sh: line 2746: 498446 Killed                  bash -c 'trap "" HUP; sleep 300'
 ok - herdr presentation cleanup: a failed pane-death close falls back to the plain close
 ok - herdr presentation cleanup: the exact-tab restore remains the backstop behind the pane-death close
 ok - herdr presentation cleanup: SIGKILL never reaches a pid the exact pane no longer owns
