@@ -2677,11 +2677,6 @@ test_pi_late_unretired_close_resumes_supervision() {
   for kind in actionable non-actionable; do
     repo="$TMP_ROOT/pi-late-$kind-root"
     home="$TMP_ROOT/pi-late-$kind-home"
-    log="$TMP_ROOT/pi-late-$kind.log"
-    ready="$TMP_ROOT/pi-late-$kind.ready"
-    retired="$TMP_ROOT/pi-late-$kind.retired"
-    release="$TMP_ROOT/pi-late-$kind.release"
-    stop="$TMP_ROOT/pi-late-$kind.stop"
     mkdir -p "$repo/bin" "$home/state" "$home/config"
     install_pi_watch_extension_fixture "$repo"
     plugin="$repo/.pi/extensions/fm-primary-pi-watch.ts"
@@ -2706,9 +2701,32 @@ trap 'exit 0' TERM INT
 while [ ! -e "$FM_STOP_FILE" ] && [ -e "$0" ]; do sleep 0.02; done
 SH
     chmod +x "$repo/bin/fm-watch-arm.sh"
+    for _attempt in 1 2 3 4 5; do
+      # A stub left from a rerun attempt can still be starting, so each
+      # attempt gets its own files.
+      log="$TMP_ROOT/pi-late-$kind-$_attempt.log"
+      ready="$TMP_ROOT/pi-late-$kind-$_attempt.ready"
+      retired="$TMP_ROOT/pi-late-$kind-$_attempt.retired"
+      release="$TMP_ROOT/pi-late-$kind-$_attempt.release"
+      stop="$TMP_ROOT/pi-late-$kind-$_attempt.stop"
+      rm -f "$log" "$ready" "$retired" "$release" "$stop"
     out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_UNRETIRED_READY_FILE="$ready" FM_UNRETIRED_RETIRE_FILE="$retired" FM_RELEASE_FILE="$release" FM_STOP_FILE="$stop" FM_LATE_KIND="$kind" FM_PI_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_ARM_RETIRE_TIMEOUT_MS=20 FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node --input-type=module 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+
+// Record each arm child so a successor that a starved login shell lost to the
+// readiness SIGTERM, before it could install its TERM trap, can be told apart
+// from the unretired path under test.
+const originalSpawn = childProcess.spawn;
+const armChildren = [];
+childProcess.spawn = function(command, args, ...rest) {
+  const child = originalSpawn.call(this, command, args, ...rest);
+  if (command === "bash" && Array.isArray(args) && String(args.at(-1)).endsWith(" --restart")) armChildren.push(child);
+  return child;
+};
+syncBuiltinESMExports();
 
 let tool = null;
 const prompts = [];
@@ -2740,11 +2758,15 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("tool-call-late-close", {}, undefined, undefined, {});
+await waitFor(() => prompts.length >= 1, "original fallback was not delivered");
+// The successor ignores TERM once its trap is in place, so a successor killed
+// by SIGTERM never wrote its ready file or reached the unretired path, and
+// exit 75 asks the shell to rerun the scenario.
 await waitFor(
-  () => existsSync(process.env.FM_UNRETIRED_READY_FILE),
+  () => existsSync(process.env.FM_UNRETIRED_READY_FILE) || armChildren[1]?.signalCode === "SIGTERM",
   "unretired successor did not enter its retirement wait",
 );
-await waitFor(() => prompts.length >= 1, "original fallback was not delivered");
+if (!existsSync(process.env.FM_UNRETIRED_READY_FILE)) process.exit(75);
 await waitFor(
   () => existsSync(process.env.FM_UNRETIRED_RETIRE_FILE),
   "unretired successor was not asked to retire before fallback",
@@ -2767,6 +2789,8 @@ await new Promise((resolve) => setTimeout(resolve, 80));
 EOF
 )
     status=$?
+      [ "$status" -eq 75 ] || break
+    done
     expect_code 0 "$status" "Pi late $kind close must remain supervised after fallback"
     [ -z "$out" ] || fail "Pi late-$kind test printed output: $out"
   done
@@ -5332,11 +5356,6 @@ test_opencode_late_unretired_close_resumes_supervision() {
     plugin="$ROOT/.opencode/plugins/fm-primary-watch-arm.js"
     repo="$TMP_ROOT/opencode-late-$kind-root"
     home="$TMP_ROOT/opencode-late-$kind-home"
-    log="$TMP_ROOT/opencode-late-$kind.log"
-    ready="$TMP_ROOT/opencode-late-$kind.ready"
-    retired="$TMP_ROOT/opencode-late-$kind.retired"
-    release="$TMP_ROOT/opencode-late-$kind.release"
-    stop="$TMP_ROOT/opencode-late-$kind.stop"
     mkdir -p "$repo/bin" "$home/state" "$home/config"
     git init -q "$repo"
     : > "$repo/AGENTS.md"
@@ -5363,9 +5382,32 @@ trap 'exit 0' TERM INT
 while [ ! -e "$FM_STOP_FILE" ] && [ -e "$0" ]; do sleep 0.02; done
 SH
     chmod +x "$repo/bin/fm-watch-arm.sh"
+    for _attempt in 1 2 3 4 5; do
+      # A stub left from a rerun attempt can still be starting, so each
+      # attempt gets its own files.
+      log="$TMP_ROOT/opencode-late-$kind-$_attempt.log"
+      ready="$TMP_ROOT/opencode-late-$kind-$_attempt.ready"
+      retired="$TMP_ROOT/opencode-late-$kind-$_attempt.retired"
+      release="$TMP_ROOT/opencode-late-$kind-$_attempt.release"
+      stop="$TMP_ROOT/opencode-late-$kind-$_attempt.stop"
+      rm -f "$log" "$ready" "$retired" "$release" "$stop"
     out=$(PLUGIN="$plugin" WORKTREE="$repo" FM_HOME="$home" FM_ARM_LOG="$log" FM_UNRETIRED_READY_FILE="$ready" FM_UNRETIRED_RETIRE_FILE="$retired" FM_RELEASE_FILE="$release" FM_STOP_FILE="$stop" FM_LATE_KIND="$kind" FM_OPENCODE_ARM_READY_TIMEOUT_MS="$ARM_READY_TIMEOUT_MS" FM_WATCH_ARM_RETIRE_TIMEOUT_MS=20 FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 FM_WATCH_REARM_RETRY_LIMIT=2 node 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+
+// Record each arm child so a successor that a starved login shell lost to the
+// readiness SIGTERM, before it could install its TERM trap, can be told apart
+// from the unretired path under test.
+const originalSpawn = childProcess.spawn;
+const armChildren = [];
+childProcess.spawn = function(command, args, ...rest) {
+  const child = originalSpawn.call(this, command, args, ...rest);
+  if (command === "bash" && Array.isArray(args) && String(args.at(-1)).endsWith(" --restart")) armChildren.push(child);
+  return child;
+};
+syncBuiltinESMExports();
 
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 const prompts = [];
@@ -5393,11 +5435,15 @@ const hooks = await mod.FmPrimaryWatchArm({
 });
 writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 await hooks.event({ event: { type: "session.idle", properties: { sessionID: "session-test" } } });
+await waitFor(() => prompts.length >= 1, "original fallback was not delivered");
+// The successor ignores TERM once its trap is in place, so a successor killed
+// by SIGTERM never wrote its ready file or reached the unretired path, and
+// exit 75 asks the shell to rerun the scenario.
 await waitFor(
-  () => existsSync(process.env.FM_UNRETIRED_READY_FILE),
+  () => existsSync(process.env.FM_UNRETIRED_READY_FILE) || armChildren[1]?.signalCode === "SIGTERM",
   "unretired successor did not enter its retirement wait",
 );
-await waitFor(() => prompts.length >= 1, "original fallback was not delivered");
+if (!existsSync(process.env.FM_UNRETIRED_READY_FILE)) process.exit(75);
 await waitFor(
   () => existsSync(process.env.FM_UNRETIRED_RETIRE_FILE),
   "unretired successor was not asked to retire before fallback",
@@ -5420,6 +5466,8 @@ await new Promise((resolve) => setTimeout(resolve, 80));
 EOF
 )
     status=$?
+      [ "$status" -eq 75 ] || break
+    done
     expect_code 0 "$status" "OpenCode late $kind close must remain supervised after fallback"
     [ -z "$out" ] || fail "OpenCode late-$kind test printed output: $out"
   done
