@@ -1,0 +1,3 @@
+== base-commit guard with .tmp-ax/.tasks.toml tracked
+tracked=[]
+MISSED (bug reproduced)

@@ -1,0 +1,42 @@
+== allow-listed only (bin/a, README.md)
+exit=0
+== tracked extra: [.tmp-ax/.tasks.toml]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.tmp-ax/.tasks.toml
+exit=1
+== tracked extra: [data/x]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+data/x
+exit=1
+== tracked extra: [state/y]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+state/y
+exit=1
+== tracked extra: [config/z]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+config/z
+exit=1
+== tracked extra: [projects/p]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+projects/p
+exit=1
+== tracked extra: [.no-mistakes/z]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.no-mistakes/z
+exit=1
+== tracked extra: [.tmp-é/x]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+.tmp-é/x
+exit=1
+== tracked extra: [ lead/x]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+ lead/x
+exit=1
+== tracked extra: [trail /x]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+trail /x
+exit=1
+== tracked extra: [stray.txt]
+::error::Tracked paths outside the root allow-list (personal fleet or scratch paths?):
+stray.txt
+exit=1
