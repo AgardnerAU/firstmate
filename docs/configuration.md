@@ -72,6 +72,7 @@ Other transient consumers retain their existing shell-relative behavior.
 | zellij | `FM_HOME` determines the readable home prefix in visible tab titles, but does not split containers; use `FM_ZELLIJ_SESSION` for a separate session; the full home label also includes a short hash of the resolved `FM_ROOT` path. |
 | cmux | `FM_HOME` determines the default config path and readable home prefix in workspace titles; `FM_CONFIG_OVERRIDE` overrides where `config/cmux-socket-password` is read; the full home label also includes a short hash of the resolved `FM_ROOT` path; there is no per-home container split. |
 | tern | `FM_HOME` determines the readable home prefix used with the shared home-tag session label (via `bin/fm-backend-hometag-lib.sh`); the full home label also includes a short hash of the resolved `FM_ROOT` path. |
+| hc | `FM_HOME` determines the home tag in each task terminal's `firstmate.home` label and the default Herdr.app space (via `bin/fm-backend-hometag-lib.sh`); `HC_SESSION` selects the core. |
 
 ## Contribution review bots (config/contribution-review-bots)
 
@@ -548,8 +549,9 @@ For spawn-capable adapters, the runtime session-provider backend controls where 
 | `rex` | Experimental; no dedicated real-backend CI lane | [`docs/rex-backend.md`](rex-backend.md) |
 | `t3code` | Experimental; no dedicated real-backend CI lane | [`docs/t3code-backend.md`](t3code-backend.md) |
 | `tern` | Experimental; no dedicated real-backend CI lane | [`docs/tern-backend.md`](tern-backend.md) |
+| `hc` | Experimental; no dedicated real-backend CI lane | [`docs/hc-backend.md`](hc-backend.md) |
 
-Treehouse remains the worktree provider for tmux, herdr, zellij, cmux, paseo, rex, t3code, and tern, since herdr, zellij, cmux, paseo, rex, t3code, and tern are session providers only; Orca provides both the task worktree and terminal endpoint.
+Treehouse remains the worktree provider for tmux, herdr, zellij, cmux, paseo, rex, t3code, tern, and hc, since herdr, zellij, cmux, paseo, rex, t3code, tern, and hc are session providers only; Orca provides both the task worktree and terminal endpoint.
 
 ### Backend selection order
 
@@ -566,13 +568,13 @@ If more than one runtime marker is present, detection resolves innermost-first: 
 See [`docs/cmux-backend.md`](cmux-backend.md#runtime-detection) for why cmux can be selected when `CMUX_WORKSPACE_ID` is absent, and [`docs/rex-backend.md`](rex-backend.md#auto-detection) for why a nested tmux or Herdr inside a Rex block is never read as Rex.
 
 Auto-detected Herdr and Rex stay silent like tmux, while auto-detected cmux prints a stderr notice naming `config/backend` and `--backend tmux` because cmux remains experimental.
-T3 Code, Zellij, Orca, Paseo, and tern are never auto-detected; select them by putting the name in a local `config/backend` file, by exporting `FM_BACKEND=<name>`, or by telling the first mate in chat.
-Paseo and tern stay explicit-only because their runtime markers leak into every descendant process, so they cannot stand for a selection (see [`docs/paseo-backend.md`](paseo-backend.md#selection-is-explicit) and [`docs/tern-backend.md`](tern-backend.md#selection-is-explicit)).
+T3 Code, Zellij, Orca, Paseo, tern, and hc are never auto-detected; select them by putting the name in a local `config/backend` file, by exporting `FM_BACKEND=<name>`, or by telling the first mate in chat.
+Paseo, tern, and hc stay explicit-only because their runtime markers leak into every descendant process, so they cannot stand for a selection (see [`docs/paseo-backend.md`](paseo-backend.md#selection-is-explicit), [`docs/tern-backend.md`](tern-backend.md#selection-is-explicit), and [`docs/hc-backend.md`](hc-backend.md#selection-is-explicit)).
 
 ### Accepted backends and secondmate limits
 
-Any value other than `tmux`, `herdr`, `zellij`, `orca`, `cmux`, `paseo`, `rex`, `t3code`, or `tern` is rejected until another adapter is implemented and verified.
-`fm-spawn.sh` accepts `tmux`, `herdr`, `zellij`, `orca`, `cmux`, `paseo`, `rex`, `t3code`, and `tern` for ship and scout tasks; `backend=orca`, `backend=cmux`, `backend=paseo`, and `backend=tern` all still refuse `--secondmate` until secondmate launch semantics are designed for each, while `backend=t3code` supports secondmates and runs only the `claude` and `codex` harnesses.
+Any value other than `tmux`, `herdr`, `zellij`, `orca`, `cmux`, `paseo`, `rex`, `t3code`, `tern`, or `hc` is rejected until another adapter is implemented and verified.
+`fm-spawn.sh` accepts `tmux`, `herdr`, `zellij`, `orca`, `cmux`, `paseo`, `rex`, `t3code`, `tern`, and `hc` for ship and scout tasks; `backend=orca`, `backend=cmux`, `backend=paseo`, `backend=tern`, and `backend=hc` all still refuse `--secondmate` until secondmate launch semantics are designed for each, while `backend=t3code` supports secondmates and runs only the `claude` and `codex` harnesses.
 
 `codex-app` is not an accepted runtime backend yet; [`docs/codex-app-backend.md`](codex-app-backend.md) owns the Codex App boundary.
 
@@ -595,6 +597,7 @@ The compatibility helper `fm_backend_agent_alive` continues to collapse those de
 
 - A rex spawn additionally gates both the `rex` CLI and the running Rex server at API revision 5 or newer and requires `jq` (see [`docs/rex-backend.md`](rex-backend.md) "Setup"), refusing loudly on a missing CLI, an older API revision, or a server that cannot be reached or started.
 - A tern spawn requires `tern` and `jq`, refusing loudly when either is missing (see [`docs/tern-backend.md`](tern-backend.md) "Setup"); bootstrap reports a missing `tern` as `MISSING_MANUAL` with `https://stencil.so/tern`.
+- An hc spawn requires `hc` and `jq` and a core that `hc server status` can reach or start (see [`docs/hc-backend.md`](hc-backend.md) "Setup").
 
 A backend spawn refusal from a missing dependency, version gate, or unauthenticated socket is terminal for that selected backend; firstmate surfaces it as a blocker instead of silently retrying another backend.
 
@@ -616,6 +619,7 @@ Task meta records `backend=` only for a non-default backend; an absent `backend=
 - A t3code task additionally records `t3_thread_id=` and `t3_project_id=`, with `window=fm-<id>` kept as the shared firstmate alias.
 
 - A tern task additionally records `tern_session_id=`, `tern_tab_id=`, and `tern_block_id=`.
+- An hc task additionally records `hc_session=` and `hc_terminal=`, with `window=<hc_session>:<hc_terminal>`.
 
 ### Task selectors
 
@@ -1608,6 +1612,7 @@ SSH_AUTH_SOCK
 
 Firstmate retains basic home, executable search, terminal, locale, temporary-directory, and backend routing variables, plus its explicit launch assignments, its ship and scout task marker, the compact-adviser kill switch described below, and enabled task trace.
 The allowlist floor also retains Tern block markers `TERN_IDENTITY`, `TERN_PANE`, `TERN_PANE_SOCKET`, `TERN_WINDOW_KEY`, and `TERN_WINDOW_SOCKET` so a worker's own Tern/TSP integration survives `env -i`.
+It retains `HC_SESSION`, `HC_TERMINAL_ID`, `HC_TERMINAL_SOCKET`, and `HC_SCOPE` the same way, so a worker in an hc terminal still reports its status to herdr-core.
 [`fm-spawn.sh --help`](../bin/fm-spawn.sh) owns the exact retained names and parsing mechanics.
 
 Other ambient names must be listed explicitly, including custom credential-store locations, proxy settings, and certificate overrides when required by the selected tools.

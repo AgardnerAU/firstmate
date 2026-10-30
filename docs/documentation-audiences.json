@@ -35,6 +35,7 @@
     "docs/rex-backend.md",
     "docs/t3code-backend.md",
     "docs/tern-backend.md",
+    "docs/hc-backend.md",
     "docs/remote-secondmates.md"
   ],
   "requiredOwnerPointers": [
@@ -108,6 +109,10 @@
     },
     {
       "source": "docs/tern-backend.md",
+      "target": "docs/verification/runtime-backends.md"
+    },
+    {
+      "source": "docs/hc-backend.md",
       "target": "docs/verification/runtime-backends.md"
     },
     {
@@ -346,6 +351,10 @@
     },
     {
       "path": "docs/tern-backend.md",
+      "audience": "operator-current"
+    },
+    {
+      "path": "docs/hc-backend.md",
       "audience": "operator-current"
     },
     {

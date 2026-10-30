@@ -122,16 +122,16 @@
 #   docs/cmux-backend.md),
 #   then tmux.
 #   Spawn-capable backends are the reference tmux adapter, verified herdr
-#   adapter, and experimental zellij, orca, cmux, paseo, rex, t3code, and tern
-#   adapters. Orca owns both the task worktree and terminal, so ship/scout Orca
-#   spawns do not run treehouse get; cmux, paseo, rex, and tern are session
+#   adapter, and experimental zellij, orca, cmux, paseo, rex, t3code, tern,
+#   and hc adapters. Orca owns both the task worktree and terminal, so ship/scout Orca
+#   spawns do not run treehouse get; cmux, paseo, rex, tern, and hc are session
 #   providers only, exactly like herdr/zellij, so they do. Auto-detected herdr
 #   and rex stay silent like tmux; auto-detected cmux prints a loud stderr
-#   notice; zellij, orca, paseo, t3code, and tern are never auto-detected (the
-#   paseo and tern markers leak into every descendant process).
+#   notice; zellij, orca, paseo, t3code, tern, and hc are never auto-detected
+#   (the paseo, tern, and hc markers leak into every descendant process).
 #   codex-app is not a known backend yet; docs/codex-app-backend.md owns that
 #   blocked backend contract. Default tmux spawns do not write backend= to meta;
-#   absent backend= means tmux. Orca, cmux, paseo, and tern do not support
+#   absent backend= means tmux. Orca, cmux, paseo, tern, and hc do not support
 #   --secondmate spawns.
 #   A rex crewmate or scout opens one tab in the Rex session the launching
 #   firstmate runs in when it runs directly inside Rex, otherwise in its home's
@@ -406,7 +406,8 @@
 #   CMUX_WORKSPACE_ID CMUX_SURFACE_ID CMUX_TAB_ID CMUX_PANEL_ID CMUX_SOCKET_PATH
 #   ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID FM_ZELLIJ_SESSION TERM_PROGRAM
 #   REX_SESSION REX_BLOCK REX_SERVER REX_BIN_DIR TERN_IDENTITY TERN_PANE
-#   TERN_PANE_SOCKET TERN_WINDOW_KEY TERN_WINDOW_SOCKET, plus the task
+#   TERN_PANE_SOCKET TERN_WINDOW_KEY TERN_WINDOW_SOCKET HC_SESSION
+#   HC_TERMINAL_ID HC_TERMINAL_SOCKET HC_SCOPE, plus the task
 #   marker FM_TASK_ID that ship and scout panes receive above, plus the
 #   compact-adviser kill switch COMPACT_ADVISER_DISABLE, which the floor also
 #   pins to 1 with a literal assignment so it survives the cleared environment
@@ -2249,6 +2250,10 @@ if [ "$RELAUNCH" -eq 0 ]; then
   fi
   if [ "$BACKEND" = tern ] && [ "$KIND" = secondmate ]; then
     echo "error: backend=tern does not support --secondmate spawns yet" >&2
+    exit 1
+  fi
+  if [ "$BACKEND" = hc ] && [ "$KIND" = secondmate ]; then
+    echo "error: backend=hc does not support --secondmate spawns yet" >&2
     exit 1
   fi
   fm_backend_runtime_check "$BACKEND" || exit 1
@@ -5069,6 +5074,11 @@ EOF
     fi
     T="$TERN_SESSION_ID:$TERN_BLOCK_ID"
     ;;
+  hc)
+    HC_SES=$(fm_backend_hc_container_ensure) || exit 1
+    HC_TERMINAL=$(fm_backend_hc_create_task "$HC_SES" "$W" "$PROJ_ABS") || exit 1
+    T="$HC_SES:$HC_TERMINAL"
+    ;;
   orca)
     set +e
     ORCA_WT_RAW=$(fm_backend_orca_worktree_create "$PROJ_ABS" "$W")
@@ -5190,6 +5200,7 @@ spawn_send_text_line() { # <target> <text>
   rex) fm_backend_rex_send_text_line "$1" "$2" "$W" ;;
   t3code) fm_backend_t3code_send_literal "$1" "$2" ;;
   tern) fm_backend_tern_send_text_line "$1" "$2" "$W" ;;
+  hc) fm_backend_hc_send_text_line "$1" "$2" "$W" ;;
   esac
 }
 spawn_current_path() { # <target>
@@ -5201,6 +5212,7 @@ spawn_current_path() { # <target>
   paseo) fm_backend_paseo_current_path "$1" "$W" ;;
   rex) fm_backend_rex_current_path "$1" "$W" ;;
   tern) fm_backend_tern_current_path "$1" "$W" ;;
+  hc) fm_backend_hc_current_path "$1" "$W" ;;
   esac
 }
 spawn_send_literal() { # <target> <text>
@@ -5214,8 +5226,13 @@ spawn_send_literal() { # <target> <text>
   rex) fm_backend_rex_send_literal "$1" "$2" "$W" ;;
   t3code) fm_backend_t3code_send_literal "$1" "$2" ;;
   tern) fm_backend_tern_send_literal "$1" "$2" "$W" ;;
+  # hc has no paste without submit, and its keys cannot type the launch line's
+  # `+` or `_`, so the line is pasted and submitted here and the Enter that
+  # follows it is consumed below (docs/hc-backend.md "Limits").
+  hc) fm_backend_hc_send_text_line "$1" "$2" "$W" && SPAWN_HC_LINE_SUBMITTED=1 ;;
   esac
 }
+SPAWN_HC_LINE_SUBMITTED=0
 spawn_send_key() { # <target> <key>
   case "$BACKEND" in
   tmux) fm_backend_tmux_send_key "$1" "$2" ;;
@@ -5227,6 +5244,13 @@ spawn_send_key() { # <target> <key>
   rex) fm_backend_rex_send_key "$1" "$2" "$W" ;;
   t3code) fm_backend_t3code_send_literal "$1" "$2" ;;
   tern) fm_backend_tern_send_key "$1" "$2" "$W" ;;
+  hc)
+    if [ "$2" = Enter ] && [ "$SPAWN_HC_LINE_SUBMITTED" = 1 ]; then
+      SPAWN_HC_LINE_SUBMITTED=0
+    else
+      fm_backend_hc_send_key "$1" "$2" "$W"
+    fi
+    ;;
   esac
 }
 
@@ -6861,7 +6885,7 @@ SPAWN_META_PATH=$SPAWN_META_TMP
 preserve_relaunch_meta() {
   awk -F= '
     BEGIN {
-      split("window endpoint_task_id worktree project harness kind mode yolo branch tasktmp base_branch upstream_consent forge backup_remote backup_prefix model effort opencode_version account account_provider omp_profile busy_gen spawn_gen approval_mode traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id paseo_terminal_id paseo_workspace_id rex_server rex_session_id rex_window_id rex_block_id t3_thread_id t3_project_id tern_session_id tern_tab_id tern_block_id home projects control_relaunch_tx polytoken_session polytoken_port polytoken_credential", keys, " ")
+      split("window endpoint_task_id worktree project harness kind mode yolo branch tasktmp base_branch upstream_consent forge backup_remote backup_prefix model effort opencode_version account account_provider omp_profile busy_gen spawn_gen approval_mode traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id paseo_terminal_id paseo_workspace_id rex_server rex_session_id rex_window_id rex_block_id t3_thread_id t3_project_id tern_session_id tern_tab_id tern_block_id hc_session hc_terminal home projects control_relaunch_tx polytoken_session polytoken_port polytoken_credential", keys, " ")
       for (i in keys) owned[keys[i]] = 1
     }
     !($1 in owned)
@@ -6947,6 +6971,10 @@ preserve_relaunch_meta() {
     echo "tern_session_id=$TERN_SESSION_ID"
     echo "tern_tab_id=$TERN_TAB_ID"
     echo "tern_block_id=$TERN_BLOCK_ID"
+  fi
+  if [ "$BACKEND" = hc ]; then
+    echo "hc_session=$HC_SES"
+    echo "hc_terminal=$HC_TERMINAL"
   fi
   if [ "$KIND" = secondmate ]; then
     echo "home=$PROJ_ABS"
@@ -7435,6 +7463,7 @@ if [ "$LAUNCH_ENV_ENABLED" = 1 ]; then
     CMUX_SOCKET_PATH ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID FM_ZELLIJ_SESSION \
     TERM_PROGRAM REX_SESSION REX_BLOCK REX_SERVER REX_BIN_DIR \
     TERN_IDENTITY TERN_PANE TERN_PANE_SOCKET TERN_WINDOW_KEY TERN_WINDOW_SOCKET \
+    HC_SESSION HC_TERMINAL_ID HC_TERMINAL_SOCKET HC_SCOPE \
     FM_TASK_ID COMPACT_ADVISER_DISABLE LAVISH_AXI_HOST \
     $LAUNCH_ENV_FORWARD_NAMES; do
     if [ "$ORCA_LAUNCH_ENV_ENABLED" = 1 ]; then
