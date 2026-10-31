@@ -1,0 +1,132 @@
+### scenario: stale-failed-newer-live-row   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: paused: waiting on rerun
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "299f9198b3f1a29c4384c1ebb080cb7104070a58"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      running    fm/lab-demo f0f0f0f0  2026-10-31 11:49
+      failed     fm/lab-demo 299f9198  2026-10-31 10:24
+--- $ fm-crew-state.sh crew
+state: unknown · source: run-step · replacement run identity unavailable; run ids: 01LABRUNOLD, replacement unavailable
+--- $ fm-inactive-reconcile.sh scan --startup
+    (exit 0)
+--- wake queue inactive-outcome records:
+    (none queued)
+
+### scenario: same-head-rerun-completed   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: working: shipping lab change
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "e40fa55665cbcd8849f83a19d8958cec52ba0670"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      completed  fm/lab-demo e40fa556  2026-10-31 11:34  https://github.com/o/r/pull/2
+      failed     fm/lab-demo e40fa556  2026-10-31 10:24
+--- $ fm-crew-state.sh crew
+state: done · source: run-step · run completed · pr=https://github.com/o/r/pull/2
+--- $ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=crew state=done pr=https://github.com/o/r/pull/2
+    (exit 0)
+--- wake queue inactive-outcome records:
+    1793418885	1	check	inactive-outcome:8a604a8db9a86a9df805c3377031fdd7	inactive terminal outcome awaiting captain presentation: child=crew state=done pr=https://github.com/o/r/pull/2
+
+### scenario: genuine-current-failure-after-done-word   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: done: PR https://github.com/o/r/pull/9
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "372e607c0f078a4bd8830bf74dd537a32a6044e8"
+      pr: "https://github.com/o/r/pull/9"
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      failed     fm/lab-demo 372e607c  2026-10-31 11:24  https://github.com/o/r/pull/9
+--- $ fm-crew-state.sh crew
+state: failed · source: run-step · run failed · pr=https://github.com/o/r/pull/9
+--- $ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/9
+    (exit 0)
+--- wake queue inactive-outcome records:
+    1793418887	1	check	inactive-outcome:2fc12bab3e611d87b8bab0de379bfffb	inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/9
+
+### scenario: newer-cancelled-row   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: working: shipping lab change
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "a6023bd22d117d9fba6d925530e1a2f75286d418"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      cancelled  fm/lab-demo a6023bd2  2026-10-31 11:34  https://github.com/o/r/pull/3
+      failed     fm/lab-demo a6023bd2  2026-10-31 10:24
+--- $ fm-crew-state.sh crew
+state: unknown · source: run-step · run cancelled: no verdict
+--- $ fm-inactive-reconcile.sh scan --startup
+    (exit 0)
+--- wake queue inactive-outcome records:
+    (none queued)
+
+### scenario: failed-run-aged-out-of-ledger   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: working: shipping lab change
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "7766c9fdbeb72a923e01a74d651b2d1862b74b04"
+      pr: "https://github.com/o/r/pull/9"
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+--- $ fm-crew-state.sh crew
+state: failed · source: run-step · run failed · pr=https://github.com/o/r/pull/9
+--- $ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/9
+    (exit 0)
+--- wake queue inactive-outcome records:
+    1793418890	1	check	inactive-outcome:2fc12bab3e611d87b8bab0de379bfffb	inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/9
+
+### scenario: socket-refusal-over-contradicted-failure   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: blocked: no-mistakes daemon socket connection refused
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "a10655088dc726c0ccdb10cf5954dab56d5917ac"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      completed  fm/lab-demo a1065508  2026-10-31 11:34  https://github.com/o/r/pull/2
+      failed     fm/lab-demo a1065508  2026-10-31 10:24
+--- $ fm-crew-state.sh crew
+state: blocked · source: status-log · no-mistakes daemon socket connection refused · daemon socket down despite attributed run record
+--- $ fm-inactive-reconcile.sh scan --startup
+    (exit 0)
+--- wake queue inactive-outcome records:
+    (none queued)
+

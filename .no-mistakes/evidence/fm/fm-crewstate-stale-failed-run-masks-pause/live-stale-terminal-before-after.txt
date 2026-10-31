@@ -1,0 +1,90 @@
+### scenario: stale-failed-newer-completed-other-head   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: paused: rerun shipped elsewhere
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "047324c491be4c7752dcfb6d7219548d1c8cbc35"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      completed  fm/lab-demo f0f0f0f0  2026-10-31 11:25  https://github.com/o/r/pull/2890
+      failed     fm/lab-demo 047324c4  2026-10-31 10:55
+--- $ fm-crew-state.sh crew
+state: unknown · source: run-step · the newest completed ledger row on this branch cannot be bound to the run failed; current state not provable here
+--- $ fm-inactive-reconcile.sh scan --startup
+    (exit 0)
+--- wake queue inactive-outcome records:
+    (none queued)
+
+### scenario: stale-passed-newer-failed-other-head   (tree: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M681B40RRH4WW47H8013FPTF)
+--- status log: working: shipping lab change
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: completed
+      head: "847d90e04969b5a3f2c5203bdf07028e2cee932a"
+      pr: "https://github.com/o/r/pull/7"
+      findings: none
+    outcome: passed
+--- stub runs ledger:
+      failed     fm/lab-demo f0f0f0f0  2026-10-31 11:25
+      completed  fm/lab-demo 847d90e0  2026-10-31 10:55  https://github.com/o/r/pull/7
+--- $ fm-crew-state.sh crew
+state: unknown · source: run-step · the newest failed ledger row on this branch cannot be bound to the run passed: PR state unknown (unreadable); current state not provable here
+--- $ fm-inactive-reconcile.sh scan --startup
+    (exit 0)
+--- wake queue inactive-outcome records:
+    (none queued)
+
+### scenario: stale-failed-newer-completed-other-head   (tree: /tmp/fm-base.r36aQG)
+--- status log: paused: rerun shipped elsewhere
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: failed
+      head: "f0fc69b3244476c16374ada1f611c863e61f97e6"
+      pr: ""
+      findings: none
+    outcome: failed
+--- stub runs ledger:
+      completed  fm/lab-demo f0f0f0f0  2026-10-31 11:25  https://github.com/o/r/pull/2890
+      failed     fm/lab-demo f0fc69b3  2026-10-31 10:55
+--- $ fm-crew-state.sh crew
+state: failed · source: run-step · run failed
+--- $ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/1
+    (exit 0)
+--- wake queue inactive-outcome records:
+    1793418922	1	check	inactive-outcome:39a409cf1739738f06057a475d726d9b	inactive terminal outcome awaiting captain presentation: child=crew state=failed pr=https://github.com/o/r/pull/1
+
+### scenario: stale-passed-newer-failed-other-head   (tree: /tmp/fm-base.r36aQG)
+--- status log: working: shipping lab change
+--- meta pr=https://github.com/o/r/pull/1 (older recorded task PR)
+--- stub axi status:
+    run:
+      id: "01LABRUNOLD"
+      branch: fm/lab-demo
+      status: completed
+      head: "7337d59d93d9a66fe8d64e60512deede270e61b2"
+      pr: "https://github.com/o/r/pull/7"
+      findings: none
+    outcome: passed
+--- stub runs ledger:
+      failed     fm/lab-demo f0f0f0f0  2026-10-31 11:25
+      completed  fm/lab-demo 7337d59d  2026-10-31 10:55  https://github.com/o/r/pull/7
+--- $ fm-crew-state.sh crew
+state: done · source: run-step · run passed: PR state unknown (unreadable)
+--- $ fm-inactive-reconcile.sh scan --startup
+actionable: inactive terminal outcome awaiting captain presentation: child=crew state=done pr=https://github.com/o/r/pull/1
+    (exit 0)
+--- wake queue inactive-outcome records:
+    1793418924	1	check	inactive-outcome:45cc4c641e04feece7c89c7c1b5eae27	inactive terminal outcome awaiting captain presentation: child=crew state=done pr=https://github.com/o/r/pull/1
+
