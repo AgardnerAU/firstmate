@@ -1,0 +1,146 @@
+# pane before: pi dead=0
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: exit-delivered hold interrupt=not-needed exit-command=delivered agent-state=missing exit=unconfirmed; the agent did not stop within 30s
+error: task hold's stand-down exit reported ''; refusing to publish an intentional no-worker state
+[rc=1]
+# pane after: 
+# record:
+-rw------- 1 fm fm 65 Oct 31 10:12 /tmp/fm-lab.m5ZVTY/state/hold.worker-state
+schema=1
+task_id=hold
+endpoint=fmlab:fm-hold
+state=standing-down
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: task hold's interrupted stand-down reads 'missing'; it remains under ordinary supervision until the endpoint can be reconciled
+[rc=1]
+$ bin/fm-crew-state.sh hold
+state: unknown · source: none · backend target gone: fmlab:fm-hold
+[rc=0]
+## fm/demo-hold
+# --- setup note: first attempt ran pi as the pane's root process, so its exit closed the endpoint (not how fm-spawn launches). Reconcile, then rebuild with a shell pane.
+$ bin/fm-control.sh hold repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+warning: task hold declared no worker but its endpoint could not be proven dead; the declaration was cleared and the task is back under ordinary supervision
+cleared-unproven-endpoint agent-state=missing hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+ls: cannot access '/tmp/fm-lab.m5ZVTY/state/hold.worker-state': No such file or directory
+# pane before: pi dead=0
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+stood-down hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+# pane after: bash dead=0
+# record:
+600 /tmp/fm-lab.m5ZVTY/state/hold.worker-state
+schema=1
+task_id=hold
+endpoint=fmlab:fm-hold
+state=stood-down
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+already-stood-down hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+$ bin/fm-crew-state.sh hold
+state: parked · source: worker-state · worker deliberately stood down
+[rc=0]
+## fm/demo-hold
+$ bin/fm-send.sh hold please continue
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task hold deliberately has no worker; relaunch it before sending an instruction
+[rc=1]
+ls: cannot access '/tmp/fm-lab.m5ZVTY/state/hold.inbox': No such file or directory
+# --- adversarial: crashed worker (agent dead, no declared hold) must not be relabelled as intentional
+$ bin/fm-control.sh crash stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: task crash's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /tmp/fm-lab.m5ZVTY/state/crash.status, then re-run stand-down
+[rc=1]
+ls: cannot access '/tmp/fm-lab.m5ZVTY/state/crash.worker-state': No such file or directory
+$ bin/fm-crew-state.sh crash
+state: unknown · source: pane · harness state unavailable (unknown missing)
+[rc=0]
+# --- adversarial: a live agent returns to the stood-down endpoint behind the record's back
+# pane: pi
+schema=1
+task_id=hold
+endpoint=fmlab:fm-hold
+state=stood-down
+$ bin/fm-crew-state.sh hold
+state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+[rc=0]
+$ bin/fm-send.sh hold status check
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+[rc=0]
+001.msg
+handled
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: task hold has an unacknowledged instruction waiting at /tmp/fm-lab.m5ZVTY/state/hold.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /tmp/fm-lab.m5ZVTY/state/hold.inbox/001.msg /tmp/fm-lab.m5ZVTY/state/hold.inbox/handled/', before standing the worker down
+[rc=1]
+$ bin/fm-control.sh hold repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+warning: task hold declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+ls: cannot access '/tmp/fm-lab.m5ZVTY/state/hold.worker-state': No such file or directory
+$ bin/fm-control.sh hold repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+no-record agent-state=alive hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: task hold has an unacknowledged instruction waiting at /tmp/fm-lab.m5ZVTY/state/hold.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /tmp/fm-lab.m5ZVTY/state/hold.inbox/001.msg /tmp/fm-lab.m5ZVTY/state/hold.inbox/handled/', before standing the worker down
+[rc=1]
+# pane: pi
+# --- withdraw the pending instruction the operator way, then stand down
+$ bin/fm-control.sh hold stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+stood-down hold harness=pi backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+# pane: bash
+$ bin/fm-crew-state.sh hold
+state: parked · source: worker-state · worker deliberately stood down
+[rc=0]
+# --- relaunch from the deliberate hold
+$ timeout 150 bin/fm-control.sh hold relaunch
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: relaunch of a ship task requires --note (or --note-file): the replacement worker inherits the local copy but none of the conversation, so it must be told what happened
+[rc=1]
+# pane: bash
+/tmp/fm-lab.m5ZVTY/state/hold.worker-state
+$ bin/fm-crew-state.sh hold
+state: parked · source: worker-state · worker deliberately stood down
+[rc=0]
+$ timeout 170 bin/fm-control.sh hold relaunch --note Resuming after a deliberate hold (lab test).
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+error: /tmp/fm-lab.m5ZVTY/data/hold/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for hold could not be launched on pi
+error: hold's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-lab.m5ZVTY/wt-hold
+[rc=1]
+# pane: bash
+/tmp/fm-lab.m5ZVTY/state/hold.worker-state
+$ bin/fm-crew-state.sh hold
+state: parked · source: worker-state · worker deliberately stood down
+[rc=0]
+# (above: relaunch aborted before the replacement was published because the lab brief was a stub; the stood-down record was restored)
+$ timeout 170 bin/fm-control.sh hold relaunch --note Resuming after a deliberate hold (lab test).
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.m5ZVTY
+warning: /tmp/fm-lab.m5ZVTY/data/hold/launch-brief.md records no ship branch; defaulting to legacy branch fm/hold
+warning: /tmp/fm-lab.m5ZVTY/data/hold/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+relaunched hold harness=pi from=pi model=default effort=default backend=tmux endpoint=fmlab:fm-hold worktree=/tmp/fm-lab.m5ZVTY/wt-hold
+[rc=0]
+# pane: pi
+ls: cannot access '/tmp/fm-lab.m5ZVTY/state/hold.worker-state': No such file or directory
+$ bin/fm-crew-state.sh hold
+state: working · source: pane · harness busy (fm-spawn)
+[rc=0]

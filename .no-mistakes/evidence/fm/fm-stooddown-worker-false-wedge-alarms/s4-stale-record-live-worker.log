@@ -1,0 +1,71 @@
+# fixture: stale stood-down record written while the relaunched claude is alive
+$ pane_current_command
+claude
+$ bin/fm-crew-state.sh hold2
+state: unknown · source: worker-state · record says stood down but endpoint has a live worker
+$ bin/fm-control.sh hold2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: task hold2 is recorded as stood down but its agent is alive; refusing to hide a live worker from wedge detection (repair it with 'fm-control hold2 repair-worker-state')
+rc=1
+$ FM_POLL=2 timeout 20 bin/fm-watch.sh
+check: rearm-resurface
+rc=0
+$ ls -a state | grep fm-hold2  (pane hash present = still under stale/wedge detection)
+$ bin/fm-send.sh hold2 "reply with the single word ok"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+rc=0
+$ bin/fm-control.sh hold2 repair-worker-state
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+warning: task hold2 declared no worker but its endpoint has a live agent; the declaration was cleared and the task is back under ordinary supervision
+cleared-live-worker agent-state=alive hold2 harness=claude backend=tmux endpoint=lab:fm-hold2 worktree=/tmp/fm-lab.1Icgis/wt-hold2
+rc=0
+$ state/hold2.worker-state
+cat: /tmp/fm-lab.1Icgis/state/hold2.worker-state: No such file or directory
+$ bin/fm-control.sh hold2 repair-worker-state   # repeat is a no-op
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+no-record agent-state=alive hold2 harness=claude backend=tmux endpoint=lab:fm-hold2 worktree=/tmp/fm-lab.1Icgis/wt-hold2
+rc=0
+--- watcher re-run with the stale record restored behind live claude ---
+$ FM_POLL=2 timeout 30 bin/fm-watch.sh
+Terminated
+rc=124
+$ ls -a state | grep -i hold2
+hold2.busy-gen
+hold2.busy-state
+hold2.control-relaunch
+hold2.control-relaunch.brief-prior
+hold2.control-relaunch.meta-prior
+hold2.control-relaunch.note
+hold2.git-hooks
+hold2.inbox
+hold2.meta
+hold2.status
+hold2.turn-ended
+hold2.worker-state
+$ wake-queue
+$ tail of pane
+✻ Cooked for 8s · done 10:49 am
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Model: Opus 5.5 | Ctx: 35.1k | ⎇ no git | (+0,-0)
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+--- watcher re-run #3 (record still present, claude alive and idle) ---
+schema=1
+task_id=hold2
+endpoint=lab:fm-hold2
+state=stood-down
+claude
+$ FM_POLL=2 timeout 30 bin/fm-watch.sh  (attempt 1)
+check: rearm-resurface
+rc=0
+$ FM_POLL=2 timeout 30 bin/fm-watch.sh  (attempt 2)
+check: rearm-resurface
+rc=0
+$ ls -a state | grep -E "^.(hash|count|stale)"
+/tmp/fm-lab.1Icgis/state/.count-*=
+$ wake-queue
+1793415061	1	signal	hold2.status	signal: /tmp/fm-lab.1Icgis/state/hold2.status /tmp/fm-lab.1Icgis/state/hold2.turn-ended
+1793415061	2	signal	hold2.turn-ended	signal: /tmp/fm-lab.1Icgis/state/hold2.status /tmp/fm-lab.1Icgis/state/hold2.turn-ended
+1793415061	3	signal	hold2.status	signal: /tmp/fm-lab.1Icgis/state/hold2.status /tmp/fm-lab.1Icgis/state/hold2.turn-ended
+1793415061	4	signal	hold2.turn-ended	signal: /tmp/fm-lab.1Icgis/state/hold2.status /tmp/fm-lab.1Icgis/state/hold2.turn-ended

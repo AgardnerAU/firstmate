@@ -1,0 +1,75 @@
+$ bin/fm-control.sh hold2 relaunch
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: relaunch of a scout task requires --note (or --note-file): the replacement worker inherits the local copy but none of the conversation, so it must be told what happened
+rc=1
+$ pane_current_command
+bash
+$ state/hold2.worker-state
+schema=1
+task_id=hold2
+endpoint=lab:fm-hold2
+state=stood-down
+$ bin/fm-crew-state.sh hold2
+state: parked · source: worker-state · worker deliberately stood down
+$ bin/fm-control.sh hold2 relaunch --note "lab: resume after hold; do nothing"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: /tmp/fm-lab.1Icgis/data/hold2/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for hold2 could not be launched on claude
+error: hold2's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-lab.1Icgis/wt-hold2
+rc=1
+$ pane_current_command
+bash
+$ state/hold2.worker-state
+schema=1
+task_id=hold2
+endpoint=lab:fm-hold2
+state=stood-down
+$ bin/fm-crew-state.sh hold2
+state: parked · source: worker-state · worker deliberately stood down
+--- retry with a valid fixture brief ---
+$ bin/fm-control.sh hold2 relaunch --note "..."
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: /tmp/fm-lab.1Icgis/data/hold2/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for hold2 could not be launched on claude
+error: hold2's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-lab.1Icgis/wt-hold2
+rc=1
+$ pane_current_command
+bash
+$ state/hold2.worker-state
+schema=1
+task_id=hold2
+endpoint=lab:fm-hold2
+state=stood-down
+$ bin/fm-crew-state.sh hold2
+state: parked · source: worker-state · worker deliberately stood down
+--- retry with a "# Task" fixture brief ---
+$ bin/fm-control.sh hold2 relaunch --note "..."
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: /tmp/fm-lab.1Icgis/data/hold2/brief.md ## Captain's intent has an operator-address line: Captain: lab fixture only, do nothing.; write the captain's actual words without a Captain label or address before spawn, since the heading already records provenance
+error: the replacement agent for hold2 could not be launched on claude
+error: hold2's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-lab.1Icgis/wt-hold2
+rc=1
+$ pane_current_command
+bash
+$ state/hold2.worker-state
+schema=1
+task_id=hold2
+endpoint=lab:fm-hold2
+state=stood-down
+$ bin/fm-crew-state.sh hold2
+state: parked · source: worker-state · worker deliberately stood down
+--- retry with an unlabelled intent line ---
+$ bin/fm-control.sh hold2 relaunch --note "..."
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+relaunched hold2 harness=claude from=claude model=default effort=default backend=tmux endpoint=lab:fm-hold2 worktree=/tmp/fm-lab.1Icgis/wt-hold2
+rc=0
+$ pane_current_command
+claude
+$ state/hold2.worker-state
+cat: /tmp/fm-lab.1Icgis/state/hold2.worker-state: No such file or directory
+$ bin/fm-crew-state.sh hold2
+state: working · source: pane · harness busy (fm-spawn)

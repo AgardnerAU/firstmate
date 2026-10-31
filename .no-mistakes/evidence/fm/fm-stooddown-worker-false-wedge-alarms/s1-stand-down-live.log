@@ -1,0 +1,40 @@
+$ bin/fm-crew-state.sh held   # before
+state: unknown · source: pane · harness state unavailable (unknown missing)
+rc=0
+$ bin/fm-control.sh held stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: exit-delivered held interrupt=not-needed exit-command=delivered agent-state=missing exit=unconfirmed; the agent did not stop within 30s
+error: task held's stand-down exit reported ''; refusing to publish an intentional no-worker state
+rc=1
+$ pane_current_command
+no server running on /tmp/fm-lab.1Icgis/tmux/tmux-1005/fm-lab
+$ ls wt + state/held.worker-state
+/tmp/fm-lab.1Icgis/wt-held
+schema=1
+task_id=held
+endpoint=lab:fm-held
+state=standing-down
+$ bin/fm-crew-state.sh held   # after
+state: unknown · source: none · backend target gone: lab:fm-held
+rc=0
+$ bin/fm-send.sh held "please continue"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+fm-send: doorbell not typed because the agent in lab:fm-held has exited; the steer is durably recorded at /tmp/fm-lab.1Icgis/state/held.inbox/001.msg for recovery (stuck-crewmate-recovery), and the watcher will not re-ring a dead pane
+rc=0
+$ ls state/held.inbox
+/tmp/fm-lab.1Icgis/state/held.inbox:
+001.msg
+handled
+
+/tmp/fm-lab.1Icgis/state/held.inbox/handled:
+$ bin/fm-control.sh held stand-down   # repeat
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.1Icgis
+error: task held has an unacknowledged instruction waiting at /tmp/fm-lab.1Icgis/state/held.inbox/001.msg; let the worker handle it, or withdraw it explicitly with 'mv /tmp/fm-lab.1Icgis/state/held.inbox/001.msg /tmp/fm-lab.1Icgis/state/held.inbox/handled/', before standing the worker down
+rc=1

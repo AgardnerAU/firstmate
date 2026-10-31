@@ -1,0 +1,13 @@
+  drained: 1793412810	3	signal	crash.status	signal: /tmp/fm-lab.m5ZVTY/state/crash.status /tmp/fm-lab.m5ZVTY/state/hold.status
+  drained: 1793412811	4	signal	hold.status	signal: /tmp/fm-lab.m5ZVTY/state/crash.status /tmp/fm-lab.m5ZVTY/state/hold.status
+  drained: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+cycle 1 exit=0 reason: stale: fmlab:fm-crash|
+  drained: 1793412858	5	stale	fmlab:fm-crash	stale: fmlab:fm-crash
+  drained: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+cycle 2 exit=0 reason: stale: fmlab:fm-crash (idle 2s, agent dead - the endpoint is still there with no agent running in it, so this is not a wedge; reported once and not re-escalated while it stays that way - reconcile this record, and check for unlanded work before any cleanup)|
+  drained: 1793412863	6	stale	fmlab:fm-crash	stale: fmlab:fm-crash (idle 2s, agent dead - the endpoint is still there with no agent running in it, so this is not a wedge; reported once and not re-escalated while it stays that way - reconcile this record, and check for unlanded work before any cleanup)
+  drained: WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+cycle 3 exit=124 reason: 
+cycle 4 exit=124 reason: 
+cycle 5 exit=124 reason: 
+cycle 6 exit=124 reason: 

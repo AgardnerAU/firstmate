@@ -1,0 +1,23 @@
+$ FM_POLL=2 timeout 25 bin/fm-watch.sh   # hold2 stood down, pane idle bash
+Terminated
+rc=124 (124 = still running at timeout, no wake emitted)
+$ ls -a state | grep hold2
+hold2.meta
+hold2.status
+hold2.worker-state
+$ wake queue
+cat: /tmp/fm-lab.1Icgis/state/.wake-queue: No such file or directory
+.
+..
+.guard-watcher-stale-banner
+hold2.meta
+hold2.status
+hold2.worker-state
+home-summary.json
+.inactive-outcome-reconcile
+.last-check
+.last-heartbeat
+.last-watcher-beat
+.secondmate-liveness-tick
+terminal-outcomes
+.watcher-down
