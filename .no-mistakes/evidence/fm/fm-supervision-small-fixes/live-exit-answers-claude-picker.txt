@@ -1,0 +1,29 @@
+### pane before fm-control exit (idle composer, 1 background shell: sleep 932)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Model: Sonnet 5.5 | Ctx: 33.1k | ⎇ task-t1 | (+0,-0)
+  ⏵⏵ auto mode on · 1 shell
+
+### pane process before
+claude
+
+$ bin/fm-control.sh t1 exit
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.BGTnQi
+stopped t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-lab.BGTnQi/wt-t1
+rc=0
+
+### pane after (endpoint preserved)
+bash-5.2$ claude --model sonnet --allowedTools 'Bash(sleep:*)'
+Resume this session with:
+claude --resume 38012a78-8043-47af-be6a-c89b303d2628
+bash-5.2$
+
+### pane process after
+bash
+
+### background shell after (sleep 932)
+none - stopped with the agent (Exit and stop tasks was chosen, not Move to background)
+
+### worktree preserved
+## task-t1

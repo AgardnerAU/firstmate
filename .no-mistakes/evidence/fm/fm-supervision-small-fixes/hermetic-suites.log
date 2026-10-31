@@ -1,0 +1,137 @@
+FM_TEST_BEGIN 2026-10-31T02:05:35Z tests/fm-task-inbox.test.sh family=watcher-wake-lock expected_gate_skip=none
+FM_TEST_BEGIN 2026-10-31T02:05:35Z tests/fm-wake-drain-unread-status.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - a note: answer buried under a later routine note: is surfaced with both lines
+ok - already-presented note: lines are not re-surfaced on the next drain
+ok - a brand-new note: after presentation is surfaced without replaying handled lines
+ok - a queued status signal annotates every unread note, not only the newest
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1388313.1793412364.ZxiM1a
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1388313.1793412364.ZxiM1a
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1388313.1793412364.ZxiM1a
+ok - a pending-reply resolution buried under a later note surfaces once and closes OPEN DECISIONS
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1397310.1793412371.K1bxzf
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 1397310.1793412371.K1bxzf
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 1397310.1793412371.K1bxzf
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 1397310.1793412371.K1bxzf
+ok - a self-announced pending-reply close does not wake yet still surfaces once in UNREAD STATUS
+ok - unread status over the former byte cap preserves every line
+ok - presentation cursor advances only through its captured endpoint
+ok - a reused task id starts its replacement status log unread at byte zero
+ok - fallback identity still presents and advances status state
+ok - a malformed presentation-cursor row fails only its own task
+ok - snapshot failures are reported visibly
+ok - OPEN DECISIONS still folds needs-decision/blocked independently of unread notes
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 1457775.1793412419.VKQXKZ
+ok - an empty-queue backstop presentation still preserves the status for its later signal annotation
+ok - routine working and branch-covered done lines print nothing on an empty-queue drain
+FM_TEST_END 2026-10-31T02:07:07Z tests/fm-wake-drain-unread-status.test.sh exit=0 duration_ms=91547 gate_skip=false
+ok - inbox: a steer is written durably and round-trips byte-exact with a self-describing doorbell
+ok - inbox: a hostile-name doorbell executes as a no-op in bare shells
+ok - inbox: terminal-control inbox names are rejected without typing
+ok - inbox: the ring skips dead or missing endpoints and still rings live or unclassifiable endpoints
+ok - inbox: the ring submits its own stuck doorbell, skips other pending text, and retries a lost Enter once on both paths
+ok - inbox: the idempotent enqueue dedups an exact re-run onto the same record, handled or not
+ok - inbox: unrelated pending and handled history avoids per-record parsing and comparison
+ok - inbox: prefilter preserves multiline, blank, legacy and delivery-mode exact matching
+ok - inbox: a prefilter error falls back without duplicating an exact retry
+ok - inbox: pending prefilter precedes handled and finds an ack before grep opens the record in both modes
+ok - inbox: idempotent enqueue follows a record concurrently moved to handled
+ok - inbox: the handled mv is the idempotent ack and sequences are never reissued
+ok - inbox: concurrent writers serialize on the sequence lock and lose nothing
+ok - inbox: a writer retries when a competing lock vanishes after its failed claim
+ok - inbox: ladder bookkeeping ignores a concurrently removed inbox
+ok - inbox: fire-and-forget records stay durable and outside the ladder
+ok - inbox: a fire-and-forget record whose ring did not land is owed exactly one retry
+ok - inbox: a due fire-and-forget retry re-rings past an escalated ordinary record
+ok - inbox: without config/wait-no-turns a fire-and-forget retry mark stays quiet
+ok - inbox: the re-ring ladder paces by grace, escalates once, and resets on ack
+ok - watcher: an unhandled aged message on an idle pane re-rings without waking firstmate, and the ack silences it
+ok - watcher: busy deferrals survive restart, escalate once at the bound, and never type
+ok - watcher: delivery and acknowledgement reset the durable busy budget
+ok - watcher: unwritable busy bookkeeping surfaces without typing
+ok - watcher: idle successor surfaces once despite unremovable predecessor bookkeeping
+ok - watcher: busy successor surfaces once despite unremovable predecessor bookkeeping
+ok - watcher: persistent idle busy-reset failure escalates once and later instructions still deliver
+ok - watcher: persistent protected busy-reset failure escalates once and later instructions still deliver
+ok - watcher: busy limit '999999999999999999999999999999' escalates exactly once at 2
+ok - watcher: busy limit '1000000000' escalates exactly once at 2
+ok - watcher: busy limit '0' escalates exactly once at 2
+ok - watcher: busy limit '000' escalates exactly once at 2
+ok - watcher: busy limit '' escalates exactly once at 2
+ok - watcher: busy limit 'invalid' escalates exactly once at 2
+ok - watcher: busy limit '1' escalates exactly once at 1
+ok - watcher: busy limit '3' escalates exactly once at 3
+ok - watcher: unremovable obsolete busy state does not block or escalate a fire-and-forget retry
+ok - watcher: busy successor escalates once despite stale predecessor ring history
+ok - watcher: dead successor escalates once despite stale predecessor ring history
+ok - watcher: missing successor escalates once despite stale predecessor ring history
+ok - watcher: unwritable successor escalates once despite stale predecessor ring history
+ok - watcher: a non-busy protected delivery breaks the busy streak and preserves the attempt ladder
+ok - watcher: a non-busy failed delivery breaks the busy streak and preserves the attempt ladder
+ok - watcher: a healthy or empty inbox stays completely silent
+ok - watcher: acknowledgement silences an unwritable ladder without a stale wake
+ok - watcher: unwritable ladder bookkeeping surfaces a stale wake after the doorbell
+ok - watcher: a fire-and-forget record's owed retry rings exactly once and never escalates
+ok - watcher: a fire-and-forget retry waits out the worker's own decision, then rings once
+ok - watcher: spending a retry keeps a newer record's mark written during its ring
+ok - watcher: a spent ring budget emits exactly one ordinary stale wake for recovery
+ok - watcher: a positively dead pane is never typed into and surfaces exactly one stale wake
+ok - watcher: dead-pane recovery overrides stale busy state
+FM_TEST_END 2026-10-31T02:07:34Z tests/fm-task-inbox.test.sh exit=0 duration_ms=118500 gate_skip=false
+FM_TEST_BEGIN 2026-10-31T02:07:34Z tests/fm-control.test.sh family=backend-dispatch expected_gate_skip=none
+ok - fm-control exit: every verified harness gets its own verified exit command
+ok - fm-control exit: a recorded OpenCode major picks /exit (1.x) or Ctrl-U then Ctrl-C (2.x)
+ok - fm-control exit: OpenCode 2.x retries Ctrl-C exactly once while the agent is still alive
+ok - fm-control interrupt: every verified harness gets its own verified key and repeat count
+ok - fm-control Devin interrupt: second press only after the armed hint, then busy invalidated without fabricating idle
+ok - fm-control Devin interrupt: an idle agent gets one Escape and reports not-running
+ok - fm-control Devin exit: a busy record whose turn already ended never opens the revert picker
+ok - fm-control Devin interrupt: a revert picker a press opened is closed with Escape, never Enter
+ok - fm-control Devin: an open revert picker refuses every typed command
+ok - fm-control interrupt: opencode needs a double Escape, claude a single one
+ok - fm-control: a harness with no verified control mechanics is refused, not guessed at
+ok - fm-control-lib: a recorded harness resolves to its verified adapter without guessing
+ok - fm-control-lib: only a runtime's own recorded session has a relaunch resume form
+ok - fm-control: prefixed recorded harnesses reach interrupt and exit mechanics
+ok - fm-control-lib: the backend key matrix matches each adapter's real send-key surface
+ok - fm-control-lib: adapter capability is per task kind, not per adapter alone
+ok - fm-control interrupt: a backend that cannot deliver the harness's key refuses instead of sending another
+ok - fm-control: a backend that cannot prove an agent stopped refuses exit and relaunch
+ok - fm-control relaunch: commandcode off tmux and herdr is refused before the running agent is stopped
+ok - fm-control-lib: stop-proving verbs are gated on the backends that really classify agent state
+ok - fm-control: a legacy window label is refused and the exact task id is named
+ok - fm-control: an explicit backend endpoint is never a control target
+ok - fm-control: an unrecorded task id is refused
+ok - fm-control: a record whose endpoint identity names another task is refused
+ok - fm-control: a remotely placed secondmate is refused by placement, not by a metadata complaint
+ok - fm-control: interrupt and exit lock before task-state resolution
+ok - fm-control: the verb list is closed - no raw keys, arbitrary text, or clear verb
+ok - fm-control: resume is refused with the determinism reason and the alternative
+ok - fm-control: profile and note flags belong to relaunch only
+ok - fm-control exit: an already-stopped agent is idempotent success with no bytes sent
+ok - fm-control exit: an unprovable tmux endpoint refuses instead of claiming the agent stopped
+ok - fm-control interrupt: refuses when no agent is running rather than keying a shell
+ok - fm-control exit: an endpoint whose process cannot be attributed refuses
+ok - fm-control exit: a busy agent receives interrupt delivery before the exit command
+ok - fm-control exit: an idle agent goes straight to its exit command
+ok - fm-control exit: retiring a codex incarnation drops busy_gen with the sidecar
+ok - fm-control exit: an already-open background-task picker is answered with Exit and stop tasks
+ok - fm-control exit: the background-task picker the exit command opened is confirmed once
+ok - fm-control exit: a picker that renders after the submit returned is answered when the stop wait times out
+ok - fm-control exit: a picker still open after one answer, or not owned by the adapter, refuses
+ok - fm-control interrupt: unconfirmed delivery preserves observed busy state
+ok - fm-control interrupt: muse confirms cancellation from its session log
+ok - fm-control interrupt: postconditions are revalidated after acknowledgement polling
+ok - fm-control exit: an interrupt-stopped agent satisfies the gone-state postcondition
+ok - fm-control exit: a stubborn agent reports delivered input and an unconfirmed exit
+ok - fm-control interrupt: grok reports delivery without claiming cancellation
+ok - fm-control interrupt: grok's idle footer does not confirm cancellation
+ok - fm-control: a lifecycle command to a secondmate is unmarked and opens no reply expectation
+ok - fm-control's arrival leaves fm-send's from-firstmate marking untouched
+FM_TEST_END 2026-10-31T02:09:38Z tests/fm-control.test.sh exit=0 duration_ms=123970 gate_skip=false
+FM_TEST_SUMMARY total=3 failed=0 skipped_gate=0 duration_ms=242763
+FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=123970 failed=0
+FM_TEST_SUMMARY_FAMILY family=watcher-wake-lock count=2 duration_ms=210047 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-control.test.sh duration_ms=123970
+FM_TEST_SLOWEST rank=2 script=tests/fm-task-inbox.test.sh duration_ms=118500
+FM_TEST_SLOWEST rank=3 script=tests/fm-wake-drain-unread-status.test.sh duration_ms=91547
+rc=0

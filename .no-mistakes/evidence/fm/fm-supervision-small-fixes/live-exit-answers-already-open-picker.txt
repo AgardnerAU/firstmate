@@ -1,0 +1,34 @@
+### pane before fm-control exit (picker already open, row 1 selected)
+   Background work is running
+   The following will stop when you exit:
+   shell · sleep 933
+   ❯ 1. Exit and stop tasks
+     2. Move to background and exit
+     3. Stay
+   Enter to confirm · Esc to cancel
+
+### background shell before
+1624969 sleep 933
+1634933 sleep 7.5
+
+$ bin/fm-control.sh t1 exit
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.BGTnQi
+stopped t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-lab.BGTnQi/wt-t1
+rc=0
+
+### pane after
+bash-5.2$ claude --model sonnet --allowedTools 'Bash(sleep:*)'
+Resume this session with:
+claude --resume 8474d7e4-cc6f-4b62-ae35-d5f13ede6f41
+bash-5.2$
+
+### pane process after
+bash
+
+### background shell after
+none - stopped with the agent
+
+$ bin/fm-control.sh t1 exit   # idempotence on the stopped agent
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.BGTnQi
+already-stopped t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-lab.BGTnQi/wt-t1
+rc=0
