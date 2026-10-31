@@ -1,0 +1,63 @@
+## 1. No config: refuses with guidance, no stdout, no request
+$ fm-local-llm.py commit-msg
+stdout: ''
+stderr: 'fm-local-llm: missing $TMP/cfg/local-llm.json; set base_url and model in config/local-llm.json'
+exit: 1
+endpoint request: None
+
+## 2. commit-msg from stdin with valid model reply
+$ fm-local-llm.py commit-msg
+stdout: 'feat(docs): add local helper entry\n\nDocument config.\n'
+stderr: ''
+exit: 0
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 3. commit-msg --repo reads staged diff
+$ fm-local-llm.py commit-msg --repo $TMP/repo
+stdout: 'feat(docs): add local helper entry\n\nDocument config.\n'
+stderr: ''
+exit: 0
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 4. Adversarial: non-conventional commit subject rejected
+$ fm-local-llm.py commit-msg
+stdout: ''
+stderr: 'fm-local-llm: model returned an invalid commit subject'
+exit: 1
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 5. summarise-log normalises model bullets
+$ fm-local-llm.py summarise-log $TMP/test.log
+stdout: '- test_one failed\n- likely cause: timeout\n'
+stderr: ''
+exit: 0
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 6. Adversarial: prose log summary rejected
+$ fm-local-llm.py summarise-log $TMP/test.log
+stdout: ''
+stderr: 'fm-local-llm: model returned an invalid log summary'
+exit: 1
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 7. Adversarial: endpoint HTTP 500
+$ fm-local-llm.py summarise-log $TMP/test.log
+stdout: ''
+stderr: 'fm-local-llm: endpoint returned HTTP 500'
+exit: 1
+endpoint request: {'path': '/v1/chat/completions', 'model': 'test-model', 'chat_template_kwargs': {'enable_thinking': False}}
+
+## 8. Adversarial: base_url with credentials rejected before any request
+$ fm-local-llm.py commit-msg
+stdout: ''
+stderr: 'fm-local-llm: invalid $TMP/cfg/local-llm.json: base_url must be an HTTP(S) API root'
+exit: 1
+endpoint request: None
+
+## 9. Unreachable endpoint
+$ fm-local-llm.py summarise-log $TMP/test.log
+stdout: ''
+stderr: 'fm-local-llm: endpoint unavailable or timed out: [Errno 111] Connection refused'
+exit: 1
+endpoint request: None
+
