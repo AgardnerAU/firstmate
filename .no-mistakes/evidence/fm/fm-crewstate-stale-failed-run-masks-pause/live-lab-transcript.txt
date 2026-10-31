@@ -1,0 +1,59 @@
+lab home: /tmp/fm-lab.dsH9iY (marked: config data fakebin projects state )
+
+=== S1 genuine failed run keeps its own PR ===
+status log: working: validating
+ledger (no-mistakes runs):
+      failed     fm/s1 a8eb9dbc  2026-10-31 22:52  https://github.com/o/r/pull/11
+fm-crew-state.sh s1 -> state: failed · source: run-step · run failed · pr=https://github.com/o/r/pull/11
+wake queue entries for s1:
+    1793460153	1	check	inactive-outcome:0cea2d730013ea43429e6512952a2e3a	inactive terminal outcome awaiting captain presentation: child=s1 state=failed pr=https://github.com/o/r/pull/11
+
+=== S2 newer cancelled row reads unknown (cancellation-as-unknown) ===
+status log: paused: waiting on captain
+ledger (no-mistakes runs):
+      cancelled  fm/s2 f0f0f0f0  2026-10-31 23:12
+      failed     fm/s2 4a8b12af  2026-10-31 22:42  https://github.com/o/r/pull/21
+fm-crew-state.sh s2 -> state: unknown · source: run-step · the newest cancelled ledger row on this branch cannot be bound to the run failed; current state not provable here
+wake queue entries for s2:
+
+=== S3 newer unbindable completed row is never published as success or failure ===
+status log: done: PR https://github.com/o/r/pull/31 merged
+ledger (no-mistakes runs):
+      completed  fm/s3 f0f0f0f0  2026-10-31 23:12  https://github.com/o/r/pull/31
+      failed     fm/s3 e9ceb687  2026-10-31 22:42
+fm-crew-state.sh s3 -> state: unknown · source: run-step · the newest completed ledger row on this branch cannot be bound to the run failed; current state not provable here
+wake queue entries for s3:
+
+=== S4 stale failed run with a newer live run does not surface as failed ===
+status log: paused: awaiting captain on scope
+ledger (no-mistakes runs):
+      running    fm/s4 f0f0f0f0  2026-10-31 23:17
+      failed     fm/s4 d595e7ef  2026-10-31 22:42
+fm-crew-state.sh s4 -> state: unknown · source: run-step · replacement run identity unavailable; run ids: 01RUN, replacement unavailable
+wake queue entries for s4:
+
+=== S-gitlab status-log done outcome ===
+status log: done: PR https://gitlab.example/group/sub/project/-/merge_requests/8 checks green
+ledger (no-mistakes runs):
+    
+fm-crew-state.sh s-gitlab -> state: done · source: status-log · PR https://gitlab.example/group/sub/project/-/merge_requests/8 checks green
+wake queue entries for s-gitlab:
+    1793460157	2	check	inactive-outcome:97ab464b2e330d42543e4520f07bbec6	inactive terminal outcome awaiting captain presentation: child=s-gitlab state=done pr=https://gitlab.example/group/sub/project/-/merge_requests/8
+
+=== S-gerrit status-log done outcome ===
+status log: done: PR https://gerrit.example/c/group/project/+/4201 published for review
+ledger (no-mistakes runs):
+    
+fm-crew-state.sh s-gerrit -> state: done · source: status-log · PR https://gerrit.example/c/group/project/+/4201 published for review
+wake queue entries for s-gerrit:
+    1793460158	3	check	inactive-outcome:ea3bbbae1353f425408421181e192f9e	inactive terminal outcome awaiting captain presentation: child=s-gerrit state=done pr=https://gerrit.example/c/group/project/+/4201
+
+=== S-prose status-log done outcome ===
+status log: done: implementation complete, see PR https://github.com/o/r/pull/77
+ledger (no-mistakes runs):
+    
+fm-crew-state.sh s-prose -> state: done · source: status-log · implementation complete, see PR https://github.com/o/r/pull/77
+wake queue entries for s-prose:
+    1793460159	4	check	inactive-outcome:94fb8b9c8fcfccf7a949e4b9ee802d0c	inactive terminal outcome awaiting captain presentation: child=s-prose state=done
+
+lab removed on exit
