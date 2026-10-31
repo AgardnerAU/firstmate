@@ -88,7 +88,7 @@
 set -u
 export LC_ALL=C
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(d=${BASH_SOURCE[0]%/*}; [ "$d" != "${BASH_SOURCE[0]}" ] || d=.; cd "${d:-/}" && pwd)"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
 OUTCOME_DIR="$STATE/terminal-outcomes"
@@ -424,7 +424,7 @@ report_child_ledger_locked() { # <id> <meta>
     && [ ! -f "$(record_path "$fingerprint" pending)" ] \
     && ! fm_dod_accept_ship_done "$(meta_field "$meta" kind)" "$(meta_field "$meta" mode)" \
       "$(meta_field "$meta" worktree)" "$(meta_field "$meta" project)" "$last" \
-      "$STATE" "$id" "$meta" >/dev/null; then
+      "$STATE" "$id" "$meta" meta-locked >/dev/null; then
     return 0
   fi
   outcome_key="child-outcome-$id-$state-${fingerprint:0:8}"
