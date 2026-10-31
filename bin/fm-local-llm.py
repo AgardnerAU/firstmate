@@ -82,7 +82,10 @@ def request_completion(url, model, task, source):
                   headers={"Content-Type": "application/json"}, method="POST")
     with urlopen(req, timeout=TIMEOUT) as response:
         result = json.load(response)
-    content = result["choices"][0]["message"]["content"]
+    choice = result["choices"][0]
+    if choice.get("finish_reason") == "length":
+        raise ValueError("model reached the token limit before finishing")
+    content = choice["message"]["content"]
     if not isinstance(content, str):
         raise ValueError("model returned no text")
     return content.strip()

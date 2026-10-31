@@ -97,6 +97,11 @@ try:
         reply["choices"][0]["message"]["content"] = ""
         empty = run("commit-msg", input="diff")
         assert empty.returncode != 0 and empty.stdout == ""
+
+        reply["choices"][0] = {"message": {"content": "- Test one failed because"}, "finish_reason": "length"}
+        cut_off = run("summarise-log", input="FAIL test_one\n")
+        assert cut_off.returncode != 0 and cut_off.stdout == ""
+        assert "token limit" in cut_off.stderr, cut_off.stderr
 finally:
     server.shutdown()
     server.server_close()
