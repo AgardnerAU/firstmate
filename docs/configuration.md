@@ -21,7 +21,7 @@ Start with the directory layout, then use the setting reference for the behavior
 
 `bin/fm-local-llm.py` is optional help for workers drafting a commit message or summarising a test log before reading it in full.
 It does not make implementation or safety decisions, and workers review its output before use.
-Create the private, gitignored `config/local-llm.json` under the effective `FM_HOME`, or under `FM_CONFIG_OVERRIDE` when set:
+Create the private, gitignored `local-llm.json` in the effective config directory, which is `FM_CONFIG_OVERRIDE` when set and `$FM_HOME/config` otherwise:
 
 ```json
 {"base_url":"http://llm-box:8000/v1","model":"nvidia/Qwen3.8-27B-NVFP4"}
