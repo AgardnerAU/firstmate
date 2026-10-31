@@ -1,0 +1,120 @@
+=== S1: config/self-update-source 'fork carry' -> primary and local secondmates follow the fork branch, not origin ===
+carry=39f3d4aa origin-tip=71c6cdcf start=ecf5d276
+self-update source: fork carry (config/self-update-source)
+firstmate: updated ecf5d276..39f3d4aa (instructions changed: AGENTS.md)
+no watches registered
+secondmate sm1: updated ecf5d276..39f3d4aa (instructions changed: AGENTS.md)
+secondmate sm2: updated ecf5d276..39f3d4aa (instructions changed: AGENTS.md)
+reread-firstmate: yes
+restart-secondmates: none
+nudge-secondmates: none
+[exit=0]
+  primary HEAD=39f3d4aa
+  sm1 HEAD=39f3d4aa
+  sm2 HEAD=39f3d4aa
+--- S1b: remove the file -> origin path is used again, diverged primary is left alone ---
+firstmate: skipped: diverged from origin/main
+secondmate sm1: skipped: diverged from origin/main; reconciliation required (record: /tmp/fm-upd-live.9t4CIV/s1/lab/state/.secondmate-update-reconcile/sm1.pending)
+secondmate sm2: skipped: diverged from origin/main; reconciliation required (record: /tmp/fm-upd-live.9t4CIV/s1/lab/state/.secondmate-update-reconcile/sm2.pending)
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit=0]
+  primary HEAD=39f3d4aa
+  sm1 HEAD=39f3d4aa
+  sm2 HEAD=39f3d4aa
+
+=== S2: no config file -> unchanged origin behaviour (fast-forward to origin) ===
+carry=f625cdbd origin-tip=1ed6d96c
+firstmate: updated ecf5d276..1ed6d96c
+no watches registered
+secondmate sm1: updated ecf5d276..1ed6d96c
+secondmate sm2: updated ecf5d276..1ed6d96c
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit=0]
+  primary HEAD=1ed6d96c
+  sm1 HEAD=1ed6d96c
+  sm2 HEAD=1ed6d96c
+
+=== S3: unusable config files refuse before anything moves, never falling back to origin ===
+origin-tip=7add393c
+--- value: nosuchremote\ carry
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: remote 'nosuchremote' does not exist in /tmp/fm-upd-live.9t4CIV/s3/primary; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: fork
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: fork\ carry\ extra
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: fork\ bad..branch
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: invalid branch name 'bad..branch'; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: -x\ carry
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: invalid remote name '-x'; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: fork\ -carry
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: invalid branch name '-carry'; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: $'fork carry\nfork other'
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: expected exactly one line "<remote> <branch>"; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+--- value: <a directory>
+error: /tmp/fm-upd-live.9t4CIV/s3/lab/config/self-update-source: not a readable regular file; fix it or remove it to update from origin
+[exit=1]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
+
+=== S4: the fork branch is rewritten (non-fast-forward) -> skipped, never forced ===
+  primary HEAD=05618693
+  sm1 HEAD=05618693
+  sm2 HEAD=05618693
+carry=05618693 rewritten=85994d6b
+self-update source: fork carry (config/self-update-source)
+firstmate: skipped: diverged from refs/remotes/fork/carry
+secondmate sm1: already current
+secondmate sm2: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit=0]
+  primary HEAD=05618693
+  sm1 HEAD=05618693
+  sm2 HEAD=05618693
+
+=== S5: fork branch fetch fails -> primary skipped, secondmates stay on primary commit ===
+self-update source: fork nosuchbranch (config/self-update-source)
+firstmate: skipped: fetch of fork nosuchbranch failed
+secondmate sm1: already current
+secondmate sm2: already current
+reread-firstmate: no
+restart-secondmates: none
+nudge-secondmates: none
+[exit=0]
+  primary HEAD=ecf5d276
+  sm1 HEAD=ecf5d276
+  sm2 HEAD=ecf5d276
