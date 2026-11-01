@@ -1,0 +1,50 @@
+
+ ▐▛███▛█   Claude Code v2.1.316
+▝▜██████▀  Opus 5.5 · Claude Ultra
+ ▝▝   ▝▝   /tmp/fml.IBGh/th/.treehouse/demo-cb26de/1/demo · /rc
+
+
+❯ : Firstmate operational input waiting: read '/tmp/fml.IBGh/state/operational-inbox/1793508116-eae3d11fac9695c8.msg' and handle its contents as Firstmate operational input.
+
+  Searched for 1 pattern, read 1 file, ran 2 shell commands
+
+● The task is done: TMPDIR, TMP and TEMP all have the same value, /tmp/fm-tdir-live/tmp.
+
+  - Report: written to /tmp/fml.IBGh/data/tdir-live/report.md, with the command I ran and its output.
+  - Completion gate: no questions are waiting for the captain, so I ran fm-captain-hold.sh complete tdir-live --none. It returned code 0 and printed "captain-call inventory reviewed".
+  - Status file: the done line is in the status file.
+  - Inbox: there were no messages in the steering inbox.
+
+  I did no other work.
+
+✻ Cogitated for 22s · done 12:42 PM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Model: Opus 5.5 | Ctx: 41.7k | ⎇ no git | (+0,-0)
+  ⏵⏵ bypass permissions on (shift+tab to cycle)

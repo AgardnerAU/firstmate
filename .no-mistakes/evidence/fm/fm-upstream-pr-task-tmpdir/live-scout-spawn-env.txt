@@ -1,0 +1,78 @@
+# real fm-spawn scout tdir-live in lab /tmp/fml.IBGh (ambient TMPDIR of launching shell=/tmp/ambient-shared)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fml.IBGh
+spawned tdir-live harness=claude kind=scout window=primary:fm-tdir-live worktree=/tmp/fml.IBGh/th/.treehouse/demo-cb26de/1/demo
+
+# per-task root
+drwx------ 4 fm fm 4096 Nov  1 12:41 /tmp/fm-tdir-live
+drwxrwxr-x 2 fm fm 4096 Nov  1 12:41 /tmp/fm-tdir-live/gotmp
+drwx------ 5 fm fm 4096 Nov  1 12:42 /tmp/fm-tdir-live/tmp
+
+# meta tasktmp
+tasktmp=/tmp/fm-tdir-live
+
+## pid 2638337 (bash)
+TMPDIR=/tmp/ambient-shared
+## pid 2638823 (treehouse)
+TMPDIR=/tmp/ambient-shared
+## pid 2638988 (bash)
+TMPDIR=/tmp/ambient-shared
+## pid 2642005 (claude)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2642740 (npm exec @agent)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2642742 (npm exec @model)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2642743 (npm exec @playw)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2643466 (sh)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2643468 (MainThread)
+TMPDIR=/tmp/fm-tdir-live/tmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+FM_TASK_ID=tdir-live
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+## pid 2643487 (sh)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2643488 (MainThread)
+TMPDIR=/tmp/fm-tdir-live/tmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+FM_TASK_ID=tdir-live
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+## pid 2643578 (sh)
+FM_TASK_ID=tdir-live
+TMPDIR=/tmp/fm-tdir-live/tmp
+GOTMPDIR=/tmp/fm-tdir-live/gotmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+## pid 2643579 (MainThread)
+TMPDIR=/tmp/fm-tdir-live/tmp
+TEMP=/tmp/fm-tdir-live/tmp
+TMP=/tmp/fm-tdir-live/tmp
+FM_TASK_ID=tdir-live
+GOTMPDIR=/tmp/fm-tdir-live/gotmp

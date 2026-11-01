@@ -1,0 +1,5 @@
+ok - fm-teardown removes the dir pointed to by tasktmp= in meta
+ok - fm-teardown removes the tmp/ scratch with the root and nothing outside it
+ok - a teardown refused for unlanded work leaves the per-task scratch in place
+ok - fm-teardown skips gracefully when tasktmp= is absent (backward compat)
+ok - fm-teardown skips gracefully when tasktmp= points to a nonexistent dir

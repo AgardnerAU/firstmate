@@ -1,0 +1,14 @@
+# bin/fm-teardown.sh tdir-live
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fml.IBGh
+teardown: reaping leaked worktree process(es) for tdir-live: 2638988 2642005 2642740 2642742 2642743 2643466 2643468 2643487 2643488 2643578 2643579
+teardown: force-killing leaked worktree process(es) for tdir-live: 2638988
+A new version of treehouse is available: v2.3.0 → v3.1.8
+Run "treehouse update" to update
+
+🌳 Worktree returned to pool.
+teardown tdir-live complete (window primary:fm-tdir-live, worktree /tmp/fml.IBGh/th/.treehouse/demo-cb26de/1/demo)
+Backlog: tdir-live just finished (this home keeps no markdown backlog at /tmp/fml.IBGh/data/backlog.md). Update /tmp/fml.IBGh/data/backlog.md - move tdir-live to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+
+# after teardown:
+ls: cannot access '/tmp/fm-tdir-live': No such file or directory
+ls: cannot access '/tmp/ambient-shared': No such file or directory
