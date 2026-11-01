@@ -1,0 +1,56 @@
+== root=/home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6AMWYMDCEMT7B6T09HGWZ27 session=fm-lab-fm-lease-new-1806171-9607
+--- S1 fresh flat spawn
+spawn rc=0
+project=/tmp/fm-lease-live.b3KWeR/project
+meta worktree=/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project pane=w1:p2
+treehouse status (raw):
+A new version of treehouse is available: v2.3.0 → v3.1.8
+Run "treehouse update" to update
+
+[{"name":"1","path":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project","status":"leased","flavor":"git","lease_id":"025e98d71e64fe1c5629b2c7f702f0b0","lease_holder":"leasea","leased_at":"2026-11-01T12:30:08.677562768+08:00","processes":[{"pid":1807366,"name":"bash"}]}]
+pane before restart: cwd=/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project foreground_cwd=/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project
+--- S2 restart the lab Herdr server
+pane after restart: cwd=/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project foreground_cwd=/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project
+panes after restart:
+[{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project","foreground_cwd":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project"}]
+--- S3 teardown returns the lease
+teardown rc=0
+
+🌳 Worktree returned to pool.
+/tmp/fm-lease-live.b3KWeR/project: already current
+teardown leasea complete (window fm-lab-fm-lease-new-1806171-9607:w1:p2, worktree /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project)
+Backlog: leasea just finished (this home keeps no markdown backlog at /tmp/fm-lease-live.b3KWeR/home-flat/data/backlog.md). Update /tmp/fm-lease-live.b3KWeR/home-flat/data/backlog.md - move leasea to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+treehouse status after teardown:
+A new version of treehouse is available: v2.3.0 → v3.1.8
+Run "treehouse update" to update
+
+[{"name":"1","path":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project","status":"available","flavor":"git","lease_id":"","lease_holder":"","leased_at":null,"processes":[]}]
+--- S4 flat abort after lease (endpoint left open)
+planted unclaimable claim dir /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/.fm-slot-owner
+spawn rc=1
+warning: /tmp/fm-lease-live.b3KWeR/home-flat/data/leaseb/launch-brief.md records no ship branch; defaulting to legacy branch fm/leaseb
+warning: /tmp/fm-lease-live.b3KWeR/home-flat/data/leaseb/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: could not claim Treehouse pool slot /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project for task leaseb; refusing to launch a worker whose slot cannot later be proved to be its own; inspect window fm-lab-fm-lease-new-1806171-9607:w2:p2
+warning: the worktree /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project stays leased to leaseb after the failed spawn; once inspected, run 'treehouse return --force /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project' from /tmp/fm-lease-live.b3KWeR/project
+meta exists? no
+treehouse status after flat abort:
+A new version of treehouse is available: v2.3.0 → v3.1.8
+Run "treehouse update" to update
+
+[{"name":"1","path":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project","status":"leased","flavor":"git","lease_id":"b8523d85bd8a86ea0bb30398598b3975","lease_holder":"leaseb","leased_at":"2026-11-01T12:30:38.897529003+08:00","processes":[]}]
+--- S5 projected abort after lease (task pane closed)
+planted unclaimable claim dir /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/.fm-slot-owner
+spawn rc=1
+warning: /tmp/fm-lease-live.b3KWeR/home-proj/data/leasec/launch-brief.md records no ship branch; defaulting to legacy branch fm/leasec
+warning: /tmp/fm-lease-live.b3KWeR/home-proj/data/leasec/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: could not claim Treehouse pool slot /tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project for task leasec; refusing to launch a worker whose slot cannot later be proved to be its own; inspect window fm-lab-fm-lease-new-1806171-9607:w3:p2
+warning: herdr presentation cleanup could not verify the exact pane; refusing focus-unsafe pane close
+meta exists? no
+treehouse status after projected abort:
+A new version of treehouse is available: v2.3.0 → v3.1.8
+Run "treehouse update" to update
+
+[{"name":"1","path":"/tmp/fm-lease-live.b3KWeR/pool/.treehouse/project-b25011/1/project","status":"available","flavor":"git","lease_id":"","lease_holder":"","leased_at":null,"processes":[]}]
+lab panes:
+[{"pane_id":"w2:p2","cwd":"/tmp/fm-lease-live.b3KWeR/project"}]
+lab teardown rc=0
