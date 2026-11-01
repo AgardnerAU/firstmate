@@ -1,0 +1,12 @@
+## live secondmate lab3d870b91cd20-mate (pid 682779) environment
+claude --permission-mode auto --add-dir /tmp/fmlab.mate2/home/state/lab3d870b91cd20-mate.inbox --set
+
+FM_HOME=/tmp/fmlab.mate2/mate
+GOTMPDIR=/tmp/fm-lab3d870b91cd20-mate/gotmp
+(TMPDIR/TMP/TEMP lines above, if any)
+
+## ls -la /tmp/fm-lab3d870b91cd20-mate
+total 792
+drwx------   3 fm   fm     4096 Nov  1 13:15 .
+drwxrwxrwt 612 root root 798720 Nov  1 13:22 ..
+drwxrwxr-x   2 fm   fm     4096 Nov  1 13:15 gotmp

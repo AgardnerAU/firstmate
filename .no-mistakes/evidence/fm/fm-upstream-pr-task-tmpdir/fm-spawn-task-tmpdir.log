@@ -3,3 +3,4 @@ ok - a scout worker starts with TMPDIR, TMP, and TEMP inside its private per-tas
 ok - TMPDIR is the only temp knob that moves; GOTMPDIR and the shared /tmp keep their roles
 ok - a secondmate home keeps its ambient temp directory in both allowlist postures
 ok - a world-writable pre-existing task root is refused before any scratch directory is created
+ok - a reused owned scratch directory is tightened, while a reused scratch symlink is refused
