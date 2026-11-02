@@ -1,0 +1,5 @@
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.6iJrLD
+warning: /tmp/fm-lab.6iJrLD/data/tmpdemo/launch-brief.md records no ship branch; defaulting to legacy branch fm/tmpdemo
+warning: /tmp/fm-lab.6iJrLD/data/tmpdemo/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode local-only - confirm its definition of done matches
+notice: tmpdemo ships mode=local-only while the standing posture for proj is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+spawned tmpdemo harness=claude kind=ship mode=local-only yolo=off window=primary:fm-tmpdemo worktree=/home/fm/.treehouse/proj-888f59/1/proj

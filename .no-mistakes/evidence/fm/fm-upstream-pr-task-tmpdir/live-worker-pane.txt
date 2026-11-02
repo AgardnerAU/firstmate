@@ -1,0 +1,50 @@
+treehouse get
+Your user’s .npmrc file (${HOME}/.npmrc)
+has a `globalconfig` and/or a `prefix` setting, which are incompatible with nvm.
+Run `nvm use --delete-prefix v24.19.0 --silent` to unset it.
+fm@agopenclaw-NUC8i7BEH:/tmp/fm-lab.6iJrLD/proj$ treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/proj-888f59/1/proj. Type 'exit' to return.
+Your user’s .npmrc file (${HOME}/.npmrc)
+has a `globalconfig` and/or a `prefix` setting, which are incompatible with nvm.
+Run `nvm use --delete-prefix v24.19.0 --silent` to unset it.
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ cd -- '/home/fm/.treehouse/proj-888f59/1/proj'
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ export GOTMPDIR=/tmp/fm-tmpdemo/gotmp
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ export TMPDIR=/tmp/fm-tmpdemo/tmp TMP=/tmp/fm-tmpdemo/tmp TEMP=/tmp/fm-tmpdemo/tmp
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ export COMPACT_ADVISER_DISABLE=1
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ export FM_TASK_ID=tmpdemo
+fm@agopenclaw-NUC8i7BEH:~/.treehouse/proj-888f59/1/proj$ . '/tmp/fm-tmpdemo+d9a117df19b80c469228585382ed691b56f239ff17e4f18c760bfc7fac55f66e/launch.s1793596487.3429885.19567.sh'
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Accessing workspace:
+
+ /home/fm/.treehouse/proj-888f59/1/proj
+
+ Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this
+ folder first.
+
+ Claude Code'll be able to read, edit, and execute files here.
+
+ Security guide
+
+ ❯ No, exit
+   Yes, I trust this folder
+
+ Enter to confirm · Esc to cancel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

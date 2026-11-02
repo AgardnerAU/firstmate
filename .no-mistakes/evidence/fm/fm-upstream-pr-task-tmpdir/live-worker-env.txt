@@ -1,26 +1,14 @@
-## live worker lab4fb8d0930f60-worker (pid 184503) environment
-FM_TASK_ID=lab4fb8d0930f60-worker
-TMPDIR=/tmp/fm-lab4fb8d0930f60-worker/tmp
-GOTMPDIR=/tmp/fm-lab4fb8d0930f60-worker/gotmp
-TEMP=/tmp/fm-lab4fb8d0930f60-worker/tmp
-TMP=/tmp/fm-lab4fb8d0930f60-worker/tmp
+# Live lab: worker process 3437480 (claude) environment, ambient TMPDIR in launching shell=/tmp/fm-lab-ambient
+FM_TASK_ID=tmpdemo
+TMPDIR=/tmp/fm-tmpdemo/tmp
+GOTMPDIR=/tmp/fm-tmpdemo/gotmp
+TEMP=/tmp/fm-tmpdemo/tmp
+TMP=/tmp/fm-tmpdemo/tmp
 
-## lab primary (pid 192975) environment - not a task worker
-(no FM_TASK_ID/TMPDIR/TMP/TEMP set)
+# /tmp/fm-tmpdemo tree (scratch the live worker created)
+drwx------ fm /tmp/fm-tmpdemo
+drwxrwxr-x fm /tmp/fm-tmpdemo/gotmp
+drwx------ fm /tmp/fm-tmpdemo/tmp
+drwx------ fm /tmp/fm-tmpdemo/tmp/claude-1005
 
-## ls -la /tmp/fm-lab4fb8d0930f60-worker /tmp/fm-lab4fb8d0930f60-worker/tmp
-/tmp/fm-lab4fb8d0930f60-worker:
-total 796
-drwx------   4 fm   fm     4096 Nov  1 13:08 .
-drwxrwxrwt 504 root root 798720 Nov  1 13:14 ..
-drwxrwxr-x   2 fm   fm     4096 Nov  1 13:08 gotmp
-drwx------   6 fm   fm     4096 Nov  1 13:08 tmp
-
-/tmp/fm-lab4fb8d0930f60-worker/tmp:
-total 24
-drwx------ 6 fm fm 4096 Nov  1 13:08 .
-drwx------ 4 fm fm 4096 Nov  1 13:08 ..
-drwx------ 2 fm fm 4096 Nov  1 13:08 cc-socks
-drwx------ 3 fm fm 4096 Nov  1 13:08 claude-1005
-drwx------ 2 fm fm 4096 Nov  1 13:08 claude-security-guidance-1005
-drwxrwxr-x 3 fm fm 4096 Nov  1 13:08 node-compile-cache
+# ambient dir contents:

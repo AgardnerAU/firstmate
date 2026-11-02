@@ -1,0 +1,8 @@
+# Adversarial: /tmp/fm-tmpevil/tmp pre-planted as symlink to /tmp/fm-lab-ambient/target
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.6iJrLD
+warning: /tmp/fm-lab.6iJrLD/data/tmpevil/launch-brief.md records no ship branch; defaulting to legacy branch fm/tmpevil
+warning: /tmp/fm-lab.6iJrLD/data/tmpevil/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode local-only - confirm its definition of done matches
+notice: tmpevil ships mode=local-only while the standing posture for proj is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+error: task scratch directory /tmp/fm-tmpevil/tmp already exists and is not a private directory owned by this user; refusing to export it; inspect and remove it, then retry
+EVIL_RC=1
+# target contents after refusal:

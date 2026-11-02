@@ -1,24 +1,11 @@
-## before teardown
-total 28
-drwx------ 7 fm fm 4096 Nov  1 13:14 .
-drwx------ 4 fm fm 4096 Nov  1 13:08 ..
-drwx------ 2 fm fm 4096 Nov  1 13:08 cc-socks
-drwx------ 3 fm fm 4096 Nov  1 13:08 claude-1005
-drwx------ 2 fm fm 4096 Nov  1 13:14 claude-security-guidance-1005
-drwxrwxr-x 3 fm fm 4096 Nov  1 13:08 node-compile-cache
--rw------- 1 fm fm    0 Nov  1 13:14 tmp.fh3bLWdCjq
-drwx------ 2 fm fm 4096 Nov  1 13:14 tmp.XTCIWesWO1
-
-## $ FM_HOME=/tmp/fmlab.OjnVay/home bin/fm-teardown.sh lab4fb8d0930f60-worker --force
-teardown: reaping leaked worktree process(es) for lab4fb8d0930f60-worker: 181889 184503 185620 185622 185623 186124 186125 186235 186236 186278 186282
-teardown: force-killing leaked worktree process(es) for lab4fb8d0930f60-worker: 181889
-A new version of treehouse is available: v2.3.0 → v3.1.8
-Run "treehouse update" to update
-
+# bin/fm-teardown.sh tmpdemo (live lab)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.6iJrLD
+teardown: reaping leaked worktree process(es) for tmpdemo: 3432305 3437480
+teardown: force-killing leaked worktree process(es) for tmpdemo: 3432305
 🌳 Worktree returned to pool.
-teardown lab4fb8d0930f60-worker complete (window firstmate:fm-lab4fb8d0930f60-worker, worktree /tmp/fmlab.OjnVay/treehouse/.treehouse/notes-551649/1/notes)
-Backlog: lab4fb8d0930f60-worker is closed in /tmp/fmlab.OjnVay/home/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
-exit=0
+teardown tmpdemo complete (window primary:fm-tmpdemo, worktree /home/fm/.treehouse/proj-888f59/1/proj)
+Backlog: tmpdemo just finished (this home keeps no markdown backlog at /tmp/fm-lab.6iJrLD/data/backlog.md). Update /tmp/fm-lab.6iJrLD/data/backlog.md - move tmpdemo to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
 
-## after teardown
-ls: cannot access '/tmp/fm-lab4fb8d0930f60-worker': No such file or directory
+# after teardown: ls /tmp/fm-tmpdemo
+ls: cannot access '/tmp/fm-tmpdemo': No such file or directory
+ls: cannot access '/tmp/fm-tmpdemo+*': No such file or directory

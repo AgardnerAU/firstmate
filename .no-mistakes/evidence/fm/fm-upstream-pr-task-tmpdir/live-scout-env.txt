@@ -1,0 +1,9 @@
+# Live lab scout worker (claude pid 3631049) environment
+TMPDIR=/tmp/fm-tmpscout/tmp
+GOTMPDIR=/tmp/fm-tmpscout/gotmp
+TEMP=/tmp/fm-tmpscout/tmp
+TMP=/tmp/fm-tmpscout/tmp
+drwx------ /tmp/fm-tmpscout
+drwxrwxr-x /tmp/fm-tmpscout/gotmp
+drwx------ /tmp/fm-tmpscout/tmp
+drwx------ /tmp/fm-tmpscout/tmp/claude-1005
