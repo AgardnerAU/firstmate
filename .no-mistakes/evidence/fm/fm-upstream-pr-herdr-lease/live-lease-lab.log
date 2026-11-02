@@ -1,0 +1,99 @@
+
+=== provision lab fm-lab-lease-live-1600575-21421 (TREEHOUSE_ROOT=/tmp/fm-lease-run.xrSvo6/treehouse, firstmate tree=/home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6DKWQFD7ZH07116V6F60F45)
+
+=== S1 fresh spawn lease-a
+warning: /tmp/fm-lease-run.xrSvo6/home/data/lease-a/launch-brief.md records no ship branch; defaulting to legacy branch fm/lease-a
+warning: /tmp/fm-lease-run.xrSvo6/home/data/lease-a/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project. Run 'treehouse return /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project' to release it.
+spawned lease-a harness=sh kind=ship mode=no-mistakes yolo=off window=fm-lab-lease-live-1600575-21421:w1:p2 worktree=/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project
+spawn rc=0
+meta worktree=/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project pane=w1:p2
+treehouse status:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project  (detached)  (held by lease-a)
+                   bash (1606155), sh (1613870), sleep (1613872)
+treehouse state lease entries:
+pane before restart:
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project","foreground_cwd":"/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project"}
+pane process tree:
+
+
+=== S2 restart the lab Herdr session (stop + provision)
+stopped
+false
+re-provisioned (restarted)
+restored panes:
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project","foreground_cwd":"/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project"}
+expected task copy: /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project
+RESULT S2: a restored pane's top-level cwd is the task copy
+
+=== S3 teardown lease-a
+teardown: reaping leaked worktree process(es) for lease-a: 1617069
+teardown: force-killing leaked worktree process(es) for lease-a: 1617069
+🌳 Worktree returned to pool.
+/tmp/fm-lease-run.xrSvo6/project: already current
+teardown lease-a complete (window fm-lab-lease-live-1600575-21421:w1:p2, worktree /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project)
+Backlog: lease-a just finished (this home keeps no markdown backlog at /tmp/fm-lease-run.xrSvo6/home/data/backlog.md). Update /tmp/fm-lease-run.xrSvo6/home/data/backlog.md - move lease-a to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+teardown rc=0
+treehouse status after teardown:
+base  master  (repository default)
+1     available    /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project  (detached)
+
+=== S4 clean-slot abort after lease (claim refused by a directory marker in every slot)
+.
+..
+.fm-slot-owner
+project
+warning: /tmp/fm-lease-run.xrSvo6/home/data/abort-clean/launch-brief.md records no ship branch; defaulting to legacy branch fm/abort-clean
+warning: /tmp/fm-lease-run.xrSvo6/home/data/abort-clean/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project. Run 'treehouse return /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project' to release it.
+error: could not claim Treehouse pool slot /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project for task abort-clean; refusing to launch a worker whose slot cannot later be proved to be its own; inspect window fm-lab-lease-live-1600575-21421:w2:p2
+warning: the worktree /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project stays leased to abort-clean after the failed spawn; once inspected, run 'treehouse return --force /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project' from /tmp/fm-lease-run.xrSvo6/project
+spawn rc=1
+no meta left
+treehouse status after clean abort:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project  (detached)  (held by abort-clean)
+[{"pane_id":"w2:p2","cwd":"/tmp/fm-lease-run.xrSvo6/project"}]
+
+=== S5 dirty-slot abort after lease
+warning: /tmp/fm-lease-run.xrSvo6/home/data/abort-dirty/launch-brief.md records no ship branch; defaulting to legacy branch fm/abort-dirty
+warning: /tmp/fm-lease-run.xrSvo6/home/data/abort-dirty/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project. Run 'treehouse return /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project' to release it.
+spawned abort-dirty harness=sh kind=ship mode=no-mistakes yolo=off window=fm-lab-lease-live-1600575-21421:w3:p2 worktree=/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project
+spawn rc=0
+meta present
+treehouse status after dirty abort:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project  (detached)  (held by abort-clean)
+2     leased       /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project  (detached)  (held by abort-dirty)
+                   bash (1652618), sh (1664652), sleep (1664656)
+slot /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/1/project/:
+ M README.md
+?? WIP.txt
+slot /tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project/:
+[{"pane_id":"w2:p2","cwd":"/tmp/fm-lease-run.xrSvo6/project"},{"pane_id":"w3:p2","cwd":"/tmp/fm-lease-run.xrSvo6/treehouse/.treehouse/project-5a7726/2/project"}]
+done
+
+=== cleanup: teardown lab fm-lab-lease-live-1600575-21421
+lab teardown ok
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-applypatch': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/post-checkout': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-commit': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/prepare-commit-msg': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/applypatch-msg': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/post-applypatch': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-push': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/post-rewrite': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/post-merge': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/post-commit': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/sendemail-validate': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-merge-commit': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-rebase': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/commit-msg': Permission denied
+rm: cannot remove '/tmp/fm-lease-run.xrSvo6/home/state/abort-dirty.git-hooks/pre-auto-gc': Permission denied

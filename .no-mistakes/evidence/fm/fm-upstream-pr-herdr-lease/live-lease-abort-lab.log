@@ -1,0 +1,58 @@
+
+=== provision lab fm-lab-lease-abort-1709314-7953 (TREEHOUSE_ROOT=/tmp/fm-lease-run.Q2pAai/treehouse, firstmate tree=/home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6DKWQFD7ZH07116V6F60F45)
+
+=== S0 anchor (presentation off) so projected spawns have a parent; prep task creates a second slot
+anchor rc=0
+spawned prep harness=sh kind=ship mode=no-mistakes yolo=off window=fm-lab-lease-abort-1709314-7953:w2:p2 worktree=/tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project
+prep torn down rc=0
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/1/project  (detached)  (held by anchor)
+                   bash (1712133), sh (1716930), sleep (1716933)
+2     available    /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project  (detached)
+free slot: /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project
+
+=== S4 clean-slot projected abort after lease (claim refused by a directory marker)
+warning: /tmp/fm-lease-run.Q2pAai/home/data/abort-clean/launch-brief.md records no ship branch; defaulting to legacy branch fm/abort-clean
+warning: /tmp/fm-lease-run.Q2pAai/home/data/abort-clean/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project. Run 'treehouse return /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project' to release it.
+error: could not claim Treehouse pool slot /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project for task abort-clean; refusing to launch a worker whose slot cannot later be proved to be its own; inspect window fm-lab-lease-abort-1709314-7953:w3:p2
+warning: herdr presentation cleanup could not verify the exact pane; refusing focus-unsafe pane close
+spawn rc=1
+no meta left
+treehouse status after clean abort:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/1/project  (detached)  (held by anchor)
+                   bash (1712133), sh (1716930), sleep (1716933)
+2     available    /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project  (detached)
+panes:
+[{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/1/project"}]
+
+=== S5 dirty-slot projected abort after lease
+slot /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project before spawn:
+ M README.md
+?? WIP.txt
+warning: /tmp/fm-lease-run.Q2pAai/home/data/abort-dirty/launch-brief.md records no ship branch; defaulting to legacy branch fm/abort-dirty
+warning: /tmp/fm-lease-run.Q2pAai/home/data/abort-dirty/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/3/project. Run 'treehouse return /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/3/project' to release it.
+spawned abort-dirty harness=sh kind=ship mode=no-mistakes yolo=off window=fm-lab-lease-abort-1709314-7953:w4:p2 worktree=/tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/3/project
+spawn rc=0
+meta present
+treehouse status after dirty abort:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/1/project  (detached)  (held by anchor)
+                   bash (1712133), sh (1716930), sleep (1716933)
+2     dirty        /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project  (detached)
+3     leased       /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/3/project  (detached)  (held by abort-dirty)
+                   bash (1767061), sh (1774513), sleep (1774515)
+slot /tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/2/project after abort:
+ M README.md
+?? WIP.txt
+uncommitted work
+panes:
+[{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/1/project"},{"pane_id":"w4:p2","cwd":"/tmp/fm-lease-run.Q2pAai/treehouse/.treehouse/project-f672cc/3/project"}]
+anchor teardown rc=0
+
+=== cleanup: teardown lab fm-lab-lease-abort-1709314-7953
+lab teardown ok

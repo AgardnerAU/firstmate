@@ -1,0 +1,34 @@
+### pane before restart (herdr pane get w1:p2)
+{
+  "pane_id": "w1:p2",
+  "cwd": "/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj",
+  "foreground_cwd": "/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj",
+  "agent": "claude",
+  "agent_status": "working"
+}
+### treehouse status (TREEHOUSE_ROOT=/tmp/fm-lease-live.aWUHd4/pool)
+base  main  (repository default)
+1     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)  (held by lease-live)
+                   bash (2753593), claude (2759060), npm exec @agent (2761076), npm exec @model (2761085), npm exec @playw (2761087), sh (2762238), MainThread (2762243), sh (2762447), MainThread (2762450), sh (2762659), MainThread (2762664)
+### meta
+window=fm-lab-lease-2746950-30724:w1:p2
+worktree=/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj
+harness=claude
+backend=herdr
+### restart: fm-herdr-lab.sh stop + provision fm-lab-lease-2746950-30724
+{"session":{"default":false,"name":"fm-lab-lease-2746950-30724","running":false,"session_dir":"/home/fm/.config/herdr/sessions/fm-lab-lease-2746950-30724","socket_path":"/home/fm/.config/herdr/sessions/fm-lab-lease-2746950-30724/herdr.sock"},"stopped":true}
+stopped
+restarted
+### pane after restart
+{
+  "pane_id": "w1:p2",
+  "cwd": "/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj",
+  "foreground_cwd": "/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj",
+  "agent": "claude",
+  "agent_status": "unknown"
+}
+### treehouse status after restart
+base  main  (repository default)
+1     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)  (held by lease-live)
+                   bash (2777611), claude (2777681), sh (2780090), npm exec ccstatusline@2.2.18 (2780092), npm exec @agent (2780215), npm exec @model (2780221), npm exec @playw (2780225)
+### primary clone path (must differ from restored cwd): /tmp/fm-lease-live.aWUHd4/lab/projects/proj

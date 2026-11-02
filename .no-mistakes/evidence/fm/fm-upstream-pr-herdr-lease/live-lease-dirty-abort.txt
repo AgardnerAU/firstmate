@@ -1,0 +1,38 @@
+### make the available pool slot dirty: uncommitted edit + untracked file
+ M README.md
+?? untracked-work.txt
+### spawn lease-dirty on herdr
+
+== spawn lease-dirty on herdr session fm-lab-lease-2746950-30724
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj. Run 'treehouse return /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj' to release it.
+spawned lease-dirty harness=claude kind=scout window=fm-lab-lease-2746950-30724:w3:p2 worktree=/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj
+spawn rc=0
+### treehouse status after spawn
+base  main  (repository default)
+1     dirty        /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+2     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj  (detached)  (held by lease-dirty)
+                   bash (2901568), claude (2905767)
+### slot contents after spawn
+ M README.md
+?? untracked-work.txt
+keep
+### lab meta for lease-dirty
+lease-dirty.busy-gen
+lease-dirty.busy-state
+lease-dirty.git-hooks
+lease-dirty.inbox
+lease-dirty.meta
+### teardown lease-dirty --force
+🌳 Worktree returned to pool.
+teardown lease-dirty complete (window fm-lab-lease-2746950-30724:w3:p2, worktree /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj)
+Backlog: lease-dirty just finished (this home keeps no markdown backlog at /tmp/fm-lease-live.aWUHd4/lab/data/backlog.md). Update /tmp/fm-lease-live.aWUHd4/lab/data/backlog.md - move lease-dirty to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+### treehouse status
+base  main  (repository default)
+1     dirty        /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+2     available    /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj  (detached)
+### dirty slot 1 still holds its work
+ M README.md
+?? untracked-work.txt

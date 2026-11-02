@@ -1,0 +1,46 @@
+### spawn lease-abort with --harness opencode (not installed on this host)
+
+== spawn lease-abort on herdr session fm-lab-lease-2746950-30724
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj. Run 'treehouse return /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj' to release it.
+spawned lease-abort harness=opencode kind=scout window=fm-lab-lease-2746950-30724:w4:p2 worktree=/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj
+spawn rc=0
+### treehouse status
+base  main  (repository default)
+1     dirty        /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+2     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj  (detached)  (held by lease-abort)
+                   bash (2959383)
+### lab state for lease-abort
+lease-abort.busy-gen
+lease-abort.busy-state
+lease-abort.git-hooks
+lease-abort.meta
+
+### ADVERSARIAL: post-lease abort. /tmp/fm-lease-tmpclash pre-created group-writable (0775) so the task temp-root check refuses after the lease
+
+== spawn lease-tmpclash on herdr session fm-lab-lease-2746950-30724
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj. Run 'treehouse return /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj' to release it.
+error: task temp root /tmp/fm-lease-tmpclash already exists and is not a private directory owned by this user; refusing to stage the launch command there; inspect and remove it, then retry
+warning: the worktree /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj stays leased to lease-tmpclash after the failed spawn; once inspected, run 'treehouse return --force /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj' from /tmp/fm-lease-live.aWUHd4/lab/projects/proj
+spawn rc=1
+### treehouse status after abort
+base  main  (repository default)
+1     dirty        /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+2     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj  (detached)  (held by lease-tmpclash)
+                   bash (3043334)
+### lab state for lease-tmpclash
+none (record rolled back)
+### herdr panes in lab
+{"pane_id":"w5:p2","cwd":"/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj","agent":null}
+### operator follows the warning: close leftover pane, then the named treehouse return --force
+pane w5:p2 closed
+🌳 Worktree returned to pool.
+### treehouse status
+base  main  (repository default)
+1     dirty        /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+2     available    /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/2/proj  (detached)

@@ -1,0 +1,31 @@
+
+=== provision lab fm-lab-lease-dirty-1829455-31414 (TREEHOUSE_ROOT=/tmp/fm-lease-run.3g5Bku/treehouse, firstmate tree=/home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6DKWQFD7ZH07116V6F60F45)
+
+=== S0 anchor (presentation off) for a projection parent
+anchor rc=0
+
+=== S5 projected spawn whose leased slot holds uncommitted work: freshen refuses, abort
+warning: /tmp/fm-lease-run.3g5Bku/home/data/abort-dirty/launch-brief.md records no ship branch; defaulting to legacy branch fm/abort-dirty
+warning: /tmp/fm-lease-run.3g5Bku/home/data/abort-dirty/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+🌳 Setting up worktree...
+🌳 Leased worktree at /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project. Run 'treehouse return /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project' to release it.
+error: pooled worktree '/tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project' is not clean; refusing to discard uncommitted work while refreshing its base
+warning: herdr presentation cleanup could not verify the exact pane; refusing focus-unsafe pane close
+warning: the worktree /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project stays leased to abort-dirty after the failed spawn; once inspected, run 'treehouse return --force /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project' from /tmp/fm-lease-run.3g5Bku/project
+spawn rc=1
+no meta left
+treehouse status after dirty abort:
+base  master  (repository default)
+1     leased       /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/1/project  (detached)  (held by anchor)
+                   bash (1830738), sh (1834738), sleep (1834742)
+2     leased       /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project  (detached)  (held by abort-dirty)
+slot /tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/2/project contents:
+ M README.md
+?? WIP.txt
+uncommitted work
+panes:
+[{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-run.3g5Bku/treehouse/.treehouse/project-cfd044/1/project"}]
+anchor teardown rc=0
+
+=== cleanup: teardown lab fm-lab-lease-dirty-1829455-31414
+lab teardown ok

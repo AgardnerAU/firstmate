@@ -1,0 +1,48 @@
+### fm-teardown.sh lease-live (lab home, lab session fm-lab-lease-2746950-30724)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: scout task lease-live has no report at /tmp/fm-lease-live.aWUHd4/lab/data/lease-live/report.md.
+The report is the work product. Have the crewmate write it, or use --force after explicit discard approval.
+teardown rc=1
+### treehouse status after teardown
+base  main  (repository default)
+1     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)  (held by lease-live)
+                   bash (2777611), claude (2777681), npm exec @agent (2780215), npm exec @model (2780221), npm exec @playw (2780225), sh (2781058), MainThread (2781068), sh (2781358), MainThread (2781362), sh (2781555), MainThread (2781559)
+### pane w1:p2 after teardown
+{"id":"cli:pane:get","result":{"pane":{"agent":"claude","agent_session":{"agent":"claude","kind":"id","source":"herdr:claude","value":"08b875dd-eb88-4446-bdc5-376a5e1f0250"},"agent_status":"idle","cwd":"/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj","focused":true,"foreground_cwd":"/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj","pane_id":"w1:p2","revision":2,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f4684c50fb51","terminal_title":"✳ Firstmate operational inbox message","terminal_title_stripped":"Firstmate operational inbox message","workspace_id":"w1"},"type":"pane_info"}}
+### (retry after writing data/lease-live/report.md) fm-teardown.sh lease-live
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+fm-captain-hold: origin lease-live has no completed captain-call inventory
+REFUSED: scout task lease-live has not passed the captain-call completion gate.
+Inventory its report and any visual review through bin/fm-captain-hold.sh before teardown.
+teardown rc=1
+### treehouse status after teardown
+base  main  (repository default)
+1     leased       /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)  (held by lease-live)
+                   bash (2777611), claude (2777681), npm exec @agent (2780215), npm exec @model (2780221), npm exec @playw (2780225), sh (2781058), MainThread (2781068), sh (2781358), MainThread (2781362), sh (2781555), MainThread (2781559)
+### pane w1:p2 after teardown
+{"id":"cli:pane:get","result":{"pane":{"agent":"claude","agent_session":{"agent":"claude","kind":"id","source":"herdr:claude","value":"08b875dd-eb88-4446-bdc5-376a5e1f0250"},"agent_status":"idle","cwd":"/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj","focused":true,"foreground_cwd":"/tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj","pane_id":"w1:p2","revision":2,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f4684c50fb51","terminal_title":"✳ Firstmate operational inbox message","terminal_title_stripped":"Firstmate operational inbox message","workspace_id":"w1"},"type":"pane_info"}}
+### lab state files for lease-live
+lease-live.busy-gen
+lease-live.busy-state
+lease-live.git-hooks
+lease-live.inbox
+lease-live.meta
+lease-live.turn-ended
+### (disposable lab task: teardown --force to skip the scout report/captain-call gates) fm-teardown.sh lease-live --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lease-live.aWUHd4/lab
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+teardown: reaping leaked worktree process(es) for lease-live: 2777611 2777681 2780215 2780221 2780225 2781058 2781068 2781358 2781362 2781555 2781559
+teardown: force-killing leaked worktree process(es) for lease-live: 2777611
+🌳 Worktree returned to pool.
+teardown lease-live complete (window fm-lab-lease-2746950-30724:w1:p2, worktree /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj)
+Backlog: lease-live just finished (this home keeps no markdown backlog at /tmp/fm-lease-live.aWUHd4/lab/data/backlog.md). Update /tmp/fm-lease-live.aWUHd4/lab/data/backlog.md - move lease-live to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+teardown rc=0
+### treehouse status after teardown
+base  main  (repository default)
+1     available    /tmp/fm-lease-live.aWUHd4/pool/.treehouse/proj-3d3ea2/1/proj  (detached)
+### pane w1:p2 after teardown
+{"error":{"code":"pane_not_found","message":"pane w1:p2 not found"},"id":"cli:pane:get"}
+### lab state files for lease-live
+none
