@@ -1,0 +1,5 @@
+skip: paseo CLI not found on PATH or at the bundle path
+fm-backend-paseo-smoke rc=0
+skip: tern not found
+fm-backend-tern-smoke rc=0
+live-home entries after runs: 0

@@ -1,0 +1,8 @@
+ok - the owner clears every fleet pointer it publishes
+ok - the pollution sentinel genuinely reaches a child process
+ok - a pointer that cannot be cleared is named and refused
+ok - all 318 behavior suites reach the fleet-environment isolation owner
+ok - the probe rejects unrelated bin/fm-*-lib.sh mentions and a disclaiming comment
+ok - the probe rejects an owner reference that never executes
+not ok - the probe accepted isolation that executed only inside a subshell
+rc=1

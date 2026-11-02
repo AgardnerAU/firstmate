@@ -1,0 +1,13 @@
+diff --git a/tests/fm-test-env-lib.test.sh b/tmp/fm-regress.V8XvFV/tests/fm-test-env-lib.test.sh
+index c815a7ab..02139ef7 100755
+--- a/tests/fm-test-env-lib.test.sh
++++ b/tmp/fm-regress.V8XvFV/tests/fm-test-env-lib.test.sh
+@@ -37,7 +37,7 @@ make_probe_root() {
+ fm_test_env_isolate() {
+   local owner_pid
+   # Bash 3.2 lacks BASHPID; a child shell's PPID identifies this frame.
+-  owner_pid=${BASHPID:-$(exec sh -c 'printf "%s\n" "$PPID"')} || exit 91
++  unset BASHPID; owner_pid=${BASHPID:-$(exec sh -c 'printf "%s\n" "$PPID"')} || exit 91
+   printf '%s\t%s\n' "$FM_TEST_ENV_PROBE_SUITE" "$owner_pid" > "$FM_TEST_ENV_PROBE_MARKER"
+   exit "$FM_TEST_ENV_PROBE_EXIT_STATUS"
+ }
