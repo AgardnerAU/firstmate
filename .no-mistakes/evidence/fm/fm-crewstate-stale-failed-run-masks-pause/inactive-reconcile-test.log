@@ -44,6 +44,8 @@ ok - notice recovery remains idempotent across queue acknowledgement
 ok - a secondmate home with no parent binding names the missing binding instead of failing quietly
 actionable: inactive terminal outcome awaiting captain presentation: child=child state=done
 ok - reconciliation makes zero forge or PR API calls
+actionable: inactive terminal outcome awaiting captain presentation: child=child state=done
+ok - reconciliation state reads set no-forge mode
 actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed
 ok - a terminal outcome names no pull request when its run opened none
 actionable: inactive terminal outcome awaiting captain presentation: child=child state=done pr=https://example.test/owner/repo/pull/42
@@ -69,11 +71,4 @@ actionable: inactive terminal outcome awaiting captain presentation: child=child
 ok - a stale pause line does not suppress the failure that followed it
 actionable: inactive terminal outcome awaiting captain presentation: child=child state=failed
 ok - a genuine, uncontradicted failure still reaches the captain
-actionable: inactive terminal outcome awaiting captain presentation: child=child state=done
-ok - reconciliation state reads set no-forge mode
 all inactive reconciliation tests passed
-
-real	1m0.075s
-user	0m29.434s
-sys	0m30.397s
-rc=0

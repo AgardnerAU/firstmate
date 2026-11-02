@@ -335,8 +335,3 @@ ok - inventory-error run selection reports unknown with candidate ids
 ok - selected-error run selection reports unknown with candidate ids
 ok - legacy conflicting run records report unknown
 all fm-crew-state tests passed
-
-real	2m20.948s
-user	1m12.015s
-sys	1m20.573s
-rc=0

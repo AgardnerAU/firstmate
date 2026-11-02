@@ -1,0 +1,21 @@
+--- real fm-crew-state.sh gl:
+state: done · source: status-log · PR https://gitlab.example/group/sub/project/-/merge_requests/8 checks green
+--- real fm-crew-state.sh gr:
+state: blocked · source: status-log · named head 9533f5fb43a3d3a3042519ef84ee0a8ece79c5f7 is not the published content of https://gerrit.example/c/group/project/+/4201: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+--- real fm-crew-state.sh gh:
+state: done · source: status-log · PR https://github.com/owner/repo/pull/7 checks green
+--- real fm-crew-state.sh prose:
+state: done · source: status-log · see PR https://gitlab.example/group/project/-/merge_requests/9 for context
+--- real fm-crew-state.sh bogus:
+state: done · source: status-log · PR https://example.test/owner/repo/pull/5 checks green
+--- real fm-inactive-reconcile.sh scan --startup:
+actionable: inactive terminal outcome awaiting captain presentation: child=bogus state=done
+actionable: inactive terminal outcome awaiting captain presentation: child=gh state=done pr=https://github.com/owner/repo/pull/7
+actionable: inactive terminal outcome awaiting captain presentation: child=gl state=done pr=https://gitlab.example/group/sub/project/-/merge_requests/8
+actionable: inactive terminal outcome awaiting captain presentation: child=prose state=done
+rc=0
+--- queued captain wakes (state/.wake-queue):
+1793598396	1	check	inactive-outcome:2aff059de1916aeccebe8dd4c740d671	inactive terminal outcome awaiting captain presentation: child=bogus state=done
+1793598397	2	check	inactive-outcome:5e1f3f93f9953006e449a7ec3f23b7fd	inactive terminal outcome awaiting captain presentation: child=gh state=done pr=https://github.com/owner/repo/pull/7
+1793598398	3	check	inactive-outcome:3d74709e9242a82f2e140c9fbfd14591	inactive terminal outcome awaiting captain presentation: child=gl state=done pr=https://gitlab.example/group/sub/project/-/merge_requests/8
+1793598399	4	check	inactive-outcome:50b362db001fcaee78bd4d91dc850bc9	inactive terminal outcome awaiting captain presentation: child=prose state=done
