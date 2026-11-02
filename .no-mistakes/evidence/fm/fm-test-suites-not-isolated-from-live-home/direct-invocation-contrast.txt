@@ -1,0 +1,11 @@
+## Directly invoked suite sourcing tests/lib.sh with a worker's live pointers exported
+--- base c61646ff:
+FM_HOME=<unset> FM_WAKE_QUEUE=/tmp/tmp.bmsuyTdLF2/live-home/state/wake FM_BACKEND=<unset> FM_SUPERVISION_MODEL=autoarm
+--- target 732a004e:
+FM_HOME=<unset> FM_WAKE_QUEUE=<unset> FM_BACKEND=<unset> FM_SUPERVISION_MODEL=<unset>
+
+## Adversarial: a pointer that cannot be cleared (readonly in the suite process)
+/home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6EBKK721KDPYA850NSZ4V8J/tests/lib.sh: line 78: unset: FM_HOME: cannot unset: readonly variable
+fm-test-env: could not clear FM_HOME from the environment
+tests/lib.sh: refusing to run a suite against the live fleet home
+exit=2

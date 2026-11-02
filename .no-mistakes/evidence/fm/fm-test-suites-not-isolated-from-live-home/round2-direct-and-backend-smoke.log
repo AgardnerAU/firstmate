@@ -1,0 +1,30 @@
+== decoy live home: /tmp/fmtest.fzGio7/decoy-live-home; every fleet pointer exported at it
+== S1: probe - what a suite sees after sourcing tests/lib.sh (target 732a004e)
+  FM_HOME=<unset>
+  FM_STATE_OVERRIDE=<unset>
+  FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=<unset>
+  FM_TRACE_CONTEXT=<unset>
+  FM_SUPERVISION_MODEL=<unset>
+== S1 base (c61646ff) same probe for comparison
+  FM_HOME=<unset>
+  FM_STATE_OVERRIDE=<unset>
+  FM_PUBLIC_FOLLOWUP_PRIMARY_HOME=/tmp/fmtest.fzGio7/decoy-live-home
+== S2: four backend smoke suites run directly with polluted env
+  tests/fm-backend-paseo-smoke.test.sh: first lines after isolate:
+    ++ dirname tests/fm-backend-paseo-smoke.test.sh
+    + fm_test_env_isolate
+    + unset FM_HOME
+  tests/fm-backend-rex-smoke.test.sh: first lines after isolate:
+    ++ dirname tests/fm-backend-rex-smoke.test.sh
+    + fm_test_env_isolate
+    + unset FM_HOME
+  tests/fm-backend-rex-eventwait-smoke.test.sh: first lines after isolate:
+    ++ dirname tests/fm-backend-rex-eventwait-smoke.test.sh
+    + fm_test_env_isolate
+    + unset FM_HOME
+  tests/fm-backend-tern-smoke.test.sh: first lines after isolate:
+    ++ dirname tests/fm-backend-tern-smoke.test.sh
+    + fm_test_env_isolate
+    + unset FM_HOME
+== decoy home contents after runs (expect only state/canary):
+  ./state/canary

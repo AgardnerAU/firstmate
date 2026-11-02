@@ -1,0 +1,30 @@
+--- bash tests/fm-backend-paseo-smoke.test.sh (direct, live pointers exported)
+skip: paseo CLI not found on PATH or at the bundle path
+exit=0
+--- bash tests/fm-backend-rex-smoke.test.sh (direct, live pointers exported)
+skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+exit=0
+--- bash tests/fm-backend-rex-eventwait-smoke.test.sh (direct, live pointers exported)
+skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+exit=0
+--- bash tests/fm-backend-tern-smoke.test.sh (direct, live pointers exported)
+skip: tern not found
+exit=0
+--- bin/fm-test-run.sh over the same four suites (live pointers exported)
+FM_TEST_SUMMARY total=4 failed=0 skipped_gate=4 duration_ms=268
+FM_TEST_SUMMARY_FAMILY family=paseo count=1 duration_ms=32 failed=0
+FM_TEST_SUMMARY_FAMILY family=rex count=2 duration_ms=74 failed=0
+FM_TEST_SUMMARY_FAMILY family=tern count=1 duration_ms=16 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-backend-rex-eventwait-smoke.test.sh duration_ms=37
+FM_TEST_SLOWEST rank=2 script=tests/fm-backend-rex-smoke.test.sh duration_ms=37
+FM_TEST_SLOWEST rank=3 script=tests/fm-backend-paseo-smoke.test.sh duration_ms=32
+FM_TEST_SLOWEST rank=4 script=tests/fm-backend-tern-smoke.test.sh duration_ms=16
+exit=0
+--- bin/fm-test-run.sh on a real lib.sh suite (fm-gotmp) with live pointers exported
+FM_TEST_END 2026-11-02T15:24:45Z tests/fm-gotmp.test.sh exit=0 duration_ms=2374 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=2431
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=1 duration_ms=2374 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-gotmp.test.sh duration_ms=2374
+exit=0
+--- fake live home changed during runs?
+no change: live home untouched

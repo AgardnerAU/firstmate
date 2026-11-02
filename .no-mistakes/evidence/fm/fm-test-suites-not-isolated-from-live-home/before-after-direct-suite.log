@@ -1,0 +1,4 @@
+### before (base c61646ff): suite sourcing tests/lib.sh, invoked directly with FM_HOME exported
+suite sees FM_HOME=<unset> FM_SUPERVISION_MODEL=autoarm
+### after (target 732a004e)
+suite sees FM_HOME=<unset> FM_SUPERVISION_MODEL=<unset>

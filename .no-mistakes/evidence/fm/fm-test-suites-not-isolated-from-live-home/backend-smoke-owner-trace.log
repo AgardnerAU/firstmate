@@ -1,0 +1,17 @@
+### execution trace: four backend smoke suites reach the owner before their CLI skip (FM_HOME=/tmp/fm-drive.Un3ODm/home exported)
+-- fm-backend-paseo-smoke
+5:+ fm_test_env_isolate
+8:+ unset FM_HOME
+232:skip: paseo CLI not found on PATH or at the bundle path
+-- fm-backend-rex-smoke
+5:+ fm_test_env_isolate
+8:+ unset FM_HOME
+302:skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+-- fm-backend-rex-eventwait-smoke
+5:+ fm_test_env_isolate
+8:+ unset FM_HOME
+302:skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+-- fm-backend-tern-smoke
+5:+ fm_test_env_isolate
+8:+ unset FM_HOME
+76:skip: tern not found

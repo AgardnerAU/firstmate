@@ -1,0 +1,39 @@
+## Decoy live home: /tmp/fm-drive.Un3ODm/home
+### direct: bash tests/fm-backend-paseo-smoke.test.sh
+skip: paseo CLI not found on PATH or at the bundle path
+exit=0
+### direct: bash tests/fm-backend-rex-smoke.test.sh
+skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+exit=0
+### direct: bash tests/fm-backend-rex-eventwait-smoke.test.sh
+skip: rex CLI not found at $REX_BIN_DIR, on PATH, or at the server bundle path
+exit=0
+### direct: bash tests/fm-backend-tern-smoke.test.sh
+skip: tern not found
+exit=0
+### direct: bash tests/fm-gotmp.test.sh
+ok - fm-teardown removes the dir pointed to by tasktmp= in meta
+ok - fm-teardown skips gracefully when tasktmp= is absent (backward compat)
+ok - fm-teardown skips gracefully when tasktmp= points to a nonexistent dir
+exit=0
+### direct: bash tests/fm-gitignore-config.test.sh
+ok - names starting with scratchpad are gitignored
+ok - no currently tracked path starts with scratchpad
+ok - scratchpad2/ does not make git status --porcelain dirty
+exit=0
+### probe: a suite-style script sourcing tests/lib.sh then printing pointers
+FM_HOME=<unset>
+FM_STATE_OVERRIDE=<unset>
+FM_DATA_OVERRIDE=<unset>
+FM_WAKE_QUEUE=<unset>
+FM_SUPERVISION_MODEL=<unset>
+FM_TRACE_CONTEXT=<unset>
+FM_BACKEND=<unset>
+### adversarial: readonly FM_HOME in the suite process cannot be cleared
+tests/lib.sh: line 78: unset: FM_HOME: cannot unset: readonly variable
+fm-test-env: could not clear FM_HOME from the environment
+tests/lib.sh: refusing to run a suite against the live fleet home
+exit=2
+### decoy snapshot before: e4ca3b09558a9fdb6a4d54e8a143f8c36ca5ed19cf062af1becd37e8091ea117  -
+### decoy snapshot after:  e4ca3b09558a9fdb6a4d54e8a143f8c36ca5ed19cf062af1becd37e8091ea117  -
+DECOY HOME UNCHANGED
