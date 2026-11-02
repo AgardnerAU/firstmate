@@ -1,0 +1,27 @@
+## lab session: fm-lab-lease-head-1557936-20181  (Treehouse root /tmp/fm-lease-live.ANAkZt/th)
+
+=========== scenario: happy-restart
+spawn rc=0
+warning: $SCR/home/data/live1/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+🌳 Setting up worktree...
+🌳 Leased worktree at $SCR/th/.treehouse/proj-c32b04/1/proj. Run 'treehouse return $SCR/th/.treehouse/proj-c32b04/1/proj' to release it.
+meta worktree=$SCR/th/.treehouse/proj-c32b04/1/proj  pane=w1:p2  project=$SCR/proj
+--- treehouse status (pool)
+base  master  (repository default)
+1     leased       $SCR/th/.treehouse/proj-c32b04/1/proj  (detached)  (held by live1)
+                   bash (1559832), sh (1564707), sleep (1564709)
+--- treehouse lease record:
+--- pane cwd before restart: $SCR/th/.treehouse/proj-c32b04/1/proj
+{"agent_status":"unknown","cwd":"$SCR/th/.treehouse/proj-c32b04/1/proj","focused":true,"foreground_cwd":"$SCR/th/.treehouse/proj-c32b04/1/proj","pane_id":"w1:p2","revision":2,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f47991210432","terminal_title":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-c32b04/1/proj","terminal_title_stripped":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-c32b04/1/proj","workspace_id":"w1"}
+--- Herdr session stopped
+--- Herdr session restarted (restored from layout)
+--- pane cwd after restart: $SCR/th/.treehouse/proj-c32b04/1/proj
+{"agent_status":"unknown","cwd":"$SCR/th/.treehouse/proj-c32b04/1/proj","focused":true,"foreground_cwd":"$SCR/th/.treehouse/proj-c32b04/1/proj","pane_id":"w1:p2","revision":1,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f47994e2ed71","terminal_title":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-c32b04/1/proj","terminal_title_stripped":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-c32b04/1/proj","workspace_id":"w1"}
+RESULT restart-restores-task-copy: PASS
+teardown rc=0
+teardown: reaping leaked worktree process(es) for live1: 1565567
+teardown: force-killing leaked worktree process(es) for live1: 1565567
+--- treehouse status (pool)
+base  master  (repository default)
+1     available    $SCR/th/.treehouse/proj-c32b04/1/proj  (detached)
+## lab fm-lab-lease-head-1557936-20181 torn down

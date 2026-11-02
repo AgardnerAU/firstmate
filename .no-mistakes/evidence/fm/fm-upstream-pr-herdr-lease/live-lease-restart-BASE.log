@@ -1,0 +1,24 @@
+## lab session: fm-lab-lease-base-1634315-783  (Treehouse root /tmp/fm-lease-live.8usSZv/th)
+
+=========== scenario: happy-restart
+spawn rc=0
+warning: $SCR/home/data/live1/launch-brief.md records no ship branch; defaulting to legacy branch fm/live1
+warning: $SCR/home/data/live1/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+meta worktree=$SCR/th/.treehouse/proj-8ae85f/1/proj  pane=w1:p2  project=$SCR/proj
+--- treehouse status (pool)
+base  master  (repository default)
+1     in-use       $SCR/th/.treehouse/proj-8ae85f/1/proj  (detached)
+                   bash (1636153), sh (1641482), sleep (1641487)
+--- treehouse lease record:
+--- pane cwd before restart: $SCR/proj
+{"agent_status":"unknown","cwd":"$SCR/proj","focused":true,"foreground_cwd":"$SCR/th/.treehouse/proj-8ae85f/1/proj","pane_id":"w1:p2","revision":2,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f479c67865a2","terminal_title":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-8ae85f/1/proj","terminal_title_stripped":"fm@agopenclaw-NUC8i7BEH: $SCR/th/.treehouse/proj-8ae85f/1/proj","workspace_id":"w1"}
+--- Herdr session stopped
+--- Herdr session restarted (restored from layout)
+--- pane cwd after restart: $SCR/proj
+{"agent_status":"unknown","cwd":"$SCR/proj","focused":true,"foreground_cwd":"$SCR/proj","pane_id":"w1:p2","revision":1,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65f479cbe28ab1","terminal_title":"fm@agopenclaw-NUC8i7BEH: $SCR/proj","terminal_title_stripped":"fm@agopenclaw-NUC8i7BEH: $SCR/proj","workspace_id":"w1"}
+RESULT restart-restores-task-copy: FAIL (expected $SCR/th/.treehouse/proj-8ae85f/1/proj)
+teardown rc=0
+--- treehouse status (pool)
+base  master  (repository default)
+1     available    $SCR/th/.treehouse/proj-8ae85f/1/proj  (detached)
+## lab fm-lab-lease-base-1634315-783 torn down

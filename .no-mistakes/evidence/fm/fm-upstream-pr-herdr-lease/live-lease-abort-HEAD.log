@@ -1,0 +1,43 @@
+## lab session: fm-lab-lease-abort-1665658-23652  (Treehouse root /tmp/fm-lease-live.fQ0uIX/th)
+
+=========== scenario: abort-fetchfail
+spawn rc=1 (presentation=off, injected fault=fetchfail)
+warning: $SCR/home/data/ab-off-fetchfail/launch-brief.md records no ship branch; defaulting to legacy branch fm/ab-off-fetchfail
+warning: $SCR/home/data/ab-off-fetchfail/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: could not fetch origin for pooled worktree '$SCR/th/.treehouse/proj-125eb2/1/proj'; refusing to launch from a potentially stale base
+warning: the worktree $SCR/th/.treehouse/proj-125eb2/1/proj stays leased to ab-off-fetchfail after the failed spawn; once inspected, run 'treehouse return --force $SCR/th/.treehouse/proj-125eb2/1/proj' from $SCR/proj
+meta present: no
+--- treehouse status (pool)
+base  master  (repository default)
+1     leased       $SCR/th/.treehouse/proj-125eb2/1/proj  (detached)  (held by ab-off-fetchfail)
+--- herdr panes for ab-off-fetchfail:
+w1:p2 $SCR/proj
+
+=========== scenario: abort-proj-fetchfail
+spawn rc=1 (presentation=on, injected fault=fetchfail)
+warning: $SCR/home/data/ab-on-fetchfail/launch-brief.md records no ship branch; defaulting to legacy branch fm/ab-on-fetchfail
+warning: $SCR/home/data/ab-on-fetchfail/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: could not fetch origin for pooled worktree '$SCR/th/.treehouse/proj-125eb2/2/proj'; refusing to launch from a potentially stale base
+warning: herdr presentation cleanup could not verify the exact pane; refusing focus-unsafe pane close
+meta present: no
+--- treehouse status (pool)
+base  master  (repository default)
+1     leased       $SCR/th/.treehouse/proj-125eb2/1/proj  (detached)  (held by ab-off-fetchfail)
+2     available    $SCR/th/.treehouse/proj-125eb2/2/proj  (detached)
+--- herdr panes for ab-on-fetchfail:
+w1:p2 $SCR/proj
+
+=========== scenario: abort-proj-dirty
+spawn rc=1 (presentation=on, injected fault=dirty)
+warning: $SCR/home/data/ab-on-dirty/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+error: pooled worktree '$SCR/th/.treehouse/proj-125eb2/2/proj' is not clean; refusing to discard uncommitted work while refreshing its base
+warning: herdr presentation cleanup could not verify the exact pane; refusing focus-unsafe pane close
+warning: the worktree $SCR/th/.treehouse/proj-125eb2/2/proj stays leased to ab-on-dirty after the failed spawn; once inspected, run 'treehouse return --force $SCR/th/.treehouse/proj-125eb2/2/proj' from $SCR/proj
+meta present: no
+--- treehouse status (pool)
+base  master  (repository default)
+1     leased       $SCR/th/.treehouse/proj-125eb2/1/proj  (detached)  (held by ab-off-fetchfail)
+2     leased       $SCR/th/.treehouse/proj-125eb2/2/proj  (detached)  (held by ab-on-dirty)
+--- herdr panes for ab-on-dirty:
+w1:p2 $SCR/proj
+## lab fm-lab-lease-abort-1665658-23652 torn down
