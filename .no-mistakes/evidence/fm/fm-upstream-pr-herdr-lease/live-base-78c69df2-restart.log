@@ -1,0 +1,18 @@
+lab session: fm-lab-lease-live-1917856-18346  herdr: herdr 0.9.5  root: /tmp/fm-lease-cmp.eLQ6V4/baseg (78c69df2)
+
+=== Scenario A: fresh Herdr spawn leases the task copy and moves the pane's top-level shell there
+meta worktree=/tmp/fm-lease-live.BGz2ou/pool/.treehouse/project-0fa6fc/1/project  pane=w1:p2
+treehouse calls during spawn:
+pool status:
+  base  master  (repository default)
+  1     in-use       /tmp/fm-lease-live.BGz2ou/pool/.treehouse/project-0fa6fc/1/project  (detached)
+                     bash (1919399), sh (1923145), sleep (1923150)
+herdr pane get .cwd = /tmp/fm-lease-live.BGz2ou/project
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-live.BGz2ou/project","foreground_cwd":"/tmp/fm-lease-live.BGz2ou/pool/.treehouse/project-0fa6fc/1/project"}
+FAIL: pane cwd (/tmp/fm-lease-live.BGz2ou/project) != task copy (/tmp/fm-lease-live.BGz2ou/pool/.treehouse/project-0fa6fc/1/project)
+
+=== Scenario B: full Herdr session restart (lab stop + provision) restores the pane
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-live.BGz2ou/project","foreground_cwd":"/tmp/fm-lease-live.BGz2ou/project"}
+restored pane cwd = /tmp/fm-lease-live.BGz2ou/project (project clone = /tmp/fm-lease-live.BGz2ou/project)
+FAIL: restored pane opened in /tmp/fm-lease-live.BGz2ou/project instead of /tmp/fm-lease-live.BGz2ou/pool/.treehouse/project-0fa6fc/1/project
+cleanup: lab fm-lab-lease-live-1917856-18346 torn down, /tmp/fm-lease-live.BGz2ou removed

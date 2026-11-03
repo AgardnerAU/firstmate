@@ -1,0 +1,75 @@
+lab session: fm-lab-lease-live-1836719-6376  herdr: herdr 0.9.5  root: /home/fm/.no-mistakes/worktrees/8b3eda8ad954/01M6FDNAB2A3E4EYA19J89601F (da543d2f)
+
+=== Scenario A: fresh Herdr spawn leases the task copy and moves the pane's top-level shell there
+meta worktree=/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  pane=w1:p2
+treehouse calls during spawn:
+  treehouse get --lease --lease-holder lease-a
+pool status:
+  base  master  (repository default)
+  1     leased       /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  (detached)  (held by lease-a)
+                     bash (1838073), sh (1840646), sleep (1840647)
+herdr pane get .cwd = /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project","foreground_cwd":"/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project"}
+PASS: pane top-level cwd equals leased copy
+
+=== Scenario B: full Herdr session restart (lab stop + provision) restores the pane
+{"pane_id":"w1:p2","cwd":"/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project","foreground_cwd":"/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project"}
+restored pane cwd = /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project (project clone = /tmp/fm-lease-live.lXE8QR/project)
+PASS: restored worker pane is in its own task copy, not the project clone
+
+=== Scenario C: teardown of a viewed task tab is refused and retains task, pane shell and leased copy
+lease-c worktree=/tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project pane=w2:p2 tab=w2:t2
+[{"workspace_id":"w1","label":"firstmate","focused":false,"active_tab_id":"w1:t2"},{"workspace_id":"w2","label":"└ lease-c · p:rkYiCPERWclcO7zfbVkeCQ","focused":true,"active_tab_id":"w2:t2"}]
+teardown rc=1; output:
+  warning: herdr presentation cleanup target is the captain's active tab; refusing a close that cannot preserve focus
+  warning: exact herdr task-pane close could not be confirmed for lease-c; retaining the presentation journal and attempting no workspace cleanup
+  error: herdr pane fm-lab-lease-live-1836719-6376:w2:p2 for lease-c is not confirmed gone after its close was refused, skipped, or failed; retaining every durable task record - rerun teardown once the close can run under the session lock
+treehouse calls during refused teardown:
+PASS: teardown exited non-zero
+PASS: teardown explains it retained the task
+PASS: task pane w2:p2 still alive (shell not reaped)
+PASS: task copy directory still present
+PASS: no treehouse return call
+PASS: task meta retained
+pool status:
+  base  master  (repository default)
+  1     leased       /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  (detached)  (held by lease-a)
+                     bash (1841019)
+  2     leased       /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project  (detached)  (held by lease-c)
+                     bash (1843478), sh (1847104), sleep (1847105)
+
+=== Scenario D: retry after the captain leaves the tab closes the exact pane before returning the copy
+teardown rc=0; output:
+  🌳 Worktree returned to pool.
+  /tmp/fm-lease-live.lXE8QR/project: already current
+  teardown lease-c complete (window fm-lab-lease-live-1836719-6376:w2:p2, worktree /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project)
+  Backlog: lease-c just finished (this home keeps no markdown backlog at /tmp/fm-lease-live.lXE8QR/home/data/backlog.md). Update /tmp/fm-lease-live.lXE8QR/home/data/backlog.md - move lease-c to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+treehouse calls:
+  treehouse return --force /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project  [task pane w2:p2: pane-gone at return]
+PASS: retry teardown succeeded
+PASS: exact pane gone
+PASS: treehouse return ran only after the pane was gone
+PASS: task record retired
+pool status:
+  base  master  (repository default)
+  1     leased       /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  (detached)  (held by lease-a)
+                     bash (1841019)
+  2     available    /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project  (detached)
+
+=== Scenario E: teardown of the restart-restored task closes its pane before returning its copy
+teardown rc=0; output:
+  🌳 Worktree returned to pool.
+  /tmp/fm-lease-live.lXE8QR/project: already current
+  teardown lease-a complete (window fm-lab-lease-live-1836719-6376:w1:p2, worktree /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project)
+  Backlog: lease-a just finished (this home keeps no markdown backlog at /tmp/fm-lease-live.lXE8QR/home/data/backlog.md). Update /tmp/fm-lease-live.lXE8QR/home/data/backlog.md - move lease-a to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+treehouse calls:
+  treehouse return --force /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  [task pane w1:p2: pane-gone at return]
+PASS: teardown succeeded
+PASS: copy returned after pane gone
+pool status:
+  base  master  (repository default)
+  1     available    /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/1/project  (detached)
+  2     available    /tmp/fm-lease-live.lXE8QR/pool/.treehouse/project-2d1d24/2/project  (detached)
+
+ALL SCENARIOS PASSED
+cleanup: lab fm-lab-lease-live-1836719-6376 torn down, /tmp/fm-lease-live.lXE8QR removed
