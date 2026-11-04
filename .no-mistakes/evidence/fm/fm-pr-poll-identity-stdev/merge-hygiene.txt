@@ -1,0 +1,3 @@
+fm_pr_poll_registration_device_shifted: not defined
+fm_pr_poll_registration_rerecord_device: not defined
+fm_pr_recorded_identity_matches: defined

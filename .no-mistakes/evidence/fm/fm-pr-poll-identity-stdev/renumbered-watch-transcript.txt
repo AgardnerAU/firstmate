@@ -1,0 +1,27 @@
+##### MODE=merged
+live state device: 66306
+registration lines 10-11 before: 66306:816003 66306:816004 
+registration lines 10-11 after renumber: 66307:816003 66307:816004 
+--- bin/fm-watch.sh output ---
+check: /tmp/fm-lab.i5ZHar/home/state/task-a.check.sh: merged
+watch exit=0
+--- gh calls ---
+pr view https://github.com/o/r/pull/1 --json state -q .state
+--- poll artifacts left ---
+task-a.meta
+task-a.pr-poll-merge-notified
+##### MODE=tamper
+live state device: 66306
+registration lines 10-11 before: 66306:816003 66306:816004 
+registration lines 10-11 after renumber: 66307:816003 66307:816004 
+tampered: appended a line to task-a.check.sh
+--- bin/fm-watch.sh output ---
+check: rejected unauthenticated state checks: /tmp/fm-lab.IMUNVz/home/state/task-a.check.sh (merge poll: the check content differs from its registration)
+watch exit=0
+--- gh calls ---
+(no gh call)
+--- poll artifacts left ---
+task-a.check.sh
+task-a.meta
+task-a.pr-poll
+task-a.pr-poll-registration
