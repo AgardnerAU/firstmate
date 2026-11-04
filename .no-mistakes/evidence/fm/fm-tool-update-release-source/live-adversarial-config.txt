@@ -1,0 +1,22 @@
+== case A: published + version_url on one entry
+{"tools":[
+ {"name":"tasks-axi","command":"tasksfx","published":{"source":"npm","package":"tasks-axi"},"version_url":"https://example.com/v"}
+]}
+-- check:
+tool updates: watched tool registry: tool tasks-axi may set published or version_url, not both
+exit=0
+-- arm:
+fm-tool-update-check: tool tasks-axi may set published or version_url, not both (/tmp/fm-tuc.PE4ya7/config/watched-tools.json)
+exit=1
+== case B: github repo given as URL
+{"tools":[{"name":"x","command":"tasksfx","published":{"source":"github","repo":"https://evil.example/a/b"}}]}
+tool updates: watched tool registry: tool x published.repo must be a GitHub owner/repo
+exit=0
+== case C: unsupported extra field (credential)
+{"tools":[{"name":"x","command":"tasksfx","published":{"source":"npm","package":"tasks-axi","token":"s3cret"}}]}
+tool updates: watched tool registry: tool x published has unsupported fields
+exit=0
+== case D: published without command
+{"tools":[{"name":"x","published":{"source":"npm","package":"tasks-axi"}}]}
+tool updates: watched tool registry: tool x needs command, git, or both
+exit=0

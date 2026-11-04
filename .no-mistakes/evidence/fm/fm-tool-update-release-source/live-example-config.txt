@@ -1,0 +1,3 @@
+== shipped docs/examples/watched-tools.json, PATH without the watched tools
+tool updates: firstmate check failed: /absolute/path/to/firstmate is not a directory; agents-on-the-go check failed: /absolute/path/to/agents-on-the-go is not a directory; herdr check failed: herdr is not on PATH; tasks-axi check failed: tasks-axi is not on PATH; gnhf check failed: gnhf is not on PATH; claude check failed: claude is not on PATH; no-mistakes check failed: no-mistakes is not on PATH
+exit=0

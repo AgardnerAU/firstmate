@@ -1,0 +1,12 @@
+$ FM_HOME=<disposable> FM_TOOL_UPDATE_INTERVAL=0 PATH=<fixture bin>:$PATH bin/fm-tool-update-check.sh check
+config/watched-tools.json:
+{"tools":[
+ {"name":"tasks-axi","command":"tasksfx","published":{"source":"npm","package":"tasks-axi"}},
+ {"name":"herdr","command":"herdrfx","published":{"source":"github","repo":"herdrdev/herdr"}},
+ {"name":"scoped","command":"newfx","published":{"source":"npm","package":"@anthropic-ai/claude-code"}},
+ {"name":"broken","command":"brokenfx","published":{"source":"npm","package":"gnhf"}},
+ {"name":"missing","command":"newfx","published":{"source":"github","repo":"kunchenguid/definitely-no-such-repo-xyz"}}
+]}
+--- output ---
+tool updates: tasks-axi update available: installed 0.0.1, published 0.2.6 at https://registry.npmjs.org/tasks-axi/latest; herdr update available: installed 0.0.1, published 0.9.5 at https://api.github.com/repos/herdrdev/herdr/releases/latest; broken check failed: /tmp/fm-tuc.PE4ya7/bin/brokenfx exited 3, so its version was not compared with the published release; missing check failed: published source https://api.github.com/repos/kunchenguid/definitely-no-such-repo-xyz/releases/latest could not be reached or read (exit 22)
+exit=0
