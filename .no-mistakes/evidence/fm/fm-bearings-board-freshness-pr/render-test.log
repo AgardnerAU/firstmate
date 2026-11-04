@@ -12,4 +12,4 @@ ok - freshness formats minute ages and uses just now under one minute
 ok - freshness includes the local date across day rollover and formats days
 ok - freshness recalculates its age on the live timer
 ok - freshness stays hidden when generated is missing or invalid
-exit=0
+exit 0

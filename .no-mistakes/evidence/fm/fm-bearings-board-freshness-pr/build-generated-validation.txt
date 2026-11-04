@@ -1,0 +1,6 @@
+generated='26 Aug 2026 10:00 AEST' rc=1 :: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: $LAB/bad.json
+generated='2026-08-26T10:00' rc=1 :: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: $LAB/bad.json
+generated='2026-02-30T10:00Z' rc=1 :: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: $LAB/bad.json
+generated='2026-08-26T24:00Z' rc=1 :: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: $LAB/bad.json
+generated='' rc=1 :: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: $LAB/bad.json
+generated='2026-11-04T20:00:00+08:00' :: board: $LAB/.lavish/bearings-board.html
