@@ -1,0 +1,20 @@
+== live lab: interrupted stand-down retried against a real claude worker in a shell-hosted tmux window
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=standing-down
+$ pane_current_command: claude
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.E6GHFa
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-lab.E6GHFa/wt-t1
+rc=0
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmses:fm-t1
+state=stood-down
+$ pane_current_command after: bash
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down
+rc=0

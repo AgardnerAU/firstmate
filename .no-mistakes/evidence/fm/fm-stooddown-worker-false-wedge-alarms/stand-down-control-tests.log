@@ -1,0 +1,23 @@
+ok - fm-control stand-down: a proven exit becomes an exact durable no-worker declaration
+ok - fm-control stand-down: a retry does not ignore a failed exit
+ok - fm-control stand-down: a self-stopping agent is a successful stop, not a refusal
+ok - fm-control stand-down: an unexplained dead agent remains eligible for recovery
+ok - fm-control stand-down: an in-flight validation run keeps its worker, and is never cancelled for the operator
+ok - fm-control stand-down: only an in-flight run blocks the hold
+ok - fm-control stand-down: run attribution uses every source, not just axi status
+ok - fm-control stand-down: an unanswerable run check refuses and names itself
+ok - fm-control stand-down: an incomplete run listing does not prove quiet
+ok - fm-control stand-down: malformed active branch identity fails closed
+ok - fm-control stand-down: an absent run CLI licenses the hold, an unanswered one does not
+ok - fm-control stand-down: a project with no run registration is held, while a silent failure still refuses
+ok - fm-control stand-down: a garbled listing row adds no run and overturns no answer
+ok - fm-control stand-down: a live run that cannot be placed is doubt, not proof of safety
+ok - fm-control stand-down: a terminal run whose head never reached this worktree is history, not doubt
+ok - fm-control stand-down: corroboration reads the branch's newest run, not its history
+ok - fm-control stand-down: the listing adds a live run, and its silence never overturns the branch read
+ok - fm-control stand-down: a full window adds no run, and the live row it shows still refuses
+ok - fm-control stand-down: an unplaceable live run is named, not misreported as an unanswered check
+ok - fm-control stand-down: an unreadable worktree refuses, while a branchless one owns no run
+ok - fm-control stand-down: an unacknowledged instruction is handled or withdrawn first
+ok - fm-control stand-down: a scout is run-checked like a ship, and its scratch worktree still holds
+exit=0

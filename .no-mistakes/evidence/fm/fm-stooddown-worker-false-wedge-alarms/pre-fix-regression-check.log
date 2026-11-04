@@ -1,0 +1,15 @@
+== fm-control (pre-fix bin at b6b795b6)
+ok - fm-control stand-down: a retry does not ignore a failed exit
+not ok - a capped run listing cannot prove the branch quiet
+stood-down t1 harness=claude backend=tmux endpoint=fmses:fm-t1 worktree=/tmp/fm-control.JgpBhj/stand-down-incomplete-run-listing-21877/wt-t1: expected exit 1, got 0
+exit=1
+== fm-crew-state (pre-fix bin at b6b795b6)
+ok - captured cancelled run leaves fleet inventory unverified without a failure contradiction
+ok - failed-outcome/github/open: terminal delivery uses current disposition
+ok - failed-outcome/github/merged: terminal delivery uses current disposition
+ok - failed-outcome/github/closed: terminal delivery uses current disposition
+ok - failed-outcome/github/unreadable: terminal delivery uses current disposition
+ok - failed-outcome/github/skipped: terminal delivery uses current disposition
+ok - failed-outcome/github/no-identity: terminal delivery uses current disposition
+ok - failed-outcome/gitlab/open: terminal delivery uses current disposition
+exit=1
