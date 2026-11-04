@@ -1,0 +1,8 @@
+working: implemented, ready for the pipeline                           -> captain-relevant
+working [at=1793750400]: implemented, ready for the pipeline           -> captain-relevant
+working: implemented, ready for the pipeline soon                      -> absorbed
+working: rebased onto merged #76                                       -> absorbed
+working: setup complete                                                -> absorbed
+done [at=1793750400]: PR https://github.com/o/r/pull/1 checks green    -> captain-relevant
+working [at=1793750400]: implemented, ready for the pipeline           -> captain-relevant  (FM_CAPTAIN_RE=^(blocked):)
+working: rebased onto merged #76                                       -> absorbed  (FM_CAPTAIN_RE=^(blocked):)
