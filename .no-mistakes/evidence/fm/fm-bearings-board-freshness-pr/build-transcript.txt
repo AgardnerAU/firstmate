@@ -1,0 +1,15 @@
+== recent generated=2026-11-04T06:51:10Z (local now 2026-11-04 16:31 AWST)
+board: /tmp/fm-fresh-live.ks0SXV/recent/.lavish/bearings-board.html
+session:
+  status: opened
+copied /tmp/fm-fresh-live.ks0SXV/recent/.lavish/bearings-board.html
+== old generated=2026-11-02T13:31:11+08:00 (local now 2026-11-04 16:31 AWST)
+board: /tmp/fm-fresh-live.ks0SXV/old/.lavish/bearings-board.html
+session:
+  status: opened
+copied /tmp/fm-fresh-live.ks0SXV/old/.lavish/bearings-board.html
+generated='26 Aug 2026 10:00 AEST' -> rc=1: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: /tmp/fm-fresh-live.ks0SXV/adv/payload.json 
+generated='2026-08-26T10:00' -> rc=1: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: /tmp/fm-fresh-live.ks0SXV/adv/payload.json 
+generated='2026-02-30T10:00Z' -> rc=1: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: /tmp/fm-fresh-live.ks0SXV/adv/payload.json 
+generated='' -> rc=1: fm-bearings-board: board data does not satisfy fm-bearings-board.v1: /tmp/fm-fresh-live.ks0SXV/adv/payload.json 
+board file unchanged after refusals
