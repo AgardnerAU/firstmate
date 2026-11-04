@@ -1,0 +1,37 @@
+### Lab state dir device: 66306
+
+=== S1: armed poll survives device renumbering (PR still OPEN) ===
+registration identity lines after simulated reboot:
+66313:937334
+66313:937335
+watcher exit=0
+--- watcher wake output:
+check: /tmp/fm-lab.o8iycd/home1/state/zz-stop.check.sh: stop-cycle
+--- gh calls:
+pr view https://github.com/o/r/pull/11 --json state -q .state
+S1 RESULT: PASS (poll ran, still armed, no rejection)
+
+=== S2: renumbered poll detects merge and retires ===
+watcher exit=0
+--- watcher wake output:
+check: /tmp/fm-lab.o8iycd/home2/state/t-merged.check.sh: merged
+S2 RESULT: PASS (merge surfaced, poll retired)
+
+=== S3 (adversarial): byte-identical replaced check after renumber is refused with cause ===
+watcher exit=0
+--- watcher wake output:
+check: rejected unauthenticated state checks: /tmp/fm-lab.o8iycd/home3/state/t-swap.check.sh (merge poll: the sidecar or check is not the file its registration was armed with)
+--- gh calls:
+S3 RESULT: PASS (refused, cause named, never executed)
+
+=== S4: unregistered custom check rejection names its cause ===
+watcher exit=0
+--- watcher wake output:
+check: rejected unauthenticated state checks: /tmp/fm-lab.o8iycd/home4/state/rogue.check.sh (custom check: it is not registered (bin/fm-check-register.sh))
+S4 RESULT: PASS
+
+=== S5: merge poll whose task record has a key after pr= is refused naming it ===
+watcher exit=0
+--- watcher wake output:
+check: rejected unauthenticated state checks: /tmp/fm-lab.o8iycd/home5/state/t-meta.check.sh (merge poll: the task record has key model after its pr= block)
+S5 RESULT: PASS
