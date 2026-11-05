@@ -1,0 +1,8 @@
+allowed-tail: accepted url=https://github.com/o/r/pull/7
+foreign-key-after-pr: rejected - task record has key model after its pr= block
+two-pr-lines: rejected - task record has more than one pr= line
+no-pr: rejected - task record has no pr= line
+live identity 66306:947252: match
+renumbered device 67305:947252: match (remount tolerated)
+byte-identical replacement (new inode 947253): refused
+malformed recorded identity: refused

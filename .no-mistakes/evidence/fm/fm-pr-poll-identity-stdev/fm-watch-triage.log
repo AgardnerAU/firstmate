@@ -1,0 +1,2 @@
+ok - an unchanged reported status survives device renumbering while a replaced file reads as new
+exit=0
