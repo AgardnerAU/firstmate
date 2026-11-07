@@ -1,0 +1,21 @@
+== repo: {run-worktree}
+ordinary record 001.msg written and escalated
+newer fire-and-forget 002.msg written with retry mark
+due_action within grace (3600s): quiet
+due_action once retry is due: retry t1.inbox/002.msg
+due_action after retry spent: quiet
+-- adversarial: retry mark on an OLDER record than the escalated one
+due_action: quiet
+-- adversarial: flag absent
+due_action without wait-no-turns: quiet
+
+== repo: /tmp/fm-base.RFcZNR
+ordinary record 001.msg written and escalated
+newer fire-and-forget 002.msg written with retry mark
+due_action within grace (3600s): quiet
+due_action once retry is due: quiet
+due_action after retry spent: quiet
+-- adversarial: retry mark on an OLDER record than the escalated one
+due_action: quiet
+-- adversarial: flag absent
+due_action without wait-no-turns: quiet

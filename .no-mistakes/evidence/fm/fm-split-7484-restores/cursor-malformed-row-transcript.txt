@@ -1,0 +1,44 @@
+== repo: {run-worktree}
+bootstrap drain rc=0
+cursor manifest after bootstrap:
+healthy<TAB>strong:48:8537075:2026-11-07 19:02:20.000425830 +0800<TAB>16<TAB>0
+-- appended malformed sibling row 'ghost<TAB>ident<TAB>NaN<TAB>0' and a new healthy note
+drain rc=0
+healthy note: captain answer after malformed sibling row
+manifest before retire (drain rewrote it, malformed ghost row re-appended):
+healthy<TAB>strong:48:8537075:2026-11-07 19:02:20.000425830 +0800<TAB>65<TAB>0
+ghost<TAB>ident<TAB>NaN<TAB>0
+-- retire healthy (teardown path) with malformed sibling present
+retire healthy rc=0
+healthy.status removed
+manifest now:
+ghost<TAB>ident<TAB>NaN<TAB>0
+-- adversarial: retire ghost (its own malformed row)
+retire ghost rc=1
+ghost.status kept (fails closed)
+-- adversarial: ghost's own cursor lookup
+ ghost lookup rc=1
+
+== repo: /tmp/fm-base.RFcZNR
+bootstrap drain rc=0
+cursor manifest after bootstrap:
+healthy<TAB>strong:48:8537146:2026-11-07 19:02:22.624534972 +0800<TAB>16<TAB>0
+-- appended malformed sibling row 'ghost<TAB>ident<TAB>NaN<TAB>0' and a new healthy note
+drain rc=0
+manifest before retire (drain rewrote it, malformed ghost row re-appended):
+healthy<TAB>strong:48:8537146:2026-11-07 19:02:22.624534972 +0800<TAB>16<TAB>0
+ghost<TAB>ident<TAB>NaN<TAB>0
+ghost<TAB>ident<TAB>NaN<TAB>0
+-- retire healthy (teardown path) with malformed sibling present
+retire healthy rc=1
+/tmp/tmp.PHdzRkv63K/state/healthy.status
+healthy.status still present
+manifest now:
+healthy<TAB>strong:48:8537146:2026-11-07 19:02:22.624534972 +0800<TAB>16<TAB>0
+ghost<TAB>ident<TAB>NaN<TAB>0
+ghost<TAB>ident<TAB>NaN<TAB>0
+-- adversarial: retire ghost (its own malformed row)
+retire ghost rc=1
+ghost.status kept (fails closed)
+-- adversarial: ghost's own cursor lookup
+ ghost lookup rc=1
