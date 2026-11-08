@@ -1,0 +1,9 @@
+Wording check: base vs head AGENTS.md, leading '- ' list markers stripped on BOTH sides
+RESULT: IDENTICAL -> only list markers changed, no wording change
+
+numstat (added/removed lines):
+15	15	AGENTS.md
+
+Changed hunks (section headers):
+@@ -46,9 +46,9 @@ You may maintain this repo's private operational state directly.
+@@ -423,6 +423,6 @@ When Relay is enabled, load `fmx-respond` for its activation, authority, mention

@@ -1,0 +1,23 @@
+## Case A: task branch was cut from a stale non-target branch carrying a foreign commit
+$ git merge-base HEAD main
+a16ab87 base
+$ git log --oneline --left-right main...HEAD
+< 807571b main advances
+> 9855aba task: real task work
+> 83a4747 foreign: unrelated other-branch commit
+$ git rev-list --reverse <merge-base>..HEAD
+83a4747 foreign: unrelated other-branch commit
+9855aba task: real task work
+$ git rev-list --merges <merge-base>..HEAD (count)
+0
+=> foreign commit is visible as outgoing (>) so the brief's 'not task work -> stop and report' rule fires
+
+## Case B: target merged into task branch
+$ git merge-base HEAD main
+d54bbc9 main advances again
+$ git log --oneline --left-right main...HEAD
+> e6466ea Merge main into fm/task2
+> 354184b task2 work
+$ git rev-list --merges <merge-base>..HEAD
+e6466ea Merge main into fm/task2
+=> merge commit is listed, so the brief's 'stop and report instead of replaying' rule fires
