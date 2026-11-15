@@ -1,0 +1,42 @@
+== S1 uncontended acquire/release x200
+  acquired=200 non-acquired=0
+== S2 live foreign holder
+  try_acquire vs live holder pid=3203847         rc=1 outcome=held cause=holder-pid=3203847 held_pid=3203847
+== S3 bounded wait vs live holder (2s)
+  bounded(2) after 2s                            rc=124 outcome=held cause=holder-pid=3203847 held_pid=3203847
+== S4 dead holder stale lock reclaimed
+  try_acquire after holder killed                rc=0 outcome=acquired cause= held_pid=
+== S5 occupied regular file / dangling symlink
+  regular file at lock path                      rc=1 outcome=refused cause=lock-path-occupied held_pid=
+  dangling symlink at lock path                  rc=1 outcome=refused cause=lock-path-occupied held_pid=
+== S6 refused causes
+  parent missing                                 rc=1 outcome=refused cause=parent-unresolvable held_pid=
+  overlong component                             rc=1 outcome=refused cause=create-denied held_pid=
+== S7 freshness classes
+  fresh: fresh
+  stale: stale
+  absent: absent
+  missing/lock: unreadable
+  000000000000: absent
+  legacy age sentinel for absent: ' rc=127'
+== S8 unbounded wait: removed parent returns 1
+  acquire_wait rc=1 after 1213ms
+== S9 unbounded wait: persistent refusal reported on bounded schedule, never returns nonzero
+  wait returned rc=0
+  stderr diagnostics in ~6s (report=1 repeat=2):
+    lock: cannot acquire /tmp/fmlt/w.q6Jr/occ.lock: lock-path-occupied
+    lock: cannot acquire /tmp/fmlt/w.q6Jr/occ.lock: lock-path-occupied
+    lock: cannot acquire /tmp/fmlt/w.q6Jr/occ.lock: lock-path-occupied
+== S10 unreadable holder pid stays held
+  try_acquire with chmod-000 pid (old)           rc=1 outcome=held cause=holder-pid-unreadable held_pid=
+== S11 concurrent reclaim of stale dead-holder lock by 8 contenders (x10 rounds)
+  round  1:       1 acquired       7 held/reclaim-marker-held 
+  round  2:       1 acquired       7 held/reclaim-marker-held 
+  round  3:       1 acquired       7 held/reclaim-marker-held 
+  round  4:       1 acquired       7 held/reclaim-marker-held 
+  round  5:       1 acquired       7 held/reclaim-marker-held 
+  round  6:       1 acquired       7 held/reclaim-marker-held 
+  round  7:       1 acquired       7 held/reclaim-marker-held 
+  round  8:       1 acquired       7 held/reclaim-marker-held 
+  round  9:       1 acquired       7 held/reclaim-marker-held 
+  round 10:       1 acquired       7 held/reclaim-marker-held 

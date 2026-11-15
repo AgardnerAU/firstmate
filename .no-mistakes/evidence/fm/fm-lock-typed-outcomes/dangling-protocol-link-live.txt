@@ -1,0 +1,5 @@
+dangling protocol-owner link (fresh): rc=1 outcome=held cause=mid-acquire
+dangling protocol-owner link (old, self-heal): rc=0 outcome=acquired cause=
+fm_path_age absent: [999999] rc=0
+fm_path_age missing parent: [999999] rc=0
+fm_path_age fresh dir: [0]

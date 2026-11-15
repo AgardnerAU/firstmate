@@ -1,0 +1,12 @@
+== W1 watch lock path is a regular file
+exit=1
+stdout:
+stderr:
+  watcher: FAILED - cannot acquire lock /tmp/fm-lab.2sGERv/state/.watch.lock: lock-path-occupied
+== W2 live downtime-marker holder during stale watch-lock reclaim
+exit=1
+  watcher: FAILED - startup lock /tmp/fm-lab.2sGERv/state/.watcher-down.lock held by live pid 3307964
+== L1 fm-lock.sh session claim with .lock.acquire occupied by a regular file
+exit=1
+  error: cannot acquire session lock /tmp/fm-lab.2sGERv/state/.lock.acquire: lock-path-occupied; operate read-only until resolved
+  (no state/.lock created)
