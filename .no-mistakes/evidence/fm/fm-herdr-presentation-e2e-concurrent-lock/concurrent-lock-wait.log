@@ -1,0 +1,3 @@
+holding session lock during delayed probe; starting second recovery
+actual test recovery block passed under controlled contention
+exit=0
