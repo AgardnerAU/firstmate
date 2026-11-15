@@ -1,0 +1,4 @@
+session=fm-lab-nm-test-5805-2885672-4680
+launch test exit=0
+live test exit=0
+teardown rc=0
