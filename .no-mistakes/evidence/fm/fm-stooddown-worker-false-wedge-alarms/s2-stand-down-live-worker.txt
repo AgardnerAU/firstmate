@@ -1,0 +1,18 @@
+pane before: claude
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+stood-down t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/tmp/fm-lab.YPDRxi/wt-t1
+exit=0
+pane after: bash
+$ cat state/t1.worker-state
+schema=1
+task_id=t1
+endpoint=fmlab:fm-t1
+state=stood-down
+$ fm-control.sh t1 stand-down   # repeat
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+already-stood-down t1 harness=claude backend=tmux endpoint=fmlab:fm-t1 worktree=/tmp/fm-lab.YPDRxi/wt-t1
+exit=0
+--- pane tail ---
+user@user-Z790-Steel-Legend-WiFi:/tmp/fm-lab.YPDRxi/wt-t1$ env -u NO_MISTAKES_GATE claude
+user@user-Z790-Steel-Legend-WiFi:/tmp/fm-lab.YPDRxi/wt-t1$

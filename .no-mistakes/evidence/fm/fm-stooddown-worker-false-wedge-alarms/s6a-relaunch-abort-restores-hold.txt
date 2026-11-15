@@ -1,0 +1,15 @@
+$ fm-control.sh t1 relaunch --note "resume after hold"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: /tmp/fm-lab.YPDRxi/data/t1/brief.md must contain nonempty ## Captain's intent and ## Firstmate spec subsections (or a nonempty legacy # Task body) before spawn
+error: the replacement agent for t1 could not be launched on claude
+error: t1's agent was stopped but the replacement did not launch; no agent is running, and its work plus the recorded progress note are preserved at /tmp/fm-lab.YPDRxi/wt-t1
+exit=1
+worker-state after relaunch: schema=1
+task_id=t1
+endpoint=fmlab:fm-t1
+state=stood-down
+pane: bash
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down

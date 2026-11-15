@@ -1,0 +1,15 @@
+# t2: a ship whose claude worker is simply gone (bare shell in its pane), no hold declared
+pane: bash
+$ fm-control.sh t2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+error: task t2's agent is already dead without a stand-down record; refusing to relabel a possible worker failure as intentional. Declare the hold first by appending a 'paused: <reason>' line to /tmp/fm-lab.YPDRxi/state/t2.status, then re-run stand-down
+exit=1
+worker-state: <none>
+$ fm-crew-state.sh t2
+state: unknown · source: pane · harness state unavailable (unknown missing)
+exit=0
+$ echo "paused: captain hold" >> state/t2.status; fm-control.sh t2 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+stood-down t2 harness=claude backend=tmux endpoint=fmlab:fm-t2 worktree=/tmp/fm-lab.YPDRxi/wt-t2
+exit=0
+worker-state: schema=1 task_id=t2 endpoint=fmlab:fm-t2 state=stood-down 

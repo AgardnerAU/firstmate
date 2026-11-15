@@ -1,0 +1,18 @@
+$ fm-crew-state.sh
+usage: fm-crew-state.sh <id>
+exit=2
+$ fm-send.sh t1 "new instruction"
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task t1 deliberately has no worker; relaunch it before sending an instruction
+exit=1
+inbox unhandled: 0
+$ fm-crew-state.sh t1
+state: parked · source: worker-state · worker deliberately stood down
+exit=0

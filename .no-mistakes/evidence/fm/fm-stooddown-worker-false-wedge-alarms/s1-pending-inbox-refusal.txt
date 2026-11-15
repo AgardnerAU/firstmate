@@ -1,0 +1,7 @@
+$ mkdir state/t1.inbox; echo steer > state/t1.inbox/0001.msg   # pending instruction
+$ fm-control.sh t1 stand-down
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.YPDRxi
+error: task t1 has an unacknowledged instruction waiting at /tmp/fm-lab.YPDRxi/state/t1.inbox/0001.msg; let the worker handle it, or withdraw it explicitly with 'mv /tmp/fm-lab.YPDRxi/state/t1.inbox/0001.msg /tmp/fm-lab.YPDRxi/state/t1.inbox/handled/', before standing the worker down
+exit=1
+worker-state present? none
+pane command: claude
